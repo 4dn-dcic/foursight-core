@@ -7,6 +7,8 @@ from .aws_ecs_tasks import _get_cluster_arns, _get_task_definition_type, _shorte
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
 
+# Functions to get AWS cluster and services info with the
+# original end purpose of supporting redeploying via Foursight.
 
 def get_aws_ecs_clusters_for_update(envs: Envs, args: Optional[dict] = None) -> list[dict]:
     response = []

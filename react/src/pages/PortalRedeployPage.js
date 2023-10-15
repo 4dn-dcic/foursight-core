@@ -570,22 +570,34 @@ const BuildDetails = (props) => {
             <tr>
                 <td style={{verticalAlign: "top"}} colSpan="2">
                     Build Details {showPrevious && <>(latest)</>}
-                    <small style={{float: "right", position: "relative", top: "2pt", right: "-2pt"}} className="pointer" onClick={toggleShowPrevious}>
-                        <span>{showPrevious ? <>hide</> : <>show</>}</span> previous
-                        <span style={{paddingLeft:"1pt"}}>{showPrevious ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</>}</span>
-                    </small>
+                    { props.services.data?.build?.previous &&
+                        <small style={{float: "right", position: "relative", top: "2pt", right: "-2pt"}} className="pointer" onClick={toggleShowPrevious}>
+                            <span>{showPrevious ? <>hide</> : <>show</>}</span> previous
+                            <span style={{paddingLeft:"1pt"}}>{showPrevious ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</>}</span>
+                        </small>
+                    }
                 </td>
             </tr>
             <TSeparatorH double={true} />
         </tbody></table>
-        <BuildInfo build={props.services.data?.build?.latest} digest={props.digest.data?.digest} image={props.services.data?.image} title="latest" />
+        <BuildInfo build={props.services.data?.build?.latest} digest={props.digest.data?.digest} image={props.services.data?.image} />
         { showPrevious && <>
-            <SeparatorH top="2pt" bottom="8pt" color="gray" />
-            <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-                <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details (previous) </td> </tr>
-                <TSeparatorH double={true} />
-            </tbody></table>
-            <BuildInfo build={props.services.data?.build?.previous} title="previous" />
+            { props.services.data?.build?.previous && <>
+                <SeparatorH top="2pt" bottom="8pt" color="gray" />
+                <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+                    <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details (previous) </td> </tr>
+                    <TSeparatorH double={true} />
+                </tbody></table>
+                <BuildInfo build={props.services.data?.build?.previous} />
+            </> }
+            { props.services.data?.build?.next_previous && <>
+                <SeparatorH top="2pt" bottom="8pt" color="gray" />
+                <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+                    <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details (next previous) </td> </tr>
+                    <TSeparatorH double={true} />
+                </tbody></table>
+                <BuildInfo build={props.services.data?.build?.next_previous} />
+            </> }
         </> }
     </div>
 }
