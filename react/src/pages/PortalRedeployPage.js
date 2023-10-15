@@ -329,7 +329,7 @@ const ReindexButtonConfirmed = (props) => {
             { props.cluster.type == "deploy" ? <>
                 Are you sure you want to redeploy <u>{props.cluster.env.name}</u>?
             </>:<>
-                Are you sure you want to redeploy for <u>{props.cluster.env.name}</u>?
+                Are you sure you want to redeploy <u>{props.cluster.env.name}</u>?
             </> }
             </b>
         </td>
@@ -338,7 +338,7 @@ const ReindexButtonConfirmed = (props) => {
 
 const ReindexButton = (props) => {
     return <div className={`check-run-button ${props.disabled && "disabled"}`} style={{width: "fit-content", border: "1px solid inherit"}} onClick={props?.onClickReindex}>
-        { props.confirmed && <>&nbsp;Yes:</> }&nbsp;Deploy&nbsp;
+        { props.confirmed && <>&nbsp;Yes:</> }&nbsp;Redeploy&nbsp;
     </div>
 }
 
@@ -533,7 +533,7 @@ const ImageDetails = (props) => {
                 <td style={tdlabel}> Digest: </td>
                 <td style={tdcontent}>
                     <span id={`image-digest-${props.services.data?.image?.id}`}>
-                        {props.services.data?.image?.digest?.replace("sha256:", "").substring(0, 32)} ...
+                        {props.services.data?.image?.digest?.replace("sha256:", "")?.substring(0, 32)} ...
                         { props.digest.data?.digest && props.services.data?.image?.digest && <>
                             { props.digest.data?.digest === props.services.data?.image?.digest ?
                                 <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
@@ -560,6 +560,8 @@ const ImageDetails = (props) => {
 }
 
 const BuildDetails = (props) => {
+    const [showPrevious, setShowPrevious] = useState(false);
+    const toggleShowPrevious = () => setShowPrevious(!showPrevious);
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     const header = useHeader();
@@ -567,73 +569,104 @@ const BuildDetails = (props) => {
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}} colSpan="2">
-                    Build Details
+                    Build Details {showPrevious && <>(latest)</>}
+                    <small style={{float: "right", position: "relative", top: "2pt"}} className="pointer" onClick={toggleShowPrevious}>
+                        <span>{showPrevious ? <>hide</> : <>show</>}</span> previous
+                        <span style={{paddingLeft:"1pt"}}>{showPrevious ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</>}</span>
+                    </small>
                 </td>
             </tr>
             <TSeparatorH double={true} />
+        </tbody></table>
+        <BuildInfo build={props.services.data?.build?.latest} digest={props.digest.data?.digest} image={props.services.data?.image} title="latest" />
+        { showPrevious && <>
+            <SeparatorH top="2pt" bottom="8pt" color="gray" />
+            <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+                <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details (previous) </td> </tr>
+                <TSeparatorH double={true} />
+            </tbody></table>
+            <BuildInfo build={props.services.data?.build?.previous} title="previous" />
+        </> }
+    </div>
+}
+
+const BuildInfo = (props) => {
+    const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
+    const tdcontent = {whiteSpace: "nowrap", width: "99%"};
+    const header = useHeader();
+    return <>
+        <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td style={tdlabel}> ID: </td>
                 <td style={tdcontent}>
-                    {props.services.data?.build?.latest?.log_stream}
-                    &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, props.services.data?.build?.latest?.project, props.services.data?.build?.latest?.log_group, props.services.data?.build?.latest?.log_stream)} nudgedown="1px" />
+                    {props.build?.log_stream}
+                    &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, props.build?.project, props.build?.log_group, props.build?.log_stream)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Initiator: </td>
-                <td style={tdcontent}> {props.services.data?.build?.latest?.initiator} </td>
+                <td style={tdcontent}> {props.build?.initiator} </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Project: </td>
                 <td style={tdcontent}>
-                    {props.services.data?.build?.latest?.project}
-                    &nbsp;<ExternalLink href={awsCodebuildProjectLink(header.app?.credentials?.aws_account_number, props.services.data?.build?.latest?.project)} nudgedown="1px" />
+                    {props.build?.project}
+                    &nbsp;<ExternalLink href={awsCodebuildProjectLink(header.app?.credentials?.aws_account_number, props.build?.project)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> GitHub: </td>
                 <td style={tdcontent}>
-                    {props.services.data?.build?.latest?.github}
-                    &nbsp;<ExternalLink href={props.services.data?.build?.latest?.github} nudgedown="1px" />
+                    {props.build?.github}
+                    &nbsp;<ExternalLink href={props.build?.github} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Branch: </td>
                 <td style={tdcontent}>
-                    {props.services.data?.build?.latest?.branch}
-                    &nbsp;<ExternalLink href={`${props.services.data?.build?.latest?.github}/tree/${props.services.data?.build?.latest?.branch}`} nudgedown="1px" />
+                    {props.build?.branch}
+                    &nbsp;<ExternalLink href={`${props.build?.github}/tree/${props.build?.branch}`} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Commit: </td>
                 <td style={tdcontent}>
-                    {props.services.data?.build?.latest?.commit}
-                    &nbsp;<ExternalLink href={`${props.services.data?.build?.latest?.github}/commit/${props.services.data?.build?.latest?.commit}`} nudgedown="1px" />
+                    {props.build?.commit}
+                    &nbsp;<ExternalLink href={`${props.build?.github}/commit/${props.build?.commit}`} nudgedown="1px" />
                 </td>
             </tr>
+            { props.digest &&
+                <tr>
+                    <td style={tdlabel}> Digest: </td>
+                    <td style={tdcontent}>
+                        <span id={props.digest}>
+                            {props.digest?.replace("sha256:", "")?.substring(0, 32)} ...
+                            { props.digest && props.image?.digest && <>
+                                { props.digest === props.image?.digest ?
+                                    <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
+                                :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
+                            </> }
+                        </span>
+                        <Tooltip id={props.digest} position="bottom" size="small" text={props.digest} />
+                    </td>
+                </tr>
+            }
             <tr>
-                <td style={tdlabel}> Digest: </td>
+                <td style={tdlabel}> Status: </td>
                 <td style={tdcontent}>
-                    <span id={props.digest.data?.digest}>
-                        {props.digest.data?.digest?.replace("sha256:", "").substring(0, 32)} ...
-                        { props.digest.data?.digest && props.services.data?.image?.digest && <>
-                            { props.digest.data?.digest === props.services.data?.image?.digest ?
-                                <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
-                            :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
-                        </> }
-                    </span>
-                    <Tooltip id={props.digest.data?.digest} position="bottom" size="small" text={props.digest.data?.digest} />
+                    {props.build?.status}
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Started: </td>
-                <td style={tdcontent}> {DateTime.Format(props.services.data?.build?.latest?.started_at)} </td>
+                <td style={tdcontent}> {DateTime.Format(props.build?.started_at)} </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Finished: </td>
-                <td style={tdcontent}> {DateTime.Format(props.services.data?.build?.latest?.finished_at)} </td>
+                <td style={tdcontent}> {DateTime.Format(props.build?.finished_at)} </td>
             </tr>
         </tbody></table>
-    </div>
+    </>
 }
 
 export default PortalRedeployPage;
