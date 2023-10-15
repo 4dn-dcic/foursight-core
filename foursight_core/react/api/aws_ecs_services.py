@@ -76,7 +76,7 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
     return reorganize_response(services) if identical_metadata else services
 
 
-def get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
+def get_aws_codebuild_digest(image_tag: str, log_group: str, log_stream: str) -> Optional[str]:
     logs = boto3.client("logs")
     sha256_pattern = re.compile(r"sha256:([0-9a-f]{64})")
     # For some reason this (rarely-ish) intermittently fails with no error;
@@ -86,7 +86,10 @@ def get_aws_codebuild_digest(log_group: str, log_stream: str) -> Optional[str]:
         log_events = logs.get_log_events(logGroupName=log_group, logStreamName=log_stream, startFromHead=True)["events"]
         for log_event in log_events:
             message = log_event.get("message")
-            if message and "digest" in message:
+            # The entrypoint_deployment.bash script at least partially
+            # creates this log output, which includes a line like this:
+            # green: digest: sha256:c1204f9ff576105d9a56828e2c0645cc6dbcf91abca767ef6fe033a60c483f10 size: 7632
+            if message and "digest:" in message and f"{image_tag}:" in message and "size:" in message:
                 match = sha256_pattern.search(message)
                 if match:
                     return "sha256:" + match.group(1)
@@ -140,13 +143,13 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
         if include_build_digest:
             log_group = build.get("latest", {}).get("log_group")
             log_stream = build.get("latest", {}).get("log_stream")
-            build["latest"]["digest"] = get_build_digest(log_group, log_stream)
+            build["latest"]["digest"] = get_build_digest(image_tag, log_group, log_stream)
         return build
 
     @lru_cache
-    def get_build_digest(log_group: str, log_stream: str) -> Optional[str]:
+    def get_build_digest(image_tag: str, log_group: str, log_stream: str) -> Optional[str]:
         # Cache this result within the enclosing function; for the below services loop.
-        return get_aws_codebuild_digest(log_group, log_stream)
+        return get_aws_codebuild_digest(image_tag, log_group, log_stream)
 
     @lru_cache
     def get_image_info(image_repo: str, image_tag: str) -> Optional[dict]:

@@ -652,11 +652,11 @@ class ReactRoutes:
         from .aws_ecs_services import get_aws_ecs_services_for_update
         return get_aws_ecs_services_for_update(app.core._envs, cluster_arn, args=app.request_args())
 
-    @route("/aws/codebuild/digest/{log_group}/{log_stream}", authorize=True)
-    def reactapi_route_aws_codebuild_digest(log_group: str, log_stream: str) -> Response:  # noqa: implicit @staticmethod via @route
+    @route("/aws/codebuild/digest/{image_tag}/{log_group}/{log_stream}", authorize=True)
+    def reactapi_route_aws_codebuild_digest(image_tag: str, log_group: str, log_stream: str) -> Response:  # noqa: implicit @staticmethod via @route
         from .aws_ecs_services import get_aws_codebuild_digest
         log_group = urllib.parse.unquote(log_group)
-        return {"digest": get_aws_codebuild_digest(log_group, log_stream)}
+        return {"digest": get_aws_codebuild_digest(image_tag, log_group, log_stream)}
 
     @route("/aws/ecs/cluster_update/{cluster_arn}", authorize=True)
     def reactapi_route_aws_ecs_update_cluster(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
