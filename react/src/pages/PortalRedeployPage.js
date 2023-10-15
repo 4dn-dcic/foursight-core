@@ -7,6 +7,7 @@ import Duration from '../utils/Duration';
 import { ExternalLink } from '../Components'; 
 import Image from '../utils/Image';
 import { PuffSpinnerInline, StandardSpinner } from '../Spinners';
+import Time from '../utils/Time';
 import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import useFetch from '../hooks/Fetch';
@@ -548,12 +549,14 @@ const ImageDetails = (props) => {
                 <td style={tdlabel}> Pulled: </td>
                 <td style={tdcontent}>
                     {DateTime.Format(props.services.data?.image?.pulled_at)}
+                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(props.services.data?.image?.pulled_at, true, false)}</small>
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Pushed: </td>
                 <td style={tdcontent}>
                     {DateTime.Format(props.services.data?.image?.pushed_at)}
+                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(props.services.data?.image?.pushed_at, true, false)}</small>
                 </td>
             </tr>
         </tbody></table>
@@ -573,7 +576,7 @@ const BuildDetails = (props) => {
                     Build Details {showPrevious && <>(latest)</>}
                     { props.services.data?.build?.previous &&
                         <small style={{float: "right", position: "relative", top: "2pt", right: "-2pt"}} className="pointer" onClick={toggleShowPrevious}>
-                            <span>{showPrevious ? <>hide</> : <>show</>}</span> previous
+                            <span>{showPrevious ? <>hide previous</> : <b>show previous</b>}</span>
                             <span style={{paddingLeft:"1pt"}}>{showPrevious ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</>}</span>
                         </small>
                     }
@@ -673,11 +676,17 @@ const BuildInfo = (props) => {
             </tr>
             <tr>
                 <td style={tdlabel}> Started: </td>
-                <td style={tdcontent}> {DateTime.Format(props.build?.started_at)} </td>
+                <td style={tdcontent}>
+                    {DateTime.Format(props.build?.started_at)}
+                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(props.build?.started_at, true, false)}</small>
+                </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Finished: </td>
-                <td style={tdcontent}> {DateTime.Format(props.build?.finished_at)} </td>
+                <td style={tdcontent}>
+                    {DateTime.Format(props.build?.finished_at)}
+                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(props.build?.finished_at, true, false)}</small>
+                </td>
             </tr>
         </tbody></table>
     </>

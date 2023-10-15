@@ -10,6 +10,7 @@ from .envs import Envs
 # Functions to get AWS cluster and services info with the
 # original end purpose of supporting redeploying via Foursight.
 
+
 def get_aws_ecs_clusters_for_update(envs: Envs, args: Optional[dict] = None) -> list[dict]:
     response = []
     for cluster_arn in _get_cluster_arns():
@@ -282,7 +283,8 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
             build_ids = build_ids["ids"]
             for i in range(0, len(build_ids), 3):
                 if i + 2 < len(build_ids):
-                    build_details = codebuild.batch_get_builds(ids=[build_ids[i], build_ids[i + 1], build_ids[i + 2]])["builds"]
+                    ids = [build_ids[i], build_ids[i + 1], build_ids[i + 2]]
+                    build_details = codebuild.batch_get_builds(ids=ids)["builds"]
                     build = get_relevant_build_info(build_details[0])
                     if build:
                         yield build
@@ -293,7 +295,8 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
                     if build:
                         yield build
                 elif i + 1 < len(build_ids):
-                    build_details = codebuild.batch_get_builds(ids=[build_ids[i], build_ids[i + 1]])["builds"]
+                    ids = [build_ids[i], build_ids[i + 1]]
+                    build_details = codebuild.batch_get_builds(ids=ids)["builds"]
                     build = get_relevant_build_info(build_details[0])
                     if build:
                         yield build
@@ -301,7 +304,8 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
                     if build:
                         yield build
                 else:
-                    build_details = codebuild.batch_get_builds(ids=[build_ids[i]])["builds"]
+                    ids = [build_ids[i]]
+                    build_details = codebuild.batch_get_builds(ids=ids)["builds"]
                     build = get_relevant_build_info(build_details[0])
                     if build:
                         yield build
