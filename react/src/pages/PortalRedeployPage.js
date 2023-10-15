@@ -242,7 +242,7 @@ const RedeployButtons = (props) => {
         if (confirmed) {
             setRunning(true);
             const url = `//aws/ecs/cluster_update/${props.cluster.cluster_arn}`;
-            fetch(url, { method: "POST", onDone: (result) => {
+            fetch(url, { method: "POST", payload: {}, onDone: (result) => {
                 setRunning(false);
                 setRunResult(result);
                 setRunDone(true);
