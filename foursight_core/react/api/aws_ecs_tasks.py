@@ -9,8 +9,8 @@ from .envs import Envs
 from .misc_utils import find_common_prefix
 from .portal_access_key_utils import get_portal_access_key_info
 
-# Functions to get AWS cluster and services info with the
-# original end purpose of supporting redeploying via Foursight.
+# Functions to get AWS cluster and task info with the
+# original end purpose of supporting reindexing via Foursight.
 
 
 def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str] = None) -> list:
