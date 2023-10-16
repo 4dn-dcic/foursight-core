@@ -387,10 +387,10 @@ const DetailBox = (props) => {
 const AccountDetails = (props) => {
     const header = useHeader();
     const portalHealth = useFetch(`//${props.cluster?.env?.full_name}/portal_health`);
-    const uniqueEnvNames = () => {
+    const uniqueNonFullEnvNames = () => {
         const env = {};
         ["name", "short_name", "public_name", "foursight_name"].forEach(name => {
-            env[name] = props.cluster.env[name];
+            if (props.cluster.env[name] != props.cluster.env.full_name) env[name] = props.cluster.env[name];
         });
         return Array.from(new Set(Object.values(env))).sort((a, b) => b.length - a.length);
     }
@@ -410,7 +410,7 @@ const AccountDetails = (props) => {
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Environment: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
                 {props.cluster?.env?.full_name}
-                {uniqueEnvNames().map(env => <><br />{env}</>)}
+                {uniqueNonFullEnvNames().map(env => <><br />{env}</>)}
             </td>
         </tr>
         { props.cluster.env?.is_production && <tr>
