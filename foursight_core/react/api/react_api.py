@@ -1863,6 +1863,17 @@ class ReactApi(ReactApiBase, ReactRoutes):
             return self.create_response(404, {"message": f"Account file not found: {self._get_accounts_file_name()}"})
         return self.create_success_response(self._get_accounts_file_data())
 
+    def reactapi_portal_health(self, env: str) -> Response:
+        portal_url = app.core.get_portal_url(env or self._envs.get_default_env, raise_exception=False)
+        portal_health_url = f"{portal_url}/health"
+        portal_health_response = requests.get(portal_health_url)
+        if portal_health_response.status_code == 200:
+            portal_health_json = portal_health_response.json()
+            portal_uptime = portal_health_json.get("uptime")
+            portal_health_json["started"] = (
+                convert_datetime_to_utc_datetime_string(convert_uptime_to_datetime(portal_uptime)))
+            return portal_health_json
+
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL - /accounts page
     # ----------------------------------------------------------------------------------------------

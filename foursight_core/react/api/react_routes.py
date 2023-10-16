@@ -663,6 +663,10 @@ class ReactRoutes:
         from .aws_ecs_services import aws_ecs_update_cluster
         return aws_ecs_update_cluster(cluster_arn)
 
+    @route("/{env}/portal_health", authorize=True)
+    def reactapi_route_portal_health(env: str) -> Response:  # noqa: implicit @staticmethod via @route
+        return app.core.reactapi_portal_health(env)
+
     @route("/aws/ecs/tasks/latest/details", authorize=True)
     def reactapi_route_aws_ecs_task() -> Response:  # noqa: implicit @staticmethod via @route
         return app.core.reactapi_aws_ecs_tasks(latest=True)

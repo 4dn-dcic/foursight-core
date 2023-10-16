@@ -385,6 +385,7 @@ const DetailBox = (props) => {
 
 const AccountDetails = (props) => {
     const header = useHeader();
+    const portalHealth = useFetch("/portal_health");
     const uniqueEnvNames = () => {
         const env = {};
         ["name", "short_name", "public_name", "foursight_name"].forEach(name => {
@@ -392,6 +393,7 @@ const AccountDetails = (props) => {
         });
         return Array.from(new Set(Object.values(env))).sort((a, b) => b.length - a.length);
     }
+    const refreshPortalStarted = () => portalHealth.refresh();
     return <table style={{fontSize: "inherit"}}><tbody>
         <tr><td colSpan="2"> AWS Account </td></tr>
         <TSeparatorH double={true} />
@@ -418,6 +420,18 @@ const AccountDetails = (props) => {
             <td> Staging: </td>
             <td> Yes {props.cluster.env?.color && <>{Char.RightArrow} {Str.Title(props.cluster.env?.color)}</>} </td>
         </tr> }
+        <TSeparatorH top="4pt" bottom="4pt" size="2" />
+        <tr className="pointer" onClick={refreshPortalStarted}>
+            <td style={{verticalAlign: "top"}}> Portal {!portalHealth.loading && <>{Char.Refresh}</>}  Started: </td>
+            <td style={{whiteSpace: "nowrap"}}>
+                { portalHealth.loading ? <>
+                    <PuffSpinnerInline size="16" />
+                </>:<>
+                    {DateTime.Format(portalHealth.data.started)} <br />
+                    <small>{Time.Ago(portalHealth.data.started, true, false)}</small>
+               </> }
+            </td>
+       </tr>
     </tbody></table>
 }
 
