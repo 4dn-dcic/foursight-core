@@ -1864,7 +1864,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         return self.create_success_response(self._get_accounts_file_data())
 
     def reactapi_portal_health(self, env: str) -> Response:
-        import pdb ; pdb.set_trace()
         portal_url = app.core.get_portal_url(env or self._envs.get_default_env, raise_exception=False)
         portal_health_url = f"{portal_url}/health?format=json"
         portal_health_response = requests.get(portal_health_url)
