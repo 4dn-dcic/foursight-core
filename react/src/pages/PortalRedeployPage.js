@@ -84,11 +84,11 @@ const PortalRedeployPage = (props) => {
                 <ContentLoading />
             : <>
                 <div className="box thickborder" style={{marginTop: "2pt", marginBottom: "10pt"}}>
-                    <i>Select the Portal environment below to redeploy</i>.
+                    <i>Select the Portal environment (cluster) below to redeploy</i>.
                     <span style={{float: "right"}} className="pointer" onClick={toggleShowDetails} id="tooltip-show-envs">
                         { isShowDetails() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b> }
                         <Tooltip id="tooltip-show-envs" position="top" size="small"
-                            text={`Click to ${isShowDetails() ? "hide" : "show"} details for task runs.`} />
+                            text={`Click to ${isShowDetails() ? "hide" : "show"} details for cluster update.`} />
                     </span>
                 </div>
                 <Content
@@ -161,7 +161,7 @@ const PortalRedeployBox = (props) => {
                 onChange={selectCluster}
                 style={{marginTop:"10pt"}}
                 id={`tooltip-run-${props.cluster?.cluster_arn}`} />
-                <Tooltip id={`tooltip-run-${props.cluster?.cluster_arn}`} position="left" shape="squared" bold={true} size="small" text={"Click to run ..."} />
+                <Tooltip id={`tooltip-run-${props.cluster?.cluster_arn}`} position="left" shape="squared" bold={true} size="small" text={"Click to update cluster ..."} />
         </td>
         <td style={{verticalAlign: "top"}} onClick={selectCluster}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
