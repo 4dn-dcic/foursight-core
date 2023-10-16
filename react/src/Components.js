@@ -10,6 +10,7 @@ import Styles from './Styles';
 import Time from './utils/Time';
 import Tooltip from './components/Tooltip';
 import Type from './utils/Type';
+import Uuid from 'react-uuid';
 
 export const Link = ({to, env = true, bold = true, id = null, children}) => {
     return <>
@@ -125,4 +126,25 @@ export const GitHubLink = (props) => {
         <a id={props.href} rel="noreferrer" target="_blank" href={props.href}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
         <Tooltip id={props.href} text={`Click to view source code for this ${props.type} (in new tab).`} />
     </span>
+}
+
+export const ToggleShowDetailArrow = ({ isShow, toggleShow, text = null, underline = null, size = null, left = null, right = null, float = null, color = null, bold = true, nudge = "" }) => {
+    const uuid = Uuid();
+    const style= {
+        position: "relative",
+        float: float || "inherit",
+        top: nudge,
+        left: left || "inherit",
+        right: right || "inherit",
+        color: color || "inherit",
+        fontSize: size || "inherit",
+        fontWeight: (bold === true) || (bold === "onshow" && isShow()) || (bold === "onhide" && !isShow()) ? "bold" : "inherit"
+    };
+    return <>
+        <span className="pointer" style={style} onClick={toggleShow} id={uuid}>
+            { text && <span style={{textDecoration: underline ? "underline" : "inherit", paddingRight: "2pt"}}>{text}</span> }
+            { isShow() ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</> }
+            <Tooltip id={uuid} position="top" text={`Click to ${isShow() ? "hide" : "show"} details`} />
+        </span>
+    </>
 }

@@ -9,6 +9,7 @@ import Image from '../utils/Image';
 import { PuffSpinnerInline, StandardSpinner } from '../Spinners';
 import Str from '../utils/Str';
 import Time from '../utils/Time';
+import { ToggleShowDetailArrow } from '../Components';
 import Tooltip from '../components/Tooltip';
 import Type from '../utils/Type';
 import useFetch from '../hooks/Fetch';
@@ -85,11 +86,7 @@ const PortalRedeployPage = (props) => {
             : <>
                 <div className="box thickborder" style={{marginTop: "2pt", marginBottom: "10pt"}}>
                     <i>Select the Portal environment (cluster) below to redeploy</i>.
-                    <span style={{float: "right"}} className="pointer" onClick={toggleShowDetails} id="tooltip-show-envs">
-                        { isShowDetails() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b> }
-                        <Tooltip id="tooltip-show-envs" position="top" size="small"
-                            text={`Click to ${isShowDetails() ? "hide" : "show"} details for cluster update.`} />
-                    </span>
+                    <ToggleShowDetailArrow isShow={isShowDetails} toggleShow={toggleShowDetails} float="right" />
                 </div>
                 <Content
                     clusters={clusters.data}
@@ -165,14 +162,7 @@ const PortalRedeployBox = (props) => {
         </td>
         <td style={{verticalAlign: "top"}} onClick={selectCluster}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
-                <span id={`tooltip-show-env-${props.cluster?.cluster_arn}`} className="pointer" onClick={toggleShowDetail}>
-                    <b style={{color: "black", textDecoration: "underline"}}>{props.cluster?.env?.name}</b>
-                    <small style={{marginLeft:"4pt"}}>
-                        {isShowDetail() ? <b>{Char.DownArrow}</b> : <b>{Char.UpArrow}</b>}
-                    </small>
-                </span>
-                <Tooltip id={`tooltip-show-env-${props.cluster?.cluster_arn}`} position="top" size="small"
-                    text={`Click to ${isShowDetail() ? "hide" : "show"} details for cluster run.`} />
+                <ToggleShowDetailArrow isShow={isShowDetail} toggleShow={toggleShowDetail} bold={true} text={props.cluster?.env?.name} underline={true}/>
                 <small style={{float: "right"}}>
                     &nbsp;&nbsp;<ExternalLink href={props.cluster.env?.portal_url} />
                 </small>
@@ -260,7 +250,7 @@ const RedeployButtons = (props) => {
                 </> }
             </> }
         </>: <>
-            <ToggleShowDetailArrow isShowDetail={props.isShowDetail} toggleShowDetail={props.toggleShowDetail} nudgedown="3pt" />
+            <ToggleShowDetailArrow isShow={props.isShowDetail} toggleShow={props.toggleShowDetail} float="right" nudge="3pt" />
             <RedeployButton
                 cluster={props.cluster}
                 onClickRedeploy={onClickRedeploy}
@@ -315,16 +305,9 @@ const RedeployButtonConfirmed = (props) => {
             </b>
         </td>
         <td style={{align: "right"}}>
-            <ToggleShowDetailArrow isShowDetail={props.isShowDetail} toggleShowDetail={props.toggleShowDetail} />
+            <ToggleShowDetailArrow isShow={props.isShowDetail} toggleShow={props.toggleShowDetail} />
         </td>
     </tr></tbody></table>
-}
-
-const ToggleShowDetailArrow = ({ isShowDetail, toggleShowDetail, nudgedown = "" }) => {
-    return <b className="pointer" style={{float: "right", position: "relative", top: nudgedown}} onClick={toggleShowDetail} id={`tooltip-toggle-show-detal`} >
-        {isShowDetail() ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</>}
-        <Tooltip id={`tooltip-toggle-show-detal`} text={`Click to ${isShowDetail() ? "hide" : "show"} details`} />
-    </b>
 }
 
 const RedeployButton = (props) => {
@@ -572,6 +555,7 @@ const ImageDetails = (props) => {
 const BuildDetails = (props) => {
     const [showPrevious, setShowPrevious] = useState(false);
     const toggleShowPrevious = () => setShowPrevious(!showPrevious);
+    const isShowPrevious = () => showPrevious;
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     const header = useHeader();
@@ -580,12 +564,10 @@ const BuildDetails = (props) => {
             <tr>
                 <td style={{verticalAlign: "top"}} colSpan="2">
                     <b>Build Details</b> {showPrevious && <>(latest)</>}
-                    { props.services.data?.build?.previous &&
-                        <small style={{float: "right", position: "relative", top: "2pt", right: "-2pt"}} className="pointer" onClick={toggleShowPrevious}>
-                            <span>{showPrevious ? <>hide previous</> : <b>show previous</b>}</span>
-                            <span style={{paddingLeft:"1pt"}}>{showPrevious ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</>}</span>
-                        </small>
-                    }
+                    { props.services.data?.build?.previous && <>
+                        <ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious}
+                            text="show previous" bold={"onhide"} size="9pt" float="right" right="-2pt" nudge="2pt" />
+                    </> }
                 </td>
             </tr>
             <TSeparatorH double={true} />
