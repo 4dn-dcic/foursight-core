@@ -403,14 +403,6 @@ const AccountDetails = (props) => {
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Number: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_number} </td>
         </tr>
-        { props.cluster.env?.is_production && <tr>
-            <td> Production: </td>
-            <td> Yes </td>
-        </tr> }
-        { props.cluster.env?.is_staging && <tr>
-            <td> Staging: </td>
-            <td> Yes </td>
-        </tr> }
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Environment: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
@@ -418,6 +410,14 @@ const AccountDetails = (props) => {
                 {uniqueEnvNames().map(env => <><br />{env}</>)}
             </td>
         </tr>
+        { props.cluster.env?.is_production && <tr>
+            <td> Production: </td>
+            <td> Yes {props.cluster.env?.color && <>{Char.RightArrow} {Str.Title(props.cluster.env?.color)}</>} </td>
+        </tr> }
+        { props.cluster.env?.is_staging && <tr>
+            <td> Staging: </td>
+            <td> Yes {props.cluster.env?.color && <>{Char.RightArrow} {Str.Title(props.cluster.env?.color)}</>} </td>
+        </tr> }
     </tbody></table>
 }
 
@@ -450,7 +450,7 @@ const ServicesDetails = (props) => {
                     Service:
                 </td>
                 <td style={{verticalAlign: "top"}}>
-                    <b>{service.type.toUpperCase()}</b>
+                    <b>{Str.Title(service.type)}</b>
                     <br /> {service.arn}&nbsp;<small><ExternalLink href={awsServiceLink(props.cluster.cluster_arn, service.arn)} /></small>
                     <br /> <i>Task Definition: {service.task_definition_arn}</i>&nbsp;<small><ExternalLink href={awsTaskDefinitionLink(service.task_definition_arn)} /></small>
                 </td>
@@ -526,14 +526,13 @@ const ImageDetails = (props) => {
             <tr>
                 <td style={tdlabel}> Digest: </td>
                 <td style={tdcontent}>
-                    <span id={`image-digest-${props.services.data?.image?.id}`}>
-                        {props.services.data?.image?.digest?.replace("sha256:", "")?.substring(0, 32)} ...
-                        { props.digest.data?.digest && props.services.data?.image?.digest && <>
-                            { props.digest.data?.digest === props.services.data?.image?.digest ?
-                                <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
-                            :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
-                        </> }
-                    </span>
+                    <span id={`image-digest-${props.services.data?.image?.id}`}>{props.services.data?.image?.digest?.replace("sha256:", "")?.substring(0, 32)}</span> ...
+                    { props.digest.data?.digest && props.services.data?.image?.digest && <big id={`tooltip-digest-sanity-${props.digest}`}>
+                        { props.digest.data?.digest === props.services.data?.image?.digest ?
+                            <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
+                        :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
+                        <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text="This digest and the build one agree." />
+                    </big> }
                     <Tooltip id={`image-digest-${props.services.data?.image?.id}`} position="bottom" size="small" text={props.services.data?.image?.digest} />
                 </td>
             </tr>
@@ -648,15 +647,14 @@ const BuildInfo = (props) => {
                 <tr>
                     <td style={tdlabel}> Digest: </td>
                     <td style={tdcontent}>
-                        <span id={props.digest}>
-                            {props.digest?.replace("sha256:", "")?.substring(0, 32)} ...
-                            { props.digest && props.image?.digest && <>
-                                { props.digest === props.image?.digest ?
-                                    <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
-                                :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
-                            </> }
-                        </span>
+                        <span id={props.digest}>{props.digest?.replace("sha256:", "")?.substring(0, 32)}</span> ...
                         <Tooltip id={props.digest} position="bottom" size="small" text={props.digest} />
+                        { props.digest && props.image?.digest && <big id={`tooltip-digest-sanity-${props.digest}`}>
+                            { props.digest === props.image?.digest ?
+                                <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
+                            :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
+                            <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text="This digest and the image one agree." />
+                        </big> }
                     </td>
                 </tr>
             }

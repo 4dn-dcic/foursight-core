@@ -46,5 +46,6 @@ const exports = {
     HasValue: HasValue,
     FormatBytes: FormatBytes,
 	LongestCommonInitialSubstring: LongestCommonInitialSubstring,
-    StringArrayToCommaSeparatedListOfTitles: StringArrayToCommaSeparatedListOfTitles
+    StringArrayToCommaSeparatedListOfTitles: StringArrayToCommaSeparatedListOfTitles,
+    Title: (s) => s?.charAt(0)?.toUpperCase() + s?.slice(1)
 }; export default exports;
