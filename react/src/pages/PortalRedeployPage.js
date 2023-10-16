@@ -150,7 +150,7 @@ const PortalRedeployBox = (props) => {
         if (showDetailOnSelect) props.setShowDetail(props.cluster);
     }
 
-    return <div xonClick={selectCluster} style={{marginTop:"4pt"}} className="hover-lighten">
+    return <div style={{marginTop:"4pt"}} className="hover-lighten">
         <table style={{width: "100%"}}><tbody><tr>
         <td style={{verticalAlign: "top", paddingRight:"10pt", width: "1%"}} onClick={selectCluster}>
             <input
@@ -177,7 +177,7 @@ const PortalRedeployBox = (props) => {
                     &nbsp;&nbsp;<ExternalLink href={props.cluster.env?.portal_url} />
                 </small>
                 { (props.cluster?.env?.is_production || props.cluster?.env?.is_staging || props.cluster?.env?.color) &&
-                    <small style={{float: "right", color: props.cluster?.env?.color == "blue" ? "blue" : (props.cluster?.env?.color == "green" ? "green" : "")}}>
+                    <small style={{float: "right", color: props.cluster?.env?.color == "blue" ? "blue" : (props.cluster?.env?.color == "green" ? "green" : "")}} onClick={toggleShowDetail}>
                         {props.cluster?.env?.is_production && <b>PRODUCTION</b>}
                         {props.cluster?.env?.is_staging && <b>STAGING</b>}
                         {props.cluster?.env?.color && <>
@@ -210,24 +210,6 @@ const RedeployButtonsBox = (props) => {
                 isShowDetail={props.isShowDetail}
                 toggleShowDetail={props.toggleShowDetail} />
         </div>
-    </>
-}
-
-const RedeployButtonsBoxDisabled = (props) => {
-    return <>
-        <div className="box bigmargin" style={{background: "inherit", marginTop: "6pt", paddingTop: "8pt", color: "red"}}>
-            <b>Redeploy disabled due to errors.</b>
-        </div>
-    </>
-}
-
-const RedeployButtonsClusterStatusLoading = (props) => {
-    return <>
-        <table><tbody><tr><td>
-            <RedeployButton cluster={props.cluster} disabled={true} />
-        </td><td style={{paddingLeft: "8pt"}}>
-            <StandardSpinner label="Fetching cluster status" />
-        </td></tr></tbody></table>
     </>
 }
 
@@ -268,11 +250,21 @@ const RedeployButtons = (props) => {
                         setRunDone={setRunDone}
                         unselectCluster={props.unselectCluster} />
                 </>:<>
-                    <RedeployButtonConfirmed cluster={props.cluster} onClickRedeploy={onClickRedeploy} onClickCancel={onClickCancel} running={props.running} />
+                    <RedeployButtonConfirmed
+                        cluster={props.cluster}
+                        onClickRedeploy={onClickRedeploy}
+                        onClickCancel={onClickCancel}
+                        running={props.running}
+                        isShowDetail={props.isShowDetail}
+                        toggleShowDetail={props.toggleShowDetail} />
                 </> }
             </> }
         </>: <>
-            <RedeployButton cluster={props.cluster} onClickRedeploy={onClickRedeploy} />
+            <ToggleShowDetailArrow isShowDetail={props.isShowDetail} toggleShowDetail={props.toggleShowDetail} nudgedown="3pt" />
+            <RedeployButton
+                cluster={props.cluster}
+                onClickRedeploy={onClickRedeploy}
+                toggleShowDetail={props.toggleShowDetail} />
         </> }
     </>
 }
@@ -294,8 +286,7 @@ const RunResult = (props) => {
                 <SeparatorH color="red" />
                 {props.runResult.data.error}
             </span>:<>
-                <b>Kicked off redeploy {Char.RightArrow}</b> <small><u>{props.runResult?.data?.task_running_id}</u></small>&nbsp;
-                <small><ExternalLink href={awsClusterLink(props.cluster.cluster_arn, props.runResult?.data?.task_running_id)} /></small>
+                <b>Kicked off redeploy {Char.RightArrow}</b> <small><b>{props.runResult?.data?.status === true ? <>OK</> : <>ERROR</>}</b></small>&nbsp;
             </> }
             { showJson && <>
                 <SeparatorH />
@@ -309,12 +300,12 @@ const RunResult = (props) => {
 }
 
 const RedeployButtonConfirmed = (props) => {
-    return <table><tbody><tr>
+    return <table style={{width: "100%"}}><tbody><tr>
         <td style={{verticalAlign: "top"}}>
             <CancelButton onClickCancel={props.onClickCancel} />
         </td><td style={{verticalAlign: "top", paddingLeft: "8pt"}}>
             <RedeployButton cluster={props.cluster} onClickRedeploy={props.onClickRedeploy} confirmed={true} />
-        </td><td style={{verticalAlign: "top", paddingLeft: "0pt"}}>
+        </td><td style={{verticalAlign: "top", paddingLeft: "0pt", width: "90%"}}>
             <b style={{position: "relative", bottom: "-3pt", whiteSpace: "nowrap"}}>&nbsp;&nbsp;&nbsp;{Char.LeftArrow}&nbsp;
             { props.cluster.type == "deploy" ? <>
                 Are you sure you want to redeploy <u>{props.cluster.env.name}</u>?
@@ -323,7 +314,17 @@ const RedeployButtonConfirmed = (props) => {
             </> }
             </b>
         </td>
+        <td style={{align: "right"}}>
+            <ToggleShowDetailArrow isShowDetail={props.isShowDetail} toggleShowDetail={props.toggleShowDetail} />
+        </td>
     </tr></tbody></table>
+}
+
+const ToggleShowDetailArrow = ({ isShowDetail, toggleShowDetail, nudgedown = "" }) => {
+    return <b className="pointer" style={{float: "right", position: "relative", top: nudgedown}} onClick={toggleShowDetail} id={`tooltip-toggle-show-detal`} >
+        {isShowDetail() ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</>}
+        <Tooltip id={`tooltip-toggle-show-detal`} text={`Click to ${isShowDetail() ? "hide" : "show"} details`} />
+    </b>
 }
 
 const RedeployButton = (props) => {
@@ -385,7 +386,7 @@ const DetailBox = (props) => {
 
 const AccountDetails = (props) => {
     const header = useHeader();
-    const portalHealth = useFetch("/portal_health");
+    const portalHealth = useFetch(`//${props.cluster?.env?.full_name}/portal_health`);
     const uniqueEnvNames = () => {
         const env = {};
         ["name", "short_name", "public_name", "foursight_name"].forEach(name => {
@@ -422,13 +423,13 @@ const AccountDetails = (props) => {
         </tr> }
         <TSeparatorH top="4pt" bottom="4pt" size="2" />
         <tr className="pointer" onClick={refreshPortalStarted}>
-            <td style={{verticalAlign: "top"}}> Portal {!portalHealth.loading && <>{Char.Refresh}</>}  Started: </td>
+            <td style={{verticalAlign: "top"}}><b>Portal {!portalHealth.loading && <>{Char.Refresh}</>}  Started</b>:</td>
             <td style={{whiteSpace: "nowrap"}}>
                 { portalHealth.loading ? <>
                     <PuffSpinnerInline size="16" />
                 </>:<>
-                    {DateTime.Format(portalHealth.data.started)} <br />
-                    <small>{Time.Ago(portalHealth.data.started, true, false)}</small>
+                    {DateTime.Format(portalHealth.data?.started)} <br />
+                    <small>{Time.Ago(portalHealth.data?.started, true, false)}</small>
                </> }
             </td>
        </tr>
@@ -545,7 +546,7 @@ const ImageDetails = (props) => {
                         { props.digest.data?.digest === props.services.data?.image?.digest ?
                             <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
                         :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
-                        <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text="This digest and the build one agree." />
+                        <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text="This digest and the build digest agree." />
                     </big> }
                     <Tooltip id={`image-digest-${props.services.data?.image?.id}`} position="bottom" size="small" text={props.services.data?.image?.digest} />
                 </td>
@@ -667,7 +668,7 @@ const BuildInfo = (props) => {
                             { props.digest === props.image?.digest ?
                                 <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
                             :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
-                            <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text="This digest and the image one agree." />
+                            <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text="This digest and the image digest agree." />
                         </big> }
                     </td>
                 </tr>

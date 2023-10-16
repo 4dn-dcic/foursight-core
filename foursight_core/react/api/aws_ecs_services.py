@@ -99,8 +99,7 @@ def get_aws_codebuild_digest(image_tag: str, log_group: str, log_stream: str) ->
 
 def aws_ecs_update_cluster(cluster_arn: str) -> dict:
     ecs = ECSUtils()
-    import pdb ; pdb.set_trace()
-    return ecs.update_all_services(cluster_name=cluster_arn)
+    return {"status": ecs.update_all_services(cluster_name=cluster_arn)}
 
 
 def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest: bool = False) -> list[dict]:
