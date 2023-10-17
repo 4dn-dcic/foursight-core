@@ -3,6 +3,7 @@ import datetime
 from functools import lru_cache
 import pytz
 import re
+import time
 from typing import Callable, Generator, Optional, Tuple, Union
 from dcicutils.ecs_utils import ECSUtils
 from .aws_ecs_tasks import (
@@ -88,8 +89,10 @@ def get_aws_codebuild_digest(image_tag: str, log_group: str, log_stream: str) ->
     sha256_pattern = re.compile(r"sha256:([0-9a-f]{64})")
     # For some reason this (rarely-ish) intermittently fails with no error;
     # the results just do not contain the digest; don't know why so try a few times.
-    ntries = 3
+    ntries = 7
     while ntries > 0:
+        if ntries > 1:
+            time.sleep(0.2)
         log_events = logs.get_log_events(logGroupName=log_group, logStreamName=log_stream, startFromHead=True)["events"]
         for log_event in log_events:
             message = log_event.get("message")

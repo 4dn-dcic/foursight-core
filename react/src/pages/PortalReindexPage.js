@@ -536,12 +536,23 @@ const NetworkDetails = (props) => {
         <TSeparatorH double={true} />
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}>
+                Task Definition
+            </td>
+            <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
+                <b>
+                    {props.task?.task_definition_arn}
+                    &nbsp;<small><ExternalLink href={awsTaskLink(props.task?.task_definition_arn)} /></small>
+                </b>
+            </td>
+        </tr>
+        <tr>
+            <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}>
                 Cluster
             </td>
             <td style={{verticalAlign: "top", whiteSpace: "break-all"}}>
                 <span>
-                    <b>{props.task?.cluster_arn}</b>
-                    &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.cluster_arn)} bold={true} /></small>
+                    {props.task?.cluster_arn}
+                    &nbsp;<small><ExternalLink href={awsClusterLink(props.task?.cluster_arn)} /></small>
                 </span>
             </td>
         </tr>
