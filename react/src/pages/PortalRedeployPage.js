@@ -210,7 +210,7 @@ const RedeployButtons = (props) => {
     const [confirmed, setConfirmed] = useState(false);
     const [running, setRunning] = useState(false);
     const [runDone, setRunDone] = useState(false);
-    const [runResult, setRunResult] = useState(false);
+    const [runResult, setRunResult] = useState(null);
     const fetch = useFetchFunction();
     const onClickCancel = (e) => { setConfirmed(false); e.stopPropagation(); }
     const onClickRedeploy = (e) => {
@@ -260,7 +260,7 @@ const RedeployButtons = (props) => {
                 toggleShowDetail={props.toggleShowDetail} />
         </> }
         {/* TODO */}
-        { (!props.status.loading && props.status.data?.updating) && <small style={{color: "red"}}>
+        { (!runResult && !props.status.loading && props.status.data?.updating) && <small style={{color: "red"}}>
             <SeparatorH color="red" />
             <b>Warning</b>: A cluseter update appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
                 <small className="pointer" onClick={toggleShowDetail}><b>
