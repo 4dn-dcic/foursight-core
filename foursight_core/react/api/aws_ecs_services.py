@@ -1,15 +1,15 @@
 import boto3
 from functools import lru_cache
 import re
-from typing import Callable, Generator, Optional, Tuple, Union
+from typing import Any, Callable, Generator, Optional, Tuple, Union
 from dcicutils.ecs_utils import ECSUtils
-from dcicutils.task_utils import pmap
 from .aws_ecs_tasks import (
     _get_cluster_arns, _get_task_running_id,
     _get_task_definition_type, _shortened_arn, _shortened_task_definition_arn
 )
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
+from .misc_utils import run_concurrently, run_functions_concurrently
 
 # Functions to get AWS cluster and services info with the
 # original end purpose of supporting redeploying via Foursight.
@@ -106,31 +106,56 @@ def aws_ecs_update_cluster(cluster_arn: str) -> dict:
 
 
 def aws_ecs_cluster_status(cluster_arn: str) -> Optional[dict]:
-    services = _get_aws_ecs_services_for_update_raw(cluster_arn, include_image_and_build_info=False)
-    response = {
-        "services": services,
-        "updating": any(service["updating"] for service in services),
-        "running": sum(service["running"] for service in services) or 0,
-        "started_at": None,
-        "tasks": []
-    }
-    ecs = boto3.client("ecs")
-    task_arns = ecs.list_tasks(cluster=cluster_arn).get("taskArns")
-    tasks = ecs.describe_tasks(cluster=cluster_arn, tasks=task_arns).get("tasks")
+
+    def get_services_info() -> list[dict]:
+        return _get_aws_ecs_services_for_update_raw(cluster_arn, include_image_and_build_info=False)
+
+    def get_tasks_info() -> dict:
+        response = []
+        ecs = boto3.client("ecs")
+        task_arns = ecs.list_tasks(cluster=cluster_arn).get("taskArns")
+        tasks = ecs.describe_tasks(cluster=cluster_arn, tasks=task_arns).get("tasks")
+        most_recent_task_started_at = None
+        for task in tasks:
+            task_started_at = task.get("startedAt")
+            if task_started_at and (not most_recent_task_started_at or task_started_at > most_recent_task_started_at):
+                most_recent_task_started_at = task_started_at
+            response.append({
+                "task_running_id": _get_task_running_id(task.get("taskArn")),
+                "task_definition_arn": task.get("taskDefinitionArn"),
+                "status": task.get("lastStatus"),
+                "started_at": task.get("startedAt")
+            })
+        return response
+
+    def get_services_or_tasks_info(info: Tuple[str, Callable]) -> Tuple[str, dict]:
+        response = info[1]()
+        return ("services", response) if info[1] == get_services_info else ("tasks", response)
+        return (info[0], info[1]())
+
+#   info = {name: info for name,
+#           info in pmap(get_services_or_tasks_info, [("services", get_services_info), ("tasks", get_tasks_info)])}
+#   services = info["services"]
+#   tasks = info["tasks"]
+    info = run_functions_concurrently([get_services_info, get_tasks_info])
+    services = info[0]
+    tasks = info[1]
+
+    response = {"services": services, "tasks": tasks}
     most_recent_task_started_at = None
     for task in tasks:
-        task_started_at = task.get("startedAt")
+        task_started_at = task["started_at"]
+        task["started_at"] = datetime_string(task_started_at)
         if task_started_at and (not most_recent_task_started_at or task_started_at > most_recent_task_started_at):
             most_recent_task_started_at = task_started_at
-        response["tasks"].append({
-            "task_running_id": _get_task_running_id(task.get("taskArn")),
-            "task_definition_arn": task.get("taskDefinitionArn"),
-            "status": task.get("lastStatus"),
-            "started_at": datetime_string(task.get("startedAt"))
-        })
-    if response["running"] < len(tasks):
-        response["updating"] = True
+    response["tasks_running_count"] = sum(service["tasks_running_count"] for service in services) or 0
+    response["tasks_running_count"] = sum(service["tasks_running_count"] for service in services) or 0
+    response["tasks_pending_count"] = sum(service["tasks_pending_count"] for service in services) or 0
+    response["tasks_desired_count"] = sum(service["tasks_desired_count"] for service in services) or 0
     response["started_at"] = datetime_string(most_recent_task_started_at)
+    response["updating"] = (response["tasks_pending_count"] > 0 or
+                            response["tasks_desired_count"] != response["tasks_running_count"] or
+                            response["tasks_running_count"] < len(tasks))
     return response
 
 
@@ -158,20 +183,18 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
         task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)["taskDefinition"]
         container_definitions = task_definition["containerDefinitions"]
         if len(container_definitions) > 0:
-            running_count = service_description.get("runningCount")
-            pending_count = service_description.get("pendingCount")
-            desired_count = service_description.get("desiredCount")
-            evidently_updating = pending_count > 0 or desired_count < running_count
+            tasks_running_count = service_description.get("runningCount")
+            tasks_pending_count = service_description.get("pendingCount")
+            tasks_desired_count = service_description.get("desiredCount")
             has_multiple_containers = len(container_definitions) > 1
             container_definition = task_definition["containerDefinitions"][0]
             response = {
                 "arn": service_arn,
                 "type": get_service_type(service_arn),
                 "task_definition_arn": task_definition_arn,
-                "running": running_count,
-                "pending": pending_count,
-                "desired": desired_count,
-                "updating": evidently_updating
+                "tasks_running_count": tasks_running_count,
+                "tasks_pending_count": tasks_pending_count,
+                "tasks_desired_count": tasks_desired_count
             }
             if include_image_and_build_info:
                 response["image"] = {"arn": container_definition["image"]}
@@ -218,17 +241,23 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
     # typically, only need a single call to get this image/biuld info anyways; and including the
     # retrieval of this would mess up the concurrency of the local caching of this image/build info.
     # Also get the image and build info concurrently relative to each other.
-    services = [service for service in pmap(get_service_info, service_arns)]
+    services = [service for service in run_concurrently(get_service_info, service_arns)]
     # Now get the image/build info for each service; concurrently for performance only.
     if include_image_and_build_info:
         for service in services:
             image_repo, image_tag = get_image_repo_and_tag(service["image"]["arn"])
             if image_repo and image_tag:
-                info = {name: info for name, info
-                        in pmap(get_build_or_image_info, [("image", get_image_info, image_repo, image_tag),
-                                                          ("build", get_build_info, image_repo, image_tag)])}
-                service["image"] = {**service["image"], **info["image"]}
-                service["build"] = info["build"]
+                info = run_functions_concurrently([
+                    lambda: get_image_info(image_repo, image_tag),
+                    lambda: get_build_info(image_repo, image_tag),
+                ])
+                service["image"] = {**service["image"], **info[0]}
+                service["build"] = info[1]
+#               info = {name: info for name, info
+#                       in pmap(get_build_or_image_info, [("image", get_image_info, image_repo, image_tag),
+#                                                         ("build", get_build_info, image_repo, image_tag)])}
+#               service["image"] = {**service["image"], **info["image"]}
+#               service["build"] = info["build"]
     return services
 
 

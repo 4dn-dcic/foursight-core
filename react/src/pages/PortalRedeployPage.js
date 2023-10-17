@@ -146,6 +146,7 @@ const PortalRedeployBox = (props) => {
         props.selectCluster(props.cluster);
         if (showDetailOnSelect) props.setShowDetail(props.cluster);
     }
+    const status = useFetch(`//aws/ecs/cluster_status/${props.cluster?.cluster_arn}`);
 
     return <div style={{marginTop:"4pt"}} className="hover-lighten">
         <table style={{width: "100%"}}><tbody><tr>
@@ -179,11 +180,12 @@ const PortalRedeployBox = (props) => {
                 <small id={`tooltip-${props.cluster.cluster_arn}`}> {props.cluster?.cluster_arn}&nbsp;<ExternalLink href={awsClusterLink(props.cluster?.cluster_arn)} /></small>
                 { isSelectedCluster() &&
                     <RedeployButtonsBox cluster={props.cluster}
+                        status={status}
                         unselectCluster={props.unselectCluster}
                         isShowDetail={isShowDetail}
                         toggleShowDetail={toggleShowDetail} />
                 }
-                { isShowDetail() && <DetailBox env={props.cluster?.env} cluster={props.cluster} /> }
+                { isShowDetail() && <DetailBox env={props.cluster?.env} cluster={props.cluster} status={status} /> }
                 <Tooltip id={`tooltip-${props.cluster.cluster_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS cluster definition to be updated."} />
             </div>
         </td></tr></tbody></table>
@@ -196,6 +198,7 @@ const RedeployButtonsBox = (props) => {
         <div className="box" style={{background: "inherit", marginTop: "4pt", paddingTop: "8pt"}} onClick={onClickIgnore}>
             <RedeployButtons
                 cluster={props.cluster}
+                status={props.status}
                 unselectCluster={props.unselectCluster}
                 isShowDetail={props.isShowDetail}
                 toggleShowDetail={props.toggleShowDetail} />
@@ -256,6 +259,19 @@ const RedeployButtons = (props) => {
                 onClickRedeploy={onClickRedeploy}
                 toggleShowDetail={props.toggleShowDetail} />
         </> }
+        {/* TODO */}
+        { (!props.status.loading && props.status.data?.updating) && <small style={{color: "red"}}>
+            <SeparatorH color="red" />
+            <b>Warning</b>: A cluseter update appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
+                <small className="pointer" onClick={toggleShowDetail}><b>
+                    &nbsp;&nbsp;{Char.RightArrow}&nbsp;
+                    { props.isShowDetail() ? <>
+                        Hide Details {Char.DownArrow}
+                    </>:<>
+                        Show Details {Char.UpArrow}
+                    </> }
+                </b></small>
+        </small> }
     </>
 }
 
@@ -344,17 +360,16 @@ const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}
 const DetailBox = (props) => {
     const header = useHeader();
     const services = useFetch(`//aws/ecs/services_for_update/${props.cluster?.cluster_arn}`);
-    const status = useFetch(`//aws/ecs/cluster_status/${props.cluster?.cluster_arn}`);
     const health = useFetch(`//${props.cluster?.env?.full_name}/portal_health`);
     return <div className="box bigmargin marginbottom" onClick={(e) => e.stopPropagation()}><small>
         <table style={{fontSize: "inherit"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}}>
-                    <ServicesDetails cluster={props.cluster} services={services} health={health} status={status} />
+                    <ServicesDetails cluster={props.cluster} services={services} health={health} status={props.status} />
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
-                    <AccountDetails cluster={props.cluster} health={health} status={status} />
+                    <AccountDetails cluster={props.cluster} health={health} status={props.status} />
                 </td>
             </tr>
             <TSpaceH />
@@ -429,7 +444,7 @@ const AccountDetails = (props) => {
 
 const ServicesDetails = (props) => {
     //const updating = () => props.services.data?.services?.some(service => service.updating);
-    const updating = () => props.status.data?.services?.some(service => service.updating);
+    const updating = () => props.status.data?.updating;
     const service_status = (service_arn) => {
         return props.status?.data?.services?.find(service => service.arn === service_arn);
     }
@@ -472,7 +487,7 @@ const ServicesDetails = (props) => {
                 </td>
                 <td style={{verticalAlign: "top"}}>
                     <b>{Str.Title(service.type)}</b>
-                    <small>&nbsp;|&nbsp;tasks running: {service_status(service.arn)?.running || 0} {service_status(service.arn)?.pending > 0 && <> | tasks pending: {service_status(service.arn)?.pending || 0}</>} {service_status(service.arn)?.updating && <> | <span style={{color: "red"}}>updating ...</span></>}</small>
+                    <small>&nbsp;|&nbsp;tasks running: {service_status(service.arn)?.tasks_running_count || 0} {service_status(service.arn)?.tasks_pending_count > 0 && <> | tasks pending: {service_status(service.arn)?.tasks_pending_count || 0}</>} {service_status(service.arn)?.updating && <> | <span style={{color: "red"}}>updating ...</span></>}</small>
                     <br /> {service.arn}&nbsp;<small><ExternalLink href={awsServiceLink(props.cluster.cluster_arn, service.arn)} /></small>
                     <br /> <i>Task Definition: {service.task_definition_arn}</i>&nbsp;<small><ExternalLink href={awsTaskDefinitionLink(service.task_definition_arn)} /></small>
                 </td>

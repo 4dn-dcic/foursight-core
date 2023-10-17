@@ -4,8 +4,9 @@ import json
 import os
 import pkg_resources
 import sys
-from typing import Callable, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union
 from urllib.parse import urlparse
+from dcicutils.task_utils import pmap
 
 
 def sort_dictionary_by_case_insensitive_keys(dictionary: dict) -> dict:
@@ -276,3 +277,9 @@ def name_value_list_to_dict(items: list,
             value = item.get(value_property_name)
             result[name] = value
     return result
+
+
+def run_functions_concurrently(functions: list[Callable]) -> list[Any]:
+    return [result for result in pmap(lambda f: f(), functions)]
+
+run_concurrently = pmap
