@@ -658,6 +658,11 @@ class ReactRoutes:
         log_group = urllib.parse.unquote(log_group)
         return {"digest": get_aws_codebuild_digest(image_tag, log_group, log_stream)}
 
+    @route("/aws/ecs/cluster_status/{cluster_arn}", authorize=True)
+    def reactapi_route_aws_ecs_cluster_status(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        from .aws_ecs_services import aws_ecs_cluster_status
+        return aws_ecs_cluster_status(cluster_arn)
+
     @route("/aws/ecs/cluster_update/{cluster_arn}", method="POST", authorize=True)
     def reactapi_route_aws_ecs_update_cluster(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
         from .aws_ecs_services import aws_ecs_update_cluster

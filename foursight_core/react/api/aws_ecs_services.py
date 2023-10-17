@@ -4,7 +4,10 @@ import re
 from typing import Callable, Generator, Optional, Tuple, Union
 from dcicutils.ecs_utils import ECSUtils
 from dcicutils.task_utils import pmap
-from .aws_ecs_tasks import _get_cluster_arns, _get_task_definition_type, _shortened_arn, _shortened_task_definition_arn
+from .aws_ecs_tasks import (
+    _get_cluster_arns, _get_task_running_id,
+    _get_task_definition_type, _shortened_arn, _shortened_task_definition_arn
+)
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
 
@@ -102,7 +105,38 @@ def aws_ecs_update_cluster(cluster_arn: str) -> dict:
     return {"status": ecs.update_all_services(cluster_name=cluster_arn)}
 
 
-def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest: bool = False) -> list[dict]:
+def aws_ecs_cluster_status(cluster_arn: str) -> Optional[dict]:
+    services = _get_aws_ecs_services_for_update_raw(cluster_arn, include_image_and_build_info=False)
+    response = {
+        "services": services,
+        "updating": any(service["updating"] for service in services),
+        "running": sum(service["running"] for service in services) or 0,
+        "started_at": None,
+        "tasks": []
+    }
+    ecs = boto3.client("ecs")
+    task_arns = ecs.list_tasks(cluster=cluster_arn).get("taskArns")
+    tasks = ecs.describe_tasks(cluster=cluster_arn, tasks=task_arns).get("tasks")
+    most_recent_task_started_at = None
+    for task in tasks:
+        task_started_at = task.get("startedAt")
+        if task_started_at and (not most_recent_task_started_at or task_started_at > most_recent_task_started_at):
+            most_recent_task_started_at = task_started_at
+        response["tasks"].append({
+            "task_running_id": _get_task_running_id(task.get("taskArn")),
+            "task_definition_arn": task.get("taskDefinitionArn"),
+            "status": task.get("lastStatus"),
+            "started_at": datetime_string(task.get("startedAt"))
+        })
+    if response["running"] < len(tasks):
+        response["updating"] = True
+    response["started_at"] = datetime_string(most_recent_task_started_at)
+    return response
+
+
+def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
+                                         include_image_and_build_info: bool = True,
+                                         include_build_digest: bool = False) -> list[dict]:
 
     ecs = boto3.client("ecs")
 
@@ -124,14 +158,23 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
         task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)["taskDefinition"]
         container_definitions = task_definition["containerDefinitions"]
         if len(container_definitions) > 0:
+            running_count = service_description.get("runningCount")
+            pending_count = service_description.get("pendingCount")
+            desired_count = service_description.get("desiredCount")
+            evidently_updating = pending_count > 0 or desired_count < running_count
             has_multiple_containers = len(container_definitions) > 1
             container_definition = task_definition["containerDefinitions"][0]
             response = {
                 "arn": service_arn,
                 "type": get_service_type(service_arn),
                 "task_definition_arn": task_definition_arn,
-                "image": {"arn": container_definition["image"]}
+                "running": running_count,
+                "pending": pending_count,
+                "desired": desired_count,
+                "updating": evidently_updating
             }
+            if include_image_and_build_info:
+                response["image"] = {"arn": container_definition["image"]}
             if has_multiple_containers:
                 response["warning_has_multiple_containers"] = True
         return response
@@ -177,14 +220,15 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str, include_build_digest:
     # Also get the image and build info concurrently relative to each other.
     services = [service for service in pmap(get_service_info, service_arns)]
     # Now get the image/build info for each service; concurrently for performance only.
-    for service in services:
-        image_repo, image_tag = get_image_repo_and_tag(service["image"]["arn"])
-        if image_repo and image_tag:
-            info = {name: info for name, info
-                    in pmap(get_build_or_image_info, [("image", get_image_info, image_repo, image_tag),
-                                                      ("build", get_build_info, image_repo, image_tag)])}
-            service["image"] = {**service["image"], **info["image"]}
-            service["build"] = info["build"]
+    if include_image_and_build_info:
+        for service in services:
+            image_repo, image_tag = get_image_repo_and_tag(service["image"]["arn"])
+            if image_repo and image_tag:
+                info = {name: info for name, info
+                        in pmap(get_build_or_image_info, [("image", get_image_info, image_repo, image_tag),
+                                                          ("build", get_build_info, image_repo, image_tag)])}
+                service["image"] = {**service["image"], **info["image"]}
+                service["build"] = info["build"]
     return services
 
 

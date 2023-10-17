@@ -344,15 +344,17 @@ const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}
 const DetailBox = (props) => {
     const header = useHeader();
     const services = useFetch(`//aws/ecs/services_for_update/${props.cluster?.cluster_arn}`);
+    const status = useFetch(`//aws/ecs/cluster_status/${props.cluster?.cluster_arn}`);
+    const health = useFetch(`//${props.cluster?.env?.full_name}/portal_health`);
     return <div className="box bigmargin marginbottom" onClick={(e) => e.stopPropagation()}><small>
         <table style={{fontSize: "inherit"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}}>
-                    <ServicesDetails cluster={props.cluster} services={services} />
+                    <ServicesDetails cluster={props.cluster} services={services} health={health} status={status} />
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
-                    <AccountDetails cluster={props.cluster} />
+                    <AccountDetails cluster={props.cluster} health={health} status={status} />
                 </td>
             </tr>
             <TSpaceH />
@@ -369,7 +371,6 @@ const DetailBox = (props) => {
 
 const AccountDetails = (props) => {
     const header = useHeader();
-    const portalHealth = useFetch(`//${props.cluster?.env?.full_name}/portal_health`);
     const uniqueNonFullEnvNames = () => {
         const env = {};
         ["name", "short_name", "public_name", "foursight_name"].forEach(name => {
@@ -377,7 +378,6 @@ const AccountDetails = (props) => {
         });
         return Array.from(new Set(Object.values(env))).sort((a, b) => b.length - a.length);
     }
-    const refreshPortalStarted = () => portalHealth.refresh();
     return <table style={{fontSize: "inherit"}}><tbody>
         <tr><td colSpan="2"> AWS Account </td></tr>
         <TSeparatorH double={true} />
@@ -405,14 +405,22 @@ const AccountDetails = (props) => {
             <td> Yes {props.cluster.env?.color && <>{Char.RightArrow} {Str.Title(props.cluster.env?.color)}</>} </td>
         </tr> }
         <TSeparatorH top="4pt" bottom="4pt" size="2" />
-        <tr className="pointer" onClick={refreshPortalStarted}>
-            <td style={{verticalAlign: "top"}}><b>Portal {!portalHealth.loading && <>{Char.Refresh}</>}  Started</b>:</td>
+        <tr className="pointer" onClick={props.health.refresh}>
+            <td style={{verticalAlign: "top"}}><small><b>Portal {!props.health.loading && <>{Char.Refresh}</>}<br />Started</b>:</small></td>
             <td style={{whiteSpace: "nowrap"}}>
-                { portalHealth.loading ? <>
-                    <PuffSpinnerInline size="16" />
-                </>:<>
-                    {DateTime.Format(portalHealth.data?.started)} <br />
-                    <small>{Time.Ago(portalHealth.data?.started, true, false)}</small>
+                { props.health.loading ? <> <PuffSpinnerInline size="16" /> </>:<>
+                    {DateTime.Format(props.health.data?.started)} <br />
+                    <small>{Time.Ago(props.health.data?.started, true, false)}</small>
+               </> }
+            </td>
+        </tr>
+        <TSeparatorH top="4pt" bottom="4pt" size="1" color="gray" />
+        <tr className="pointer" onClick={props.status.refresh}>
+            <td style={{verticalAlign: "top"}}><small><b>Portal {!props.status.loading && <>{Char.Refresh}</>}<br />Deployed</b>:</small></td>
+            <td style={{whiteSpace: "nowrap"}}>
+                { props.status.loading ? <> <PuffSpinnerInline size="16" /> </>:<>
+                    {DateTime.Format(props.status.data?.started_at)} <br />
+                    <small>{Time.Ago(props.status.data?.started_at, true, false)}</small>
                </> }
             </td>
        </tr>
@@ -420,9 +428,24 @@ const AccountDetails = (props) => {
 }
 
 const ServicesDetails = (props) => {
+    //const updating = () => props.services.data?.services?.some(service => service.updating);
+    const updating = () => props.status.data?.services?.some(service => service.updating);
+    const service_status = (service_arn) => {
+        return props.status?.data?.services?.find(service => service.arn === service_arn);
+    }
     return <table style={{fontSize: "inherit"}}><tbody>
         <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
-        <tr><td colSpan="2"> AWS Services
+        <tr><td colSpan="2">
+            <b>AWS Cluster Services</b>
+            <b style={{float: "right"}} className="pointer" onClick={() => { props.status.refresh(); props.health.refresh(); }}>
+                { !props.services.loading && <>
+                    {updating() ? <span style={{color: "red"}}>
+                        {Char.Refresh} updating ...
+                    </span>:<>
+                        {Char.Refresh}
+                    </> }
+                </> }
+            </b>
         </td></tr>
         <TSeparatorH double={true} />
         <tr>
@@ -449,6 +472,7 @@ const ServicesDetails = (props) => {
                 </td>
                 <td style={{verticalAlign: "top"}}>
                     <b>{Str.Title(service.type)}</b>
+                    <small>&nbsp;|&nbsp;tasks running: {service_status(service.arn)?.running || 0} {service_status(service.arn)?.pending > 0 && <> | tasks pending: {service_status(service.arn)?.pending || 0}</>} {service_status(service.arn)?.updating && <> | <span style={{color: "red"}}>updating ...</span></>}</small>
                     <br /> {service.arn}&nbsp;<small><ExternalLink href={awsServiceLink(props.cluster.cluster_arn, service.arn)} /></small>
                     <br /> <i>Task Definition: {service.task_definition_arn}</i>&nbsp;<small><ExternalLink href={awsTaskDefinitionLink(service.task_definition_arn)} /></small>
                 </td>
