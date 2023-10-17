@@ -134,7 +134,7 @@ const Content = (props) => {
 
 const PortalRedeployBox = (props) => {
 
-    const showDetailOnSelect = false;
+    const showDetailOnSelect = true;
     const [ showDetail, setShowDetail ] = useState(false);
     const isShowDetail = () => props.isShowDetail(props.cluster);
     const toggleShowDetail = (e) => {
@@ -221,6 +221,7 @@ const RedeployButtons = (props) => {
                 setRunning(false);
                 setRunResult(result);
                 setRunDone(true);
+                props.status.refresh();
             } });
         }
         else {
@@ -259,7 +260,6 @@ const RedeployButtons = (props) => {
                 onClickRedeploy={onClickRedeploy}
                 toggleShowDetail={props.toggleShowDetail} />
         </> }
-        {/* TODO */}
         { (!runResult && !props.status.loading && props.status.data?.updating) && <small style={{color: "red"}}>
             <SeparatorH color="red" />
             <b>Warning</b>: A cluseter update appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
@@ -292,12 +292,11 @@ const RunResult = (props) => {
                 <SeparatorH color="red" />
                 {props.runResult.data.error}
             </span>:<>
-                <b>Kicked off redeploy {Char.RightArrow}</b> <small><b>{props.runResult?.data?.status === true ? <>OK</> : <>ERROR</>}</b></small>&nbsp;
+                <b>Kicked off redeploy {Char.RightArrow}</b> <b>{props.runResult?.data?.status === true ? <>OK</> : <>ERROR</>}</b>&nbsp;
             </> }
             { showJson && <>
                 <SeparatorH />
                 <pre style={{background: "inherit", color: props.runResult.data?.error ? "red" : "inherit", wordWrap:"break-word", maxWidth: widthRef?.current?.offsetWidth}}>
-        
                     {Yaml.Format(props.runResult.data)}
                 </pre>
             </> }
@@ -443,7 +442,6 @@ const AccountDetails = (props) => {
 }
 
 const ServicesDetails = (props) => {
-    //const updating = () => props.services.data?.services?.some(service => service.updating);
     const updating = () => props.status.data?.updating;
     const service_status = (service_arn) => {
         return props.status?.data?.services?.find(service => service.arn === service_arn);
@@ -453,7 +451,7 @@ const ServicesDetails = (props) => {
         <tr><td colSpan="2">
             <b>AWS Cluster Services</b>
             <b style={{float: "right"}} className="pointer" onClick={() => { props.status.refresh(); props.health.refresh(); }}>
-                { !props.services.loading && <>
+                { !props.status.loading && <>
                     {updating() ? <span style={{color: "red"}}>
                         {Char.Refresh} updating ...
                     </span>:<>
@@ -493,6 +491,19 @@ const ServicesDetails = (props) => {
                 </td>
             </tr>
         </>)}
+        { props.status.data?.last_redeploy_kickoff_at && <>
+            <TSeparatorH top="4pt" bottom="4pt" />
+            <tr>
+                <td colSpan="2">
+                    Redeploy last kicked off: {DateTime.Format(props.status.data?.last_redeploy_kickoff_at)}
+                    <small>&nbsp;{Char.RightArrow} {Time.Ago(props.status.data?.last_redeploy_kickoff_at, true, false)}</small>
+                    { props.status.data?.last_redeploy_kickoff_by && <>
+                        <br />
+                        Redeploy last kicked off by: {props.status.data.last_redeploy_kickoff_by}
+                    </> }
+                </td>
+            </tr>
+        </> }
     </tbody></table>
 }
 

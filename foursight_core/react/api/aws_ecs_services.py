@@ -1,7 +1,9 @@
 import boto3
+import datetime
 from functools import lru_cache
+import pytz
 import re
-from typing import Any, Callable, Generator, Optional, Tuple, Union
+from typing import Callable, Generator, Optional, Tuple, Union
 from dcicutils.ecs_utils import ECSUtils
 from .aws_ecs_tasks import (
     _get_cluster_arns, _get_task_running_id,
@@ -13,6 +15,8 @@ from .misc_utils import run_concurrently, run_functions_concurrently
 
 # Functions to get AWS cluster and services info with the
 # original end purpose of supporting redeploying via Foursight.
+
+record_reindex_kickoff_via_tags = True
 
 
 def get_aws_ecs_clusters_for_update(envs: Envs, args: Optional[dict] = None) -> list[dict]:
@@ -100,21 +104,40 @@ def get_aws_codebuild_digest(image_tag: str, log_group: str, log_stream: str) ->
     return None
 
 
-def aws_ecs_update_cluster(cluster_arn: str) -> dict:
+def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> dict:
     ecs = ECSUtils()
+    if record_reindex_kickoff_via_tags:
+        full_cluster_arn = ecs.client.describe_clusters(clusters=[cluster_arn])["clusters"][0]["clusterArn"]
+        if record_reindex_kickoff_via_tags:
+            tags = [
+                {"key": "last_redeploy_kickoff_at", "value": datetime_string(datetime.datetime.now(pytz.UTC))},
+                {"key": "last_redeploy_kickoff_by", "value": user or "unknown"}
+            ]
+        ecs.client.tag_resource(resourceArn=full_cluster_arn, tags=tags)
     return {"status": ecs.update_all_services(cluster_name=cluster_arn)}
 
 
 def aws_ecs_cluster_status(cluster_arn: str) -> Optional[dict]:
+
+    ecs = boto3.client("ecs")
+
+    if record_reindex_kickoff_via_tags:
+        # We need the full cluster ARN to deal with (cluster) tags;
+        # but we generally deal with the shortened version; so we get it
+        # below within get_tasks_info as we don't want to make an extra call.
+        full_cluster_arn = None
 
     def get_services_info() -> list[dict]:
         return _get_aws_ecs_services_for_update_raw(cluster_arn, include_image_and_build_info=False)
 
     def get_tasks_info() -> dict:
         response = []
-        ecs = boto3.client("ecs")
         task_arns = ecs.list_tasks(cluster=cluster_arn).get("taskArns")
         tasks = ecs.describe_tasks(cluster=cluster_arn, tasks=task_arns).get("tasks")
+        if record_reindex_kickoff_via_tags:
+            nonlocal full_cluster_arn
+            if not full_cluster_arn and len(tasks) > 0:
+                full_cluster_arn = tasks[0]["clusterArn"]
         most_recent_task_started_at = None
         for task in tasks:
             task_started_at = task.get("startedAt")
@@ -128,10 +151,10 @@ def aws_ecs_cluster_status(cluster_arn: str) -> Optional[dict]:
             })
         return response
 
-    def get_services_or_tasks_info(info: Tuple[str, Callable]) -> Tuple[str, dict]:
-        response = info[1]()
-        return ("services", response) if info[1] == get_services_info else ("tasks", response)
-        return (info[0], info[1]())
+#   def get_services_or_tasks_info(info: Tuple[str, Callable]) -> Tuple[str, dict]:
+#       response = info[1]()
+#       return ("services", response) if info[1] == get_services_info else ("tasks", response)
+#       return (info[0], info[1]())
 
 #   info = {name: info for name,
 #           info in pmap(get_services_or_tasks_info, [("services", get_services_info), ("tasks", get_tasks_info)])}
@@ -153,15 +176,29 @@ def aws_ecs_cluster_status(cluster_arn: str) -> Optional[dict]:
     response["tasks_pending_count"] = sum(service["tasks_pending_count"] for service in services) or 0
     response["tasks_desired_count"] = sum(service["tasks_desired_count"] for service in services) or 0
     response["started_at"] = datetime_string(most_recent_task_started_at)
-    response["updating"] = (response["tasks_pending_count"] > 0 or
-                            response["tasks_desired_count"] != response["tasks_running_count"] or
+    response["updating"] = (any(service["updating"] for service in services) or
                             response["tasks_running_count"] < len(tasks))
+#   response["updating"] = (response["tasks_pending_count"] > 0 or
+#                           response["tasks_desired_count"] != response["tasks_running_count"] or
+#                           response["tasks_running_count"] < len(tasks))
+    if record_reindex_kickoff_via_tags:
+        tags = ecs.list_tags_for_resource(resourceArn=full_cluster_arn).get("tags")
+        last_redeploy_kickoff_at = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_at"]
+        last_redeploy_kickoff_at = last_redeploy_kickoff_at[0] if last_redeploy_kickoff_at else None
+        last_redeploy_kickoff_by = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_by"]
+        last_redeploy_kickoff_by = last_redeploy_kickoff_by[0] if last_redeploy_kickoff_by else None
+        if last_redeploy_kickoff_at:
+            response["last_redeploy_kickoff_at"] = last_redeploy_kickoff_at
+            if response["started_at"] and response["started_at"] < last_redeploy_kickoff_at:
+                response["updating"] = True
+        if last_redeploy_kickoff_by:
+            response["last_redeploy_kickoff_by"] = last_redeploy_kickoff_by
     return response
 
 
 def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
-                                         include_image_and_build_info: bool = True,
-                                         include_build_digest: bool = False) -> list[dict]:
+                                         include_build_digest: bool = False,
+                                         include_image_and_build_info: bool = True) -> list[dict]:
 
     ecs = boto3.client("ecs")
 
@@ -194,7 +231,8 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
                 "task_definition_arn": task_definition_arn,
                 "tasks_running_count": tasks_running_count,
                 "tasks_pending_count": tasks_pending_count,
-                "tasks_desired_count": tasks_desired_count
+                "tasks_desired_count": tasks_desired_count,
+                "updating": tasks_pending_count > 0 or tasks_desired_count != tasks_running_count
             }
             if include_image_and_build_info:
                 response["image"] = {"arn": container_definition["image"]}

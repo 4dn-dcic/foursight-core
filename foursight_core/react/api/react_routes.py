@@ -666,7 +666,8 @@ class ReactRoutes:
     @route("/aws/ecs/cluster_update/{cluster_arn}", method="POST", authorize=True)
     def reactapi_route_aws_ecs_update_cluster(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
         from .aws_ecs_services import aws_ecs_update_cluster
-        return aws_ecs_update_cluster(cluster_arn)
+        user = app.core.react_authorize(app.request(), app.core.get_default_env())["user"]
+        return aws_ecs_update_cluster(cluster_arn, user)
 
     @route("/{env}/portal_health", authorize=True)
     def reactapi_route_portal_health(env: str) -> Response:  # noqa: implicit @staticmethod via @route
