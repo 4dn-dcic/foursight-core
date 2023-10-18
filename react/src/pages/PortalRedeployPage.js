@@ -263,14 +263,13 @@ const RedeployButtons = (props) => {
         { (!runResult && !props.status.loading && props.status.data?.updating) && <small style={{color: "red"}}>
             <SeparatorH color="red" />
             <b>Warning</b>: A cluseter update appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
-                <small className="pointer" onClick={toggleShowDetail}><b>
-                    &nbsp;&nbsp;{Char.RightArrow}&nbsp;
+                <small style={{float: "right"}} className="pointer" onClick={toggleShowDetail}>
                     { props.isShowDetail() ? <>
                         Hide Details {Char.DownArrow}
                     </>:<>
-                        Show Details {Char.UpArrow}
+                        <b>Show Details {Char.UpArrow}</b>
                     </> }
-                </b></small>
+                </small>
         </small> }
     </>
 }
@@ -495,7 +494,7 @@ const ServicesDetails = (props) => {
             <TSeparatorH top="4pt" bottom="4pt" />
             <tr>
                 <td colSpan="2">
-                    Redeploy last kicked off: {DateTime.Format(props.status.data?.last_redeploy_kickoff_at)}
+                    <b>Redeploy last kicked off</b>: <u>{DateTime.Format(props.status.data?.last_redeploy_kickoff_at)}</u>
                     <small>&nbsp;{Char.RightArrow} {Time.Ago(props.status.data?.last_redeploy_kickoff_at, true, false)}</small>
                     { props.status.data?.last_redeploy_kickoff_by && <>
                         <br />

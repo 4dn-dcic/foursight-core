@@ -7,6 +7,7 @@ import Duration from '../utils/Duration';
 import { ExternalLink } from '../Components'; 
 import Image from '../utils/Image';
 import { PuffSpinnerInline, StandardSpinner } from '../Spinners';
+import Str from '../utils/Str';
 import Tooltip from '../components/Tooltip';
 import useFetch from '../hooks/Fetch';
 import useFetchFunction from '../hooks/FetchFunction';
@@ -498,14 +499,6 @@ const AccountDetails = (props) => {
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Name: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}> {header.app?.credentials?.aws_account_name} </td>
         </tr>
-        { props.task.env?.is_production && <tr>
-            <td> Production: </td>
-            <td> Yes </td>
-        </tr> }
-        { props.task.env?.is_staging && <tr>
-            <td> Staging: </td>
-            <td> Yes </td>
-        </tr> }
         <tr>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Environment: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
@@ -513,6 +506,14 @@ const AccountDetails = (props) => {
                 {uniqueEnvNames().map(env => <><br />{env}</>)}
             </td>
         </tr>
+        { props.task.env?.is_production && <tr>
+            <td> Production: </td>
+            <td> Yes {props.task.env?.color && <>{Char.RightArrow} {Str.Title(props.task.env?.color)}</>} </td>
+        </tr> }
+        { props.task.env?.is_staging && <tr>
+            <td> Staging: </td>
+            <td> Yes {props.task.env?.color && <>{Char.RightArrow} {Str.Title(props.task.env?.color)}</>} </td>
+        </tr> }
     </tbody></table>
 }
 
