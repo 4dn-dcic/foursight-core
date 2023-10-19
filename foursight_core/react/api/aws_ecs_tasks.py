@@ -249,10 +249,13 @@ def get_aws_ecs_tasks_running(cluster_arn: Optional[str] = None,
             if existing_task:
                 existing_task[0]["tasks"].append(task)
             elif not given_task_definition_arn:
-                response.append({"task_definition_arn": task_definition_arn, "tasks": [task]})
+                response.append({"task_definition_arn": task_definition_arn,
+                                 "type": _get_task_definition_type(task_definition_arn),
+                                 "tasks": [task]})
             else:
                 response.append({"cluster_arn": cluster_arn,
                                  "task_definition_arn": given_task_definition_arn,
+                                 "type": _get_task_definition_type(task_definition_arn),
                                  "tasks": [task]})
     return response
 

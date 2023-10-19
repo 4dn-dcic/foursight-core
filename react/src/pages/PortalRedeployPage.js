@@ -449,15 +449,15 @@ const ServicesDetails = (props) => {
         <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
         <tr><td colSpan="2">
             <b>AWS Cluster Services</b>
-            <b style={{float: "right"}} className="pointer" onClick={() => { props.status.refresh(); props.health.refresh(); }}>
+            <span style={{float: "right"}} className="pointer" onClick={() => { props.status.refresh(); props.health.refresh(); }}>
                 { !props.status.loading && <>
                     {updating() ? <span style={{color: "red"}}>
-                        {Char.Refresh} updating ...
+                        <b>{Char.Refresh} updating</b> ...
                     </span>:<>
-                        {Char.Refresh}
+                        <b>{Char.Refresh}</b>
                     </> }
                 </> }
-            </b>
+            </span>
         </td></tr>
         <TSeparatorH double={true} />
         <tr>
