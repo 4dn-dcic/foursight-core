@@ -230,7 +230,7 @@ const RedeployButtons = (props) => {
         e.stopPropagation();
     }
     const toggleShowDetail = (e) => props.toggleShowDetail(e);
-    const updatingWarning = () => !runResult && !props.status.loading && props.status.data?.updating || true;
+    const updatingWarning = () => !runResult && !props.status.loading && props.status.data?.updating;
     return <>
         <table style={{width: "100%"}}><tbody><tr><td>
         { confirmed ? <>
