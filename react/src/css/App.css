@@ -272,7 +272,7 @@
    user-select: none;
 }
 .updating-button {
-   border: 1px solid darkyellow;
+   border: 1px solid yellow;
    border-radius: 9px;
    padding-left: 8pt;
    padding-top: 2pt;

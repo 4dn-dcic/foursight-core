@@ -230,7 +230,8 @@ const RedeployButtons = (props) => {
         e.stopPropagation();
     }
     const toggleShowDetail = (e) => props.toggleShowDetail(e);
-    const updatingWarning = () => !runResult && !props.status.loading && props.status.data?.updating;
+    const isShowUpdatingButton = () => !props.status.loading && props.status.data?.updating;
+    const isShowUpdatingWarning = () => isShowUpdatingButton() && !runResult;
     return <>
         <table style={{width: "100%"}}><tbody><tr><td>
         { confirmed ? <>
@@ -244,6 +245,7 @@ const RedeployButtons = (props) => {
                         runResult={runResult}
                         setConfirmed={setConfirmed}
                         setRunDone={setRunDone}
+                        isShowUpdatingButton = {isShowUpdatingButton}
                         unselectCluster={props.unselectCluster} />
                 </>:<>
                     <RedeployButtonConfirmed
@@ -262,15 +264,17 @@ const RedeployButtons = (props) => {
                 toggleShowDetail={props.toggleShowDetail} />
         </> }
         </td><td>
-        { updatingWarning() ? <>
+        { isShowUpdatingButton() ? <>
             <span style={{float: "right"}} className="pointer" onClick={(e) => { if (!props.isShowDetail()) toggleShowDetail(e); props.status.refresh(); }}>
                 <UpdatingButton />
             </span>
         </>:<>
-            <ToggleShowDetailArrow isShow={props.isShowDetail} toggleShow={props.toggleShowDetail} float="right" text="show details" bold={"onshow"} size={"small"} />
+            { !props.status.loading &&
+                <ToggleShowDetailArrow isShow={props.isShowDetail} toggleShow={props.toggleShowDetail} float="right" text="show details" bold={"onshow"} size={"small"} />
+            }
         </> }
         </td></tr></tbody></table>
-        { updatingWarning() && <small style={{color: "red"}}>
+        { isShowUpdatingWarning() && (!isShowUpdatingButton() || confirmed) && !runResult && <small style={{color: "red"}}>
             <SeparatorH color="red" />
             <b>Warning</b>: A cluseter update appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
                 <small style={{float: "right"}} className="pointer" onClick={toggleShowDetail}>
@@ -294,7 +298,9 @@ const RunResult = (props) => {
     }
     const widthRef = useRef(null);
     return <div ref={widthRef}>
-        <div className="pointer" onClick={onClickRunDoneX} style={{float: "right", marginRight: "2pt"}}><b>{Char.X}</b></div>
+        { !props.isShowUpdatingButton() &&
+            <div className="pointer" onClick={onClickRunDoneX} style={{float: "right", marginRight: "2pt"}}><b>{Char.X}</b></div>
+        }
         <div className="pointer" onClick={toggleShowJson}>
             { props.runResult.data?.error ? <span style={{color: "red"}}>
                 <b>Error kicking off redeploy ...</b>
@@ -344,9 +350,9 @@ const CancelButton = (props) => {
 }
 
 const UpdatingButton = (props) => {
-    return <div className="updating-button" style={{width: "fit-content", border: "1px solid inherit"}}>
+    return <span className="updating-button" style={{width: "fit-content", border: "1px solid inherit"}}>
         Updating ...
-    </div>
+    </span>
 }
 
 // Spacing and separtor line, horizontal/vertical, for div and table.
@@ -497,7 +503,12 @@ const ServicesDetails = (props) => {
                 </td>
                 <td style={{verticalAlign: "top"}}>
                     <b>{Str.Title(service.type)}</b>
-                    <small>&nbsp;|&nbsp;tasks running: {service_status(service.arn)?.tasks_running_count || 0} {service_status(service.arn)?.tasks_pending_count > 0 && <> | tasks pending: {service_status(service.arn)?.tasks_pending_count || 0}</>} {service_status(service.arn)?.updating && <> | <span style={{color: "red"}}>updating ...</span></>}</small>
+                    <small>
+                        &nbsp;{Char.RightArrow} tasks running: {service_status(service.arn)?.tasks_running_count || 0}
+                        {service_status(service.arn)?.tasks_pending_count > 0 && <> | tasks pending: {service_status(service.arn)?.tasks_pending_count || 0}</>}
+                        {service_status(service.arn)?.tasks_desired_count > 0 && service_status(service.arn)?.tasks_desired_count != service_status(service.arn)?.tasks_running_count && <> | tasks desired: {service_status(service.arn)?.tasks_desired_count || 0}</>}
+                        {service_status(service.arn)?.updating && <> | <span style={{color: "red"}}>updating ...</span></>}
+                    </small>
                     <br /> {service.arn}&nbsp;<small><ExternalLink href={awsServiceLink(props.cluster.cluster_arn, service.arn)} /></small>
                     <br /> <i>Task Definition: {service.task_definition_arn}</i>&nbsp;<small><ExternalLink href={awsTaskDefinitionLink(service.task_definition_arn)} /></small>
                 </td>
