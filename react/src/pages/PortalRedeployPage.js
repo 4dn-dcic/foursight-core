@@ -504,7 +504,11 @@ const ServicesDetails = (props) => {
                 <td style={{verticalAlign: "top"}}>
                     <b>{Str.Title(service.type)}</b>
                     <small>
-                        &nbsp;{Char.RightArrow} tasks running: {service_status(service.arn)?.tasks_running_count || 0}
+                        { service_status(service.arn)?.tasks_running_count === 0 ? <>
+                            &nbsp;{Char.RightArrow} not running
+                        </>:<>
+                            &nbsp;{Char.RightArrow} tasks running: {service_status(service.arn)?.tasks_running_count || 0}
+                        </> }
                         {service_status(service.arn)?.tasks_pending_count > 0 && <> | tasks pending: {service_status(service.arn)?.tasks_pending_count || 0}</>}
                         {service_status(service.arn)?.tasks_desired_count > 0 && service_status(service.arn)?.tasks_desired_count != service_status(service.arn)?.tasks_running_count && <> | tasks desired: {service_status(service.arn)?.tasks_desired_count || 0}</>}
                         {service_status(service.arn)?.updating && <> | <span style={{color: "red"}}>updating ...</span></>}
