@@ -4,7 +4,7 @@ from functools import lru_cache
 import pytz
 import re
 import time
-from typing import Callable, Generator, Optional, Tuple, Union
+from typing import Callable, Dict, List, Generator, Optional, Tuple, Union
 from dcicutils.ecs_utils import ECSUtils
 from .aws_ecs_tasks import (
     _get_cluster_arns, _get_task_running_id,
@@ -20,7 +20,7 @@ from .misc_utils import run_concurrently, run_functions_concurrently
 record_reindex_kickoff_via_tags = True
 
 
-def get_aws_ecs_clusters_for_update(envs: Envs, args: Optional[dict] = None) -> list[dict]:
+def get_aws_ecs_clusters_for_update(envs: Envs, args: Optional[Dict] = None) -> List[Dict]:
     response = []
     for cluster_arn in _get_cluster_arns():
         cluster_env = envs.get_associated_env(cluster_arn)
@@ -33,7 +33,7 @@ def get_aws_ecs_clusters_for_update(envs: Envs, args: Optional[dict] = None) -> 
 
 
 def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
-                                    args: Optional[dict] = None) -> Union[dict, list[dict]]:
+                                    args: Optional[Dict] = None) -> Union[Dict, List[Dict]]:
     """
     Returns the list of AWS services (for possible update purposes) within the given cluster (ARN).
     If all of the services have the same image, build, and environment info (which is typical/expected
@@ -46,7 +46,7 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
     digest information is useful to sanity check the the image and associated build digest match.
     """
 
-    def reorganize_response(services: dict) -> dict:
+    def reorganize_response(services: Dict) -> Dict:
         if not services:
             return {}
         response = {
@@ -63,7 +63,7 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
         response["services"] = sorted(response["services"], key=lambda item: item["type"])
         return response
 
-    def has_identitical_metadata(service: dict, previous_service: dict) -> bool:
+    def has_identitical_metadata(service: Dict, previous_service: Dict) -> bool:
         return (service["build"] == previous_service["build"] and
                 service["image"] == previous_service["image"] and
                 service["env"] == previous_service["env"])
@@ -107,7 +107,7 @@ def get_aws_codebuild_digest(image_tag: str, log_group: str, log_stream: str) ->
     return None
 
 
-def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> dict:
+def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> Dict:
     ecs = ECSUtils()
     if record_reindex_kickoff_via_tags:
         full_cluster_arn = ecs.client.describe_clusters(clusters=[cluster_arn])["clusters"][0]["clusterArn"]
@@ -120,7 +120,7 @@ def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> dict
     return {"status": ecs.update_all_services(cluster_name=cluster_arn)}
 
 
-def aws_ecs_cluster_status(cluster_arn: str) -> Optional[dict]:
+def aws_ecs_cluster_status(cluster_arn: str) -> Optional[Dict]:
 
     ecs = boto3.client("ecs")
 
@@ -130,10 +130,10 @@ def aws_ecs_cluster_status(cluster_arn: str) -> Optional[dict]:
         # below within get_tasks_info as we don't want to make an extra call.
         full_cluster_arn = None
 
-    def get_services_info() -> list[dict]:
+    def get_services_info() -> List[Dict]:
         return _get_aws_ecs_services_for_update_raw(cluster_arn, include_image_and_build_info=False)
 
-    def get_tasks_info() -> dict:
+    def get_tasks_info() -> Dict:
         response = []
         task_arns = ecs.list_tasks(cluster=cluster_arn).get("taskArns")
         tasks = ecs.describe_tasks(cluster=cluster_arn, tasks=task_arns).get("tasks")
@@ -154,15 +154,6 @@ def aws_ecs_cluster_status(cluster_arn: str) -> Optional[dict]:
             })
         return response
 
-#   def get_services_or_tasks_info(info: Tuple[str, Callable]) -> Tuple[str, dict]:
-#       response = info[1]()
-#       return ("services", response) if info[1] == get_services_info else ("tasks", response)
-#       return (info[0], info[1]())
-
-#   info = {name: info for name,
-#           info in pmap(get_services_or_tasks_info, [("services", get_services_info), ("tasks", get_tasks_info)])}
-#   services = info["services"]
-#   tasks = info["tasks"]
     info = run_functions_concurrently([get_services_info, get_tasks_info])
     services = info[0]
     tasks = info[1]
@@ -181,9 +172,6 @@ def aws_ecs_cluster_status(cluster_arn: str) -> Optional[dict]:
     response["started_at"] = datetime_string(most_recent_task_started_at)
     response["updating"] = (any(service["updating"] for service in services) or
                             response["tasks_running_count"] < len(tasks))
-#   response["updating"] = (response["tasks_pending_count"] > 0 or
-#                           response["tasks_desired_count"] != response["tasks_running_count"] or
-#                           response["tasks_running_count"] < len(tasks))
     if record_reindex_kickoff_via_tags:
         tags = ecs.list_tags_for_resource(resourceArn=full_cluster_arn).get("tags")
         last_redeploy_kickoff_at = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_at"]
@@ -201,11 +189,11 @@ def aws_ecs_cluster_status(cluster_arn: str) -> Optional[dict]:
 
 def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
                                          include_build_digest: bool = False,
-                                         include_image_and_build_info: bool = True) -> list[dict]:
+                                         include_image_and_build_info: bool = True) -> List[Dict]:
 
     ecs = boto3.client("ecs")
 
-    def get_service_info(service_arn: str) -> dict:
+    def get_service_info(service_arn: str) -> Dict:
 
         def get_service_type(service_arn: str) -> str:
             return _get_task_definition_type(service_arn)
@@ -244,7 +232,7 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
         return response
 
     @lru_cache
-    def get_build_info(image_repo: str, image_tag: str) -> Optional[dict]:
+    def get_build_info(image_repo: str, image_tag: str) -> Optional[Dict]:
         # Cache this result within the enclosing function; for the below services loop.
         build = _get_aws_codebuild_info(image_repo, image_tag)
         if include_build_digest:
@@ -259,11 +247,11 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
         return get_aws_codebuild_digest(image_tag, log_group, log_stream)
 
     @lru_cache
-    def get_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
+    def get_image_info(image_repo: str, image_tag: str) -> Optional[Dict]:
         # Cache this result within the enclosing function; for the below services loop.
         return _get_aws_ecr_image_info(image_repo, image_tag)
 
-    def get_build_or_image_info(info: Tuple[str, Callable, str, str]) -> Tuple[str, dict]:
+    def get_build_or_image_info(info: Tuple[str, Callable, str, str]) -> Tuple[str, Dict]:
         name = info[0]
         function = info[1]
         image_repo = info[2]
@@ -302,12 +290,12 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
     return services
 
 
-def _get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
+def _get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[Dict]:
     """
     Returns AWS ECR image info for the given image repo and tag.
     """
 
-    def create_image_info(image_repo: str, image_tag: str, image: dict) -> dict:
+    def create_image_info(image_repo: str, image_tag: str, image: Dict) -> Dict:
         return {
             "id": image.get("registryId"),
             "repo": image_repo,
@@ -339,7 +327,7 @@ def _get_aws_ecr_image_info(image_repo: str, image_tag: str) -> Optional[dict]:
     return None
 
 
-def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
+def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[Dict]:
     """
     Returns a dictionary with info about the three most recent CodeBuild builds
     for the given image repo and tag, or None if none found.
@@ -347,7 +335,7 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
 
     codebuild = boto3.client("codebuild")
 
-    def get_projects() -> list[str]:
+    def get_projects() -> List[str]:
 
         projects = codebuild.list_projects()["projects"]
 
@@ -374,16 +362,16 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
             return prefer_project(preferred_project[0])
         return projects
 
-    def get_relevant_builds(project: str) -> Generator[Optional[dict], None, None]:
+    def get_relevant_builds(project: str) -> Generator[Optional[Dict], None, None]:
 
         # For efficiency, and the most common actual case, get builds three at a time; i.e. since we
         # want to the three most recent (relevant) builds, and they are usually together at the start
         # of the (list_build_for_projects) list ordered (descending) by build (creation) time;
         # but of course, just in case, we need to handle the general case.
 
-        def get_relevant_build_info(build: Optional[dict]) -> Optional[dict]:
+        def get_relevant_build_info(build: Optional[Dict]) -> Optional[Dict]:
 
-            def find_environment_variable(environment_variables: list[dict], name: str) -> Optional[str]:
+            def find_environment_variable(environment_variables: List[Dict], name: str) -> Optional[str]:
                 value = [item["value"] for item in environment_variables if item["name"] == name]
                 return value[0] if len(value) == 1 else None
 
@@ -435,7 +423,7 @@ def _get_aws_codebuild_info(image_repo: str, image_tag: str) -> Optional[dict]:
             if not next_token:
                 break
 
-    def create_build_info(build: dict) -> dict:
+    def create_build_info(build: Dict) -> Dict:
         return {
             "arn": _shortened_arn(build["arn"]),
             "project": project,

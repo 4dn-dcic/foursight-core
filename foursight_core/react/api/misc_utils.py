@@ -1,4 +1,5 @@
 from chalice.app import Request
+from typing import Dict, List
 import inspect
 import json
 import os
@@ -9,7 +10,7 @@ from urllib.parse import urlparse
 from dcicutils.task_utils import pmap
 
 
-def sort_dictionary_by_case_insensitive_keys(dictionary: dict) -> dict:
+def sort_dictionary_by_case_insensitive_keys(dictionary: Dict) -> Dict:
     """
     Returns the given dictionary sorted by (case-insenstivie) key values; yes,
     dictionaries are ordered as of Python 3.7. If the given value is not a
@@ -17,20 +18,20 @@ def sort_dictionary_by_case_insensitive_keys(dictionary: dict) -> dict:
     :param dictionary: Dictionary to sort.
     :return: Given dictionary sorted by key value.
     """
-    if not dictionary or not isinstance(dictionary, dict):
+    if not dictionary or not isinstance(dictionary, Dict):
         return {}
     return {key: dictionary[key] for key in sorted(dictionary.keys(), key=lambda key: key.lower())}
 
 
-def get_request_domain(request: dict) -> str:
+def get_request_domain(request: Dict) -> str:
     return request.get("headers", {}).get("host")
 
 
-def get_request_args(request: dict) -> dict:
+def get_request_args(request: Dict) -> Dict:
     return request.get("query_params") or {}
 
 
-def get_request_arg(request: dict, name: str) -> Optional[str]:
+def get_request_arg(request: Dict, name: str) -> Optional[str]:
     """
     Returns the value of the given URL query parameter name for the given request;
     returns None if not present. Note if present but with no value, then and empty
@@ -40,11 +41,11 @@ def get_request_arg(request: dict, name: str) -> Optional[str]:
     return get_request_args(request).get(name, None)
 
 
-def get_request_body(request: Request) -> dict:
+def get_request_body(request: Request) -> Dict:
     return json.loads(request.raw_body.decode())
 
 
-def get_request_origin(request: dict) -> str:
+def get_request_origin(request: Dict) -> str:
     headers = request.get("headers", {})
     scheme = headers.get("x-forwarded-proto", "http" if is_running_locally(request) else "https")
     domain = headers.get("host")
@@ -118,7 +119,7 @@ def get_github_url(package: str, file: Optional[str] = None, line: Optional[int]
     return f"{repo_url}/blob/{version}/{package_target}/{file}{line}"
 
 
-def is_running_locally(request: dict) -> bool:
+def is_running_locally(request: Dict) -> bool:
     """
     Returns true iff the given request indicates that we are running locally (localhost).
     """
@@ -162,7 +163,7 @@ def get_function_info(func: Union[str, Callable]) -> Optional[Tuple[str, str, st
 
 # TODO: Included here until we get utils PR-236 approved/merged/pushed
 
-def keys_and_values_to_dict(keys_and_values: list, key_name: str = "Key", value_name: str = "Value") -> dict:
+def keys_and_values_to_dict(keys_and_values: List, key_name: str = "Key", value_name: str = "Value") -> Dict:
     """
     Transforms the given list of key/value objects, each containing a "Key" and "Value" property,
     or alternately named via the key_name and/or value_name arguments, into a simple
@@ -209,7 +210,7 @@ def keys_and_values_to_dict(keys_and_values: list, key_name: str = "Key", value_
     return result
 
 
-def dict_to_keys_and_values(dictionary: dict, key_name: str = "Key", value_name: str = "Value") -> list:
+def dict_to_keys_and_values(dictionary: Dict, key_name: str = "Key", value_name: str = "Value") -> List:
     """
     Transforms the keys/values in the given dictionary to a list of key/value objects, each containing
     a "Key" and "Value" property, or alternately named via the key_name and/or value_name arguments,
@@ -242,7 +243,7 @@ def dict_to_keys_and_values(dictionary: dict, key_name: str = "Key", value_name:
     return result
 
 
-def find_common_prefix(string_list: list) -> str:
+def find_common_prefix(string_list: List) -> str:
     """
     Returns the longest common initial substring among all of the strings in the given list.
     """
@@ -255,7 +256,7 @@ def find_common_prefix(string_list: list) -> str:
     return string_list[0][:min_length]
 
 
-def name_value_list_to_dict(items: list,
+def name_value_list_to_dict(items: List,
                             name_property_name: str = "name",
                             value_property_name: str = "value"):
     """
@@ -279,7 +280,7 @@ def name_value_list_to_dict(items: list,
     return result
 
 
-def run_functions_concurrently(functions: list[Callable]) -> list[Any]:
+def run_functions_concurrently(functions: List[Callable]) -> List[Any]:
     return [result for result in pmap(lambda f: f(), functions)]
 
 run_concurrently = pmap

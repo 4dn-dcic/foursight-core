@@ -1,6 +1,6 @@
 import boto3
 import json
-from typing import Optional
+from typing import Dict, List, Optional
 from dcicutils.ecs_utils import ECSUtils
 from dcicutils.misc_utils import get_error_message
 from .aws_network import aws_get_security_groups, aws_get_subnets, aws_get_vpcs
@@ -13,20 +13,20 @@ from .portal_access_key_utils import get_portal_access_key_info
 # original end purpose of supporting reindexing via Foursight.
 
 
-def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str] = None) -> list:
+def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str] = None) -> List:
 
     given_task_definition_type = task_definition_type.lower() if task_definition_type else None
     task_definition_arns = _get_task_definition_arns()
     tasks_for_running = []
 
-    def get_cluster_for_env(clusters: list[dict], env: Optional[dict]) -> Optional[str]:
+    def get_cluster_for_env(clusters: List[Dict], env: Optional[Dict]) -> Optional[str]:
         if not env:
             return None
         for cluster in clusters:
             if envs._env_contained_within(env, cluster):
                 return cluster
 
-    def get_vpc() -> Optional[dict]:
+    def get_vpc() -> Optional[Dict]:
         vpcs = aws_get_vpcs()
         if len(vpcs) == 1:
             vpc = vpcs[0]
@@ -37,7 +37,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
             vpc = {"id": vpc["id"], "name": vpc["name"]}
         return vpc
 
-    def get_security_groups(vpc: Optional[dict]) -> list[dict]:
+    def get_security_groups(vpc: Optional[Dict]) -> List[Dict]:
         if not vpc:
             return []
         security_groups = aws_get_security_groups(vpc_id=vpc["id"]) if vpc else []
@@ -52,7 +52,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
         ]
         return security_groups
 
-    def get_security_group_for_env(security_groups: list[dict], env: Optional[dict]) -> Optional[dict]:
+    def get_security_group_for_env(security_groups: List[Dict], env: Optional[Dict]) -> Optional[Dict]:
         if not env:
             return None
         env_specific_security_group = None
@@ -66,12 +66,12 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
                 break
         return env_specific_security_group
 
-    def get_subnets() -> list[dict]:
+    def get_subnets() -> List[Dict]:
         subnets = aws_get_subnets()
         subnets = [item for item in subnets if item.get("type") == "private"]
         return [{"id": subnet["id"], "name": subnet["name"]} for subnet in subnets]
 
-    def get_subnets_for_env(subnets: list[dict], env: Optional[dict]) -> list[dict]:
+    def get_subnets_for_env(subnets: List[Dict], env: Optional[Dict]) -> List[Dict]:
         subnets_for_env = [item for item in subnets if "main" in (item.get("name") or "").lower()]
         if not subnets_for_env:
             for subnet in subnets:
@@ -82,7 +82,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
             subnets_for_env = subnets
         return subnets_for_env
 
-    def add_task_for_running(task: dict) -> None:
+    def add_task_for_running(task: Dict) -> None:
         # Add the given task to the given task list, but make sure we don't have a duplicate,
         # meaning more than one task with the same "name" (i.e. e.g. "deploy") as determined
         # by the _get_task_definition_type function definition, above); and for the same
@@ -160,7 +160,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
 def get_aws_ecs_task_running(envs: Envs,
                              cluster_arn: str,
                              task_definition_arn: str,
-                             check_other_clusters: bool = True) -> dict:
+                             check_other_clusters: bool = True) -> Dict:
     """
     Returns an indication of if the given task definition is currently running.
     Note that if the given task definition ARN is not valid or does not exist,
@@ -190,7 +190,7 @@ def get_aws_ecs_task_running(envs: Envs,
     return response
 
 
-def get_aws_ecs_task_last_run(envs: Envs, cluster_arn: str, task_definition_arn: str) -> dict:
+def get_aws_ecs_task_last_run(envs: Envs, cluster_arn: str, task_definition_arn: str) -> Dict:
     # If this is the deploy task the approximate that last time it was run by using the
     # create date of the Portal Access Key as a proxy for when this task last ran since
     # the entrypoint_deployment.bash script creates this as its last step.
@@ -214,7 +214,7 @@ def get_aws_ecs_task_last_run(envs: Envs, cluster_arn: str, task_definition_arn:
 
 def get_aws_ecs_tasks_running(cluster_arn: Optional[str] = None,
                               task_definition_type: Optional[str] = None,
-                              task_definition_arn: Optional[str] = None) -> list[dict]:
+                              task_definition_arn: Optional[str] = None) -> List[Dict]:
     """
     Returns a list of all tasks running within the given cluster (ARN).
     This list is groups by task definition (ARN), which each containing
@@ -261,7 +261,7 @@ def get_aws_ecs_tasks_running(cluster_arn: Optional[str] = None,
 
 
 def get_aws_ecs_tasks_running_across_clusters(task_definition_type: Optional[str] = None,
-                                              task_definition_arn: Optional[str] = None) -> list[dict]:
+                                              task_definition_arn: Optional[str] = None) -> List[Dict]:
     """
     Returns tasks running across any/all clusters.
     If a task_definition_arn is given the the response is will contain only tasks which are
@@ -285,7 +285,7 @@ def get_aws_ecs_tasks_running_across_clusters(task_definition_type: Optional[str
     return response
 
 
-def aws_ecs_run_task(cluster_arn: str, task_definition_arn: str, args: dict) -> dict:
+def aws_ecs_run_task(cluster_arn: str, task_definition_arn: str, args: Dict) -> Dict:
     subnets = args.get("subnets")
     security_group = args.get("security_group")
     subnets = [item["id"] for item in subnets]
@@ -321,17 +321,17 @@ def aws_ecs_run_task(cluster_arn: str, task_definition_arn: str, args: dict) -> 
     return response
 
 
-def _get_cluster_arns() -> list[str]:
+def _get_cluster_arns() -> List[str]:
     ecs = ECSUtils()
     return sorted([_shortened_arn(item) for item in ecs.list_ecs_clusters()])
 
 
-def _get_task_definition_arns() -> list[str]:
+def _get_task_definition_arns() -> List[str]:
     ecs = ECSUtils()
     return sorted(list(set([_shortened_task_definition_arn(item) for item in ecs.list_ecs_tasks()])))
 
 
-def _get_task_arns(cluster_arn: str, task_definition_arn: str) -> list[str]:
+def _get_task_arns(cluster_arn: str, task_definition_arn: str) -> List[str]:
     ecs = boto3.client("ecs")
     return ecs.list_tasks(cluster=cluster_arn, family=task_definition_arn).get("taskArns")
 
