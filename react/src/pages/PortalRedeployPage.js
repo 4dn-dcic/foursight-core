@@ -134,7 +134,7 @@ const Content = (props) => {
 
 const PortalRedeployBox = (props) => {
 
-    const showDetailOnSelect = true;
+    const showDetailOnSelect = false;
     const [ showDetail, setShowDetail ] = useState(false);
     const isShowDetail = () => props.isShowDetail(props.cluster);
     const toggleShowDetail = (e) => {
@@ -230,7 +230,9 @@ const RedeployButtons = (props) => {
         e.stopPropagation();
     }
     const toggleShowDetail = (e) => props.toggleShowDetail(e);
+    const updatingWarning = () => !runResult && !props.status.loading && props.status.data?.updating || true;
     return <>
+        <table style={{width: "100%"}}><tbody><tr><td>
         { confirmed ? <>
             { running ? <div style={{marginTop: "-2pt"}}>
                 <StandardSpinner label="Kicking off cluster update"/>
@@ -254,13 +256,21 @@ const RedeployButtons = (props) => {
                 </> }
             </> }
         </>: <>
-            <ToggleShowDetailArrow isShow={props.isShowDetail} toggleShow={props.toggleShowDetail} float="right" nudge="3pt" />
             <RedeployButton
                 cluster={props.cluster}
                 onClickRedeploy={onClickRedeploy}
                 toggleShowDetail={props.toggleShowDetail} />
         </> }
-        { (!runResult && !props.status.loading && props.status.data?.updating) && <small style={{color: "red"}}>
+        </td><td>
+        { updatingWarning() ? <>
+            <span style={{float: "right"}} className="pointer" onClick={(e) => { if (!props.isShowDetail()) toggleShowDetail(e); props.status.refresh(); }}>
+                <UpdatingButton />
+            </span>
+        </>:<>
+            <ToggleShowDetailArrow isShow={props.isShowDetail} toggleShow={props.toggleShowDetail} float="right" text="show details" bold={"onshow"} size={"small"} />
+        </> }
+        </td></tr></tbody></table>
+        { updatingWarning() && <small style={{color: "red"}}>
             <SeparatorH color="red" />
             <b>Warning</b>: A cluseter update appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
                 <small style={{float: "right"}} className="pointer" onClick={toggleShowDetail}>
@@ -318,9 +328,6 @@ const RedeployButtonConfirmed = (props) => {
             </> }
             </b>
         </td>
-        <td style={{align: "right"}}>
-            <ToggleShowDetailArrow isShow={props.isShowDetail} toggleShow={props.toggleShowDetail} />
-        </td>
     </tr></tbody></table>
 }
 
@@ -333,6 +340,12 @@ const RedeployButton = (props) => {
 const CancelButton = (props) => {
     return <div className="check-action-confirm-button" style={{width: "fit-content", marginBottom: "-1pt"}} onClick={props.onClickCancel}>
         &nbsp;<b>Cancel</b>&nbsp;
+    </div>
+}
+
+const UpdatingButton = (props) => {
+    return <div className="updating-button" style={{width: "fit-content", border: "1px solid inherit"}}>
+        Updating ...
     </div>
 }
 

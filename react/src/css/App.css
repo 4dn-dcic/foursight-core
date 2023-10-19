@@ -271,6 +271,18 @@
    cursor: not-allowed;
    user-select: none;
 }
+.updating-button {
+   border: 1px solid darkyellow;
+   border-radius: 9px;
+   padding-left: 8pt;
+   padding-top: 2pt;
+   padding-bottom: 3pt;
+   padding-right: 12pt;
+   background: red;
+   color: yellow;
+   user-select: none;
+   font-style: italic;
+}
 
 /* https://blog.logrocket.com/creating-beautiful-tooltips-with-only-css */
 .tool-tip {
