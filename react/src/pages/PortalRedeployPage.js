@@ -452,7 +452,7 @@ const AccountDetails = (props) => {
             <td style={{whiteSpace: "nowrap"}}>
                 { props.status.loading ? <> <PuffSpinnerInline size="16" /> </>:<>
                     {DateTime.Format(props.status.data?.started_at)} <br />
-                    <small>{Time.Ago(props.status.data?.started_at, true, false)}</small>
+                    <small>{Time.Ago(props.status.data?.started_at, true, true)}</small>
                </> }
             </td>
        </tr>
@@ -523,7 +523,7 @@ const ServicesDetails = (props) => {
             <tr>
                 <td colSpan="2">
                     <b>Redeploy last kicked off</b>: <u>{DateTime.Format(props.status.data?.last_redeploy_kickoff_at)}</u>
-                    <small>&nbsp;{Char.RightArrow} {Time.Ago(props.status.data?.last_redeploy_kickoff_at, true, false)}</small>
+                    <small>&nbsp;{Char.RightArrow} {Time.Ago(props.status.data?.last_redeploy_kickoff_at, true, true)}</small>
                     { props.status.data?.last_redeploy_kickoff_by && <>
                         <br />
                         Redeploy last kicked off by: {props.status.data.last_redeploy_kickoff_by}
@@ -538,7 +538,7 @@ const ImageAndBuildDetails = (props) => {
     const image_tag = props.services.data?.image?.tag;
     const log_group = props.services.data?.build?.latest?.log_group;
     const log_stream = props.services.data?.build?.latest?.log_stream;
-    const digest = useFetch(`//aws/codebuild/digest/${image_tag}/${encodeURIComponent(log_group)}/${log_stream}`);
+    const digest = useFetch(`//aws/codebuild/digest/${encodeURIComponent(log_group)}/${log_stream}?image_tag=${image_tag}`);
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     return <div className="box darken">
@@ -649,7 +649,7 @@ const BuildDetails = (props) => {
             </tr>
             <TSeparatorH double={true} />
         </tbody></table>
-        <BuildInfo build={props.services.data?.build?.latest} digest={props.digest.data?.digest} image={props.services.data?.image} />
+        <BuildInfo build={props.services.data?.build?.latest} digest={props.digest} image={props.services.data?.image} />
         { showPrevious && <>
             { props.services.data?.build?.previous && <>
                 <SeparatorH top="2pt" bottom="8pt" color="gray" />
@@ -717,14 +717,14 @@ const BuildInfo = (props) => {
                     &nbsp;<ExternalLink href={`${props.build?.github}/commit/${props.build?.commit}`} nudgedown="1px" />
                 </td>
             </tr>
-            { props.digest &&
-                <tr>
+            { props.digest?.data?.digest &&
+                <tr onClick={props.digest.refresh}>
                     <td style={tdlabel}> Digest: </td>
                     <td style={tdcontent}>
-                        <span id={props.digest}>{props.digest?.replace("sha256:", "")?.substring(0, 32)}</span> ...
-                        <Tooltip id={props.digest} position="bottom" size="small" text={props.digest} />
-                        { props.digest && props.image?.digest && <big id={`tooltip-digest-sanity-${props.digest}`}>
-                            { props.digest === props.image?.digest ?
+                        <span id={props.digest}>{props.digest.data?.digest?.replace("sha256:", "")?.substring(0, 32)}</span> ...
+                        <Tooltip id={props.digest.data?.digest} position="bottom" size="small" text={props.digest.data?.digest} />
+                        { props.digest.data?.digest && props.image?.digest && <big id={`tooltip-digest-sanity-${props.digest.data?.digest}`}>
+                            { props.digest.data?.digest === props.image?.digest ?
                                 <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
                             :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
                             <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text="This digest and the image digest agree." />
