@@ -645,12 +645,28 @@ class ReactRoutes:
     @route("/aws/ecs/clusters_for_update", authorize=True)
     def reactapi_route_aws_ecs_clusters_for_update() -> Response:  # noqa: implicit @staticmethod via @route
         from .aws_ecs_services import get_aws_ecs_clusters_for_update
-        return get_aws_ecs_clusters_for_update(app.core._envs, args=app.request_args())
+        return get_aws_ecs_clusters_for_update(app.core._envs)
 
     @route("/aws/ecs/services_for_update/{cluster_arn}", authorize=True)
     def reactapi_route_aws_ecs_services_for_update(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
         from .aws_ecs_services import get_aws_ecs_services_for_update
-        return get_aws_ecs_services_for_update(app.core._envs, cluster_arn, args=app.request_args())
+        include_image = app.request_arg_bool("include_image", True)
+        include_build = app.request_arg_bool("include_build", True)
+        raw = app.request_arg_bool("raw", False)
+        return get_aws_ecs_services_for_update(app.core._envs, cluster_arn,
+                                               include_image=include_image, include_build=include_build, raw=raw)
+
+    @route("/aws/ecr/image/{image_arn}", authorize=True)
+    def reactapi_route_aws_ecr_image(image_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        from .aws_ecs_services import get_aws_ecr_image_info
+        image_arn = urllib.parse.unquote(image_arn)
+        return get_aws_ecr_image_info(image_arn)
+
+    @route("/aws/ecr/build/{image_arn}", authorize=True)
+    def reactapi_route_aws_ecr_build(image_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
+        from .aws_ecs_services import get_aws_ecr_build_info
+        image_arn = urllib.parse.unquote(image_arn)
+        return get_aws_ecr_build_info(image_arn)
 
     @route("/aws/codebuild/digest/{log_group}/{log_stream}", authorize=True)
     def reactapi_route_aws_codebuild_digest(log_group: str, log_stream: str) -> Response:  # noqa: implicit @staticmethod via @route
@@ -661,8 +677,8 @@ class ReactRoutes:
 
     @route("/aws/ecs/cluster_status/{cluster_arn}", authorize=True)
     def reactapi_route_aws_ecs_cluster_status(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
-        from .aws_ecs_services import aws_ecs_cluster_status
-        return aws_ecs_cluster_status(cluster_arn)
+        from .aws_ecs_services import get_aws_ecs_cluster_status
+        return get_aws_ecs_cluster_status(cluster_arn)
 
     @route("/aws/ecs/cluster_update/{cluster_arn}", method="POST", authorize=True)
     def reactapi_route_aws_ecs_update_cluster(cluster_arn: str) -> Response:  # noqa: implicit @staticmethod via @route

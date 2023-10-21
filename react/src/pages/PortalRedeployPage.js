@@ -671,6 +671,15 @@ const BuildDetails = (props) => {
     </div>
 }
 
+const BuildDigest = (props) => {
+    //const digest = useFetch(`//aws/codebuild/digest/${encodeURIComponent(props.log_group)}/${props.log_stream}?image_tag=${props.image_tag}`);
+    const digest = useFetch(`//aws/codebuild/digest/${encodeURIComponent(props.log_group)}/${props.log_stream}`);
+    return <span id={`tooltip-${digest.data?.digest}`} >
+        {digest.data?.digest?.replace("sha256:", "")?.substring(0, 32)}
+        <Tooltip id={`tooltip-${digest.data?.digest}`} text={digest.data?.digest}/>
+    </span>
+}
+
 const BuildInfo = (props) => {
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
@@ -717,7 +726,7 @@ const BuildInfo = (props) => {
                     &nbsp;<ExternalLink href={`${props.build?.github}/commit/${props.build?.commit}`} nudgedown="1px" />
                 </td>
             </tr>
-            { props.digest?.data?.digest &&
+            { props.digest?.data?.digest ?
                 <tr onClick={props.digest.refresh}>
                     <td style={tdlabel}> Digest: </td>
                     <td style={tdcontent}>
@@ -731,7 +740,12 @@ const BuildInfo = (props) => {
                         </big> }
                     </td>
                 </tr>
-            }
+            :<>
+                <tr>
+                    <td style={tdlabel}> Digest: </td>
+                    <td style={tdlabel}> <BuildDigest log_group={props.build?.log_group} log_stream={props.build?.log_stream} /></td>
+                </tr>
+            </>}
             <tr>
                 <td style={tdlabel}> Status: </td>
                 <td style={tdcontent}>

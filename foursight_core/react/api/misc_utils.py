@@ -256,9 +256,7 @@ def find_common_prefix(string_list: List) -> str:
     return string_list[0][:min_length]
 
 
-def name_value_list_to_dict(items: List,
-                            name_property_name: str = "name",
-                            value_property_name: str = "value"):
+def name_value_list_to_dict(items: List, name_property_name: str = "name", value_property_name: str = "value"):
     """
     Give a list that looks like this:
 
@@ -281,6 +279,16 @@ def name_value_list_to_dict(items: List,
 
 
 def run_functions_concurrently(functions: List[Callable]) -> List[Any]:
-    return [result for result in pmap(lambda f: f(), functions)]
+    """
+    Runs the given list of functions concurrently. No arguments are passed to the function;
+    so often/typically the caller passes a special wrapper function/lambda which calls
+    the "real" function with the desired arguments. Returns the results of each function
+    call in a list, the order of which corresponds to the order fo the given function list.
+    """
+    if not functions or not isinstance(functions, list):
+        return []
+    functions = [function if isinstance(function, Callable) else lambda: None for function in functions]
+    return [result for result in pmap(lambda f: f(), functions)] if len(functions) > 1 else [functions[0]()]
+
 
 run_concurrently = pmap
