@@ -377,6 +377,7 @@ const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}
 const DetailBox = (props) => {
     const header = useHeader();
     const services = useFetch(`//aws/ecs/services_for_update/${props.cluster?.cluster_arn}`);
+    const image = useFetch(services.loading ? null : `//aws/ecr/image/${encodeURIComponent(services.data.image.arn)}`);
     const health = useFetch(`//${props.cluster?.env?.full_name}/portal_health`);
     return <div className="box bigmargin marginbottom" onClick={(e) => e.stopPropagation()}><small>
         <table style={{fontSize: "inherit"}}><tbody>
@@ -743,7 +744,7 @@ const BuildInfo = (props) => {
             :<>
                 <tr>
                     <td style={tdlabel}> Digest: </td>
-                    <td style={tdlabel}> <BuildDigest log_group={props.build?.log_group} log_stream={props.build?.log_stream} /></td>
+                    <td style={tdlabel}> TODO <BuildDigest log_group={props.build?.log_group} log_stream={props.build?.log_stream} /></td>
                 </tr>
             </>}
             <tr>

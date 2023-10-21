@@ -652,9 +652,12 @@ class ReactRoutes:
         from .aws_ecs_services import get_aws_ecs_services_for_update
         include_image = app.request_arg_bool("include_image", True)
         include_build = app.request_arg_bool("include_build", True)
+        previous_builds = app.request_arg_int("previous_builds", 2)
         raw = app.request_arg_bool("raw", False)
         return get_aws_ecs_services_for_update(app.core._envs, cluster_arn,
-                                               include_image=include_image, include_build=include_build, raw=raw)
+                                               include_image=include_image,
+                                               include_build=include_build,
+                                               previous_builds=previous_builds, raw=raw)
 
     @route("/aws/ecr/image/{image_arn}", authorize=True)
     def reactapi_route_aws_ecr_image(image_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
@@ -666,7 +669,8 @@ class ReactRoutes:
     def reactapi_route_aws_ecr_build(image_arn: str) -> Response:  # noqa: implicit @staticmethod via @route
         from .aws_ecs_services import get_aws_ecr_build_info
         image_arn = urllib.parse.unquote(image_arn)
-        return get_aws_ecr_build_info(image_arn)
+        previous_builds = app.request_arg_int("previous_builds", 2)
+        return get_aws_ecr_build_info(image_arn, previous_builds=previous_builds)
 
     @route("/aws/codebuild/digest/{log_group}/{log_stream}", authorize=True)
     def reactapi_route_aws_codebuild_digest(log_group: str, log_stream: str) -> Response:  # noqa: implicit @staticmethod via @route

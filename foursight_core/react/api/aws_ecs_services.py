@@ -36,6 +36,7 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
                                     include_image: bool = True,
                                     include_build: bool = True,
                                     include_build_digest: bool = False,
+                                    previous_builds: int = 2,
                                     raw: bool = False) -> Union[Dict, List[Dict]]:
     """
     Returns the list of AWS services (for possible update purposes) within the given cluster (ARN).
@@ -79,7 +80,8 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
     services = _get_aws_ecs_services_for_update_raw(cluster_arn,
                                                     include_image=include_image,
                                                     include_build=include_build,
-                                                    include_build_digest=False)
+                                                    include_build_digest=include_build_digest,
+                                                    previous_builds=previous_builds)
     for service in services:
         service["env"] = envs.get_associated_env(service["task_definition_arn"])
         if previous_service and not has_identical_metadata(service, previous_service):
@@ -135,7 +137,11 @@ def get_aws_ecs_cluster_status(cluster_arn: str) -> Optional[Dict]:
         full_cluster_arn = None
 
     def get_services_info() -> List[Dict]:
-        return _get_aws_ecs_services_for_update_raw(cluster_arn, include_image=False, include_build=False)
+        return _get_aws_ecs_services_for_update_raw(cluster_arn,
+                                                    include_image=False,
+                                                    include_build=False,
+                                                    include_build_digest=False,
+                                                    previous_builds=0)
 
     def get_tasks_info() -> Dict:
         response = []
@@ -192,9 +198,10 @@ def get_aws_ecs_cluster_status(cluster_arn: str) -> Optional[Dict]:
 
 
 def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
-                                         include_image: bool = True,
-                                         include_build: bool = True,
-                                         include_build_digest: bool = False) -> List[Dict]:
+                                         include_image: bool,
+                                         include_build: bool,
+                                         include_build_digest: bool,
+                                         previous_builds: int) -> List[Dict]:
 
     ecs = boto3.client("ecs")
 
@@ -243,7 +250,7 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
     @lru_cache
     def get_build_info(image_repo: str, image_tag: str) -> Optional[Dict]:
         # Cache this result within the enclosing function; for the below services loop.
-        build = get_aws_ecr_build_info(image_repo, image_tag)
+        build = get_aws_ecr_build_info(image_repo, image_tag, previous_builds=previous_builds)
         if include_build_digest:
             log_group = build.get("latest", {}).get("log_group")
             log_stream = build.get("latest", {}).get("log_stream")
@@ -317,7 +324,7 @@ def get_aws_ecr_image_info(image_repo_or_arn: str, image_tag: Optional[str] = No
     return {}
 
 
-def get_aws_ecr_build_info(image_repo_or_arn: str, image_tag: Optional[str] = None) -> Dict:
+def get_aws_ecr_build_info(image_repo_or_arn: str, image_tag: Optional[str] = None, previous_builds: int = 2) -> Dict:
     """
     Returns a dictionary with info about the three most recent CodeBuild builds
     for the given image repo and tag, or None if none found.
@@ -421,7 +428,7 @@ def get_aws_ecr_build_info(image_repo_or_arn: str, image_tag: Optional[str] = No
             if not next_token:
                 break
 
-    number_of_previous_builds_to_return = 2
+    number_of_previous_builds_to_return = previous_builds
     response = {}
     for project in get_projects():
         for build in get_relevant_builds(project):
