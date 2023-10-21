@@ -676,7 +676,7 @@ class ReactRoutes:
     def reactapi_route_aws_codebuild_digest(log_group: str, log_stream: str) -> Response:  # noqa: implicit @staticmethod via @route
         from .aws_ecs_services import get_aws_codebuild_digest
         log_group = urllib.parse.unquote(log_group)
-        image_tag = app.request_arg("image_tag")
+        image_tag = app.request_arg("image_tag")  # Just to narrow it down during the digest rummage
         return {"digest": get_aws_codebuild_digest(log_group, log_stream, image_tag)}
 
     @route("/aws/ecs/cluster_status/{cluster_arn}", authorize=True)
