@@ -31,8 +31,8 @@ function awsTaskDefinitionLink(id) {
     return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${id}`;
 }
 
-function awsCodebuildLogLink(account_number, project, log_group, log_stream) {
-    return `https://${region}.console.aws.amazon.com/codesuite/codebuild/${account_number}/projects/${project}/build/${project}:${log_stream}/?region=${region}`;
+function awsCodebuildLogLink(account_number, project, logGroup, logStream) {
+    return `https://${region}.console.aws.amazon.com/codesuite/codebuild/${account_number}/projects/${project}/build/${project}:${logStream}/?region=${region}`;
 }
 
 function awsCodebuildProjectLink(account_number, project) {
@@ -45,6 +45,22 @@ function awsImageRepoLink(account_number, project) {
 
 function awsImageTagLink(account_number, repo, sha) {
     return `https://${region}.console.aws.amazon.com/ecr/repositories/private/${account_number}/${repo}/_/image/${sha}/details`
+}
+
+const useFetchServices = (clusterArn) => {
+    return useFetch(`//aws/ecs/services_for_update/${clusterArn}`, { cache: true });
+}
+
+const useFetchStatus = (clusterArn) => {
+    return useFetch(`//aws/ecs/cluster_status/${clusterArn}`, { cache: true });
+}
+
+const useFetchBuildInfo = (imageArn) => {
+    return useFetch(`//aws/ecr/build/${imageArn}`);
+}
+
+const useFetchBuildDigest = (logGroup, logStream, imageTag, args) => {
+    return useFetch(`//aws/codebuild/digest/${encodeURIComponent(logGroup)}/${logStream}?image_tag=${imageTag}`, args);
 }
 
 const PortalRedeployPage = (props) => {
@@ -146,7 +162,37 @@ const PortalRedeployBox = (props) => {
         props.selectCluster(props.cluster);
         if (showDetailOnSelect) props.setShowDetail(props.cluster);
     }
-    const status = useFetch(`//aws/ecs/cluster_status/${props.cluster?.cluster_arn}`);
+    const [deployedBranch, setDeployedBranch] = useState();
+    const [deployingBranch, setDeployingBranch] = useState();
+
+    const services = useFetchServices(props.cluster?.cluster_arn);
+    const status = useFetchStatus(props.cluster?.cluster_arn, services, setDeployedBranch, setDeployingBranch);
+
+    const setDeployedBranchFromServicesAndStatus = () => {
+        if (status.data?.started_at) {
+            if (services.data?.build?.latest?.finished_at < status.data?.started_at) {
+                setDeployedBranch(services.data?.build?.latest?.commit);
+            }
+            else if (services.data?.build?.previous?.finished_at < status.data?.started_at) {
+                setDeployedBranch(services.data?.build?.previous?.commit);
+            }
+            else if (services.data?.build?.next_previous?.finished_at < status.data?.started_at) {
+                setDeployedBranch(services.data?.build?.next_previous?.commit);
+            }
+        }
+    }
+
+    useEffect(() => {
+        if (!services.loading && !status.loading) {
+            setDeployedBranchFromServicesAndStatus();
+        }
+        else {
+            Promise.all([services.promise, status.promise]).then(() => {
+                console.log('in promise all')
+                setDeployedBranchFromServicesAndStatus();
+            });
+        }
+    }, [services, status]);
 
     return <div style={{marginTop:"4pt"}} className="hover-lighten">
         <table style={{width: "100%"}}><tbody><tr>
@@ -164,10 +210,10 @@ const PortalRedeployBox = (props) => {
         <td style={{verticalAlign: "top"}} onClick={selectCluster}>
             <div className="box bigmarginbottom lighten" style={{cursor:"default"}}>
                 <ToggleShowDetailArrow isShow={isShowDetail} toggleShow={toggleShowDetail} bold={true} text={props.cluster?.env?.name} underline={true}/>
-                <small style={{float: "right"}}>
+                <small style={{float: "right", marginRight: "2pt"}}>
                     &nbsp;&nbsp;<ExternalLink href={props.cluster.env?.portal_url} />
                 </small>
-                { (props.cluster?.env?.is_production || props.cluster?.env?.is_staging || props.cluster?.env?.color) &&
+                { false && (props.cluster?.env?.is_production || props.cluster?.env?.is_staging || props.cluster?.env?.color) &&
                     <small style={{float: "right", color: props.cluster?.env?.color == "blue" ? "blue" : (props.cluster?.env?.color == "green" ? "green" : "")}} onClick={toggleShowDetail}>
                         {props.cluster?.env?.is_production && <b>PRODUCTION</b>}
                         {props.cluster?.env?.is_staging && <b>STAGING</b>}
@@ -177,7 +223,14 @@ const PortalRedeployBox = (props) => {
                     </small>
                 }
                 <br />
-                <small id={`tooltip-${props.cluster.cluster_arn}`}> {props.cluster?.cluster_arn}&nbsp;<ExternalLink href={awsClusterLink(props.cluster?.cluster_arn)} /></small>
+                <small id={`tooltip-${props.cluster.cluster_arn}`}>
+                    {props.cluster?.cluster_arn}&nbsp;<ExternalLink href={awsClusterLink(props.cluster?.cluster_arn)} />
+                    { deployedBranch &&
+                        <small style={{float: "right", marginRight:"2pt"}}>
+                            Branch: <b>{deployedBranch}</b>
+                        </small>
+                    }
+                </small>
                 { isSelectedCluster() &&
                     <RedeployButtonsBox cluster={props.cluster}
                         status={status}
@@ -185,7 +238,9 @@ const PortalRedeployBox = (props) => {
                         isShowDetail={isShowDetail}
                         toggleShowDetail={toggleShowDetail} />
                 }
-                { isShowDetail() && <DetailBox env={props.cluster?.env} cluster={props.cluster} status={status} /> }
+                { isShowDetail() &&
+                    <DetailBox services={services} cluster={props.cluster} env={props.cluster?.env} status={status} />
+                }
                 <Tooltip id={`tooltip-${props.cluster.cluster_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS cluster definition to be updated."} />
             </div>
         </td></tr></tbody></table>
@@ -375,19 +430,19 @@ const TSeparatorH = ({size = "1px", color = "black", span = "2", double = false,
 const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}) => <div style={{width: "100%", height: size, marginTop: top, marginBottom: bottom, background: color}} />
 
 const DetailBox = (props) => {
+    const services = props.services, cluster = props.cluster, status = props.status
     const header = useHeader();
-    const services = useFetch(`//aws/ecs/services_for_update/${props.cluster?.cluster_arn}`);
     const image = useFetch(services.loading ? null : `//aws/ecr/image/${encodeURIComponent(services.data.image.arn)}`);
-    const health = useFetch(`//${props.cluster?.env?.full_name}/portal_health`);
+    const health = useFetch(`//${cluster?.env?.full_name}/portal_health`);
     return <div className="box bigmargin marginbottom" onClick={(e) => e.stopPropagation()}><small>
         <table style={{fontSize: "inherit"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}}>
-                    <ServicesDetails cluster={props.cluster} services={services} health={health} status={props.status} />
+                    <ServicesDetails cluster={cluster} services={services} status={status} health={health} />
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
-                    <AccountDetails cluster={props.cluster} health={health} status={props.status} />
+                    <AccountDetails cluster={cluster} health={health} status={status} />
                 </td>
             </tr>
             <TSpaceH />
@@ -462,14 +517,14 @@ const AccountDetails = (props) => {
 
 const ServicesDetails = (props) => {
     const updating = () => props.status.data?.updating;
-    const service_status = (service_arn) => {
+    const serviceStatus = (service_arn) => {
         return props.status?.data?.services?.find(service => service.arn === service_arn);
     }
     return <table style={{fontSize: "inherit"}}><tbody>
         <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
         <tr><td colSpan="2">
             <b>AWS Cluster Services</b>
-            <span style={{float: "right"}} className="pointer" onClick={() => { props.status.refresh(); props.health.refresh(); }}>
+            <span style={{float: "right"}} className="pointer" onClick={() => { props.services.refresh(); props.status.refresh(); props.health.refresh(); }}>
                 { !props.status.loading && <>
                     {updating() ? <span style={{color: "red"}}>
                         <b>{Char.Refresh} updating</b> ...
@@ -505,14 +560,14 @@ const ServicesDetails = (props) => {
                 <td style={{verticalAlign: "top"}}>
                     <b>{Str.Title(service.type)}</b>
                     <small>
-                        { service_status(service.arn)?.tasks_running_count === 0 ? <>
+                        { serviceStatus(service.arn)?.tasks_running_count === 0 ? <>
                             &nbsp;{Char.RightArrow} not running
                         </>:<>
-                            &nbsp;{Char.RightArrow} tasks running: {service_status(service.arn)?.tasks_running_count || 0}
+                            &nbsp;{Char.RightArrow} tasks running: {serviceStatus(service.arn)?.tasks_running_count || 0}
                         </> }
-                        {service_status(service.arn)?.tasks_pending_count > 0 && <> | tasks pending: {service_status(service.arn)?.tasks_pending_count || 0}</>}
-                        {service_status(service.arn)?.tasks_desired_count > 0 && service_status(service.arn)?.tasks_desired_count != service_status(service.arn)?.tasks_running_count && <> | tasks desired: {service_status(service.arn)?.tasks_desired_count || 0}</>}
-                        {service_status(service.arn)?.updating && <> | <span style={{color: "red"}}>updating ...</span></>}
+                        {serviceStatus(service.arn)?.tasks_pending_count > 0 && <> | tasks pending: {serviceStatus(service.arn)?.tasks_pending_count || 0}</>}
+                        {serviceStatus(service.arn)?.tasks_desired_count > 0 && serviceStatus(service.arn)?.tasks_desired_count != serviceStatus(service.arn)?.tasks_running_count && <> | tasks desired: {serviceStatus(service.arn)?.tasks_desired_count || 0}</>}
+                        {serviceStatus(service.arn)?.updating && <> | <span style={{color: "red"}}>updating ...</span></>}
                     </small>
                     <br /> {service.arn}&nbsp;<small><ExternalLink href={awsServiceLink(props.cluster.cluster_arn, service.arn)} /></small>
                     <br /> <i>Task Definition: {service.task_definition_arn}</i>&nbsp;<small><ExternalLink href={awsTaskDefinitionLink(service.task_definition_arn)} /></small>
@@ -536,10 +591,10 @@ const ServicesDetails = (props) => {
 }
 
 const ImageAndBuildDetails = (props) => {
-    const image_tag = props.services.data?.image?.tag;
-    const log_group = props.services.data?.build?.latest?.log_group;
-    const log_stream = props.services.data?.build?.latest?.log_stream;
-    const digest = useFetch(`//aws/codebuild/digest/${encodeURIComponent(log_group)}/${log_stream}?image_tag=${image_tag}`);
+    const imageTag = props.services.data?.image?.tag;
+    const logGroup = props.services.data?.build?.latest?.log_group;
+    const logStream = props.services.data?.build?.latest?.log_stream;
+    const digest = useFetchBuildDigest(logGroup, logStream, imageTag);
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     return <div className="box darken">
@@ -650,7 +705,7 @@ const BuildDetails = (props) => {
             </tr>
             <TSeparatorH double={true} />
         </tbody></table>
-        <BuildInfo build={props.services.data?.build?.latest} digest={props.digest} image={props.services.data?.image} />
+        <BuildInfo build={props.services.data?.build?.latest} digest={props.digest} image={props.services.data?.image} fetchDigest={true} />
         { showPrevious && <>
             { props.services.data?.build?.previous && <>
                 <SeparatorH top="2pt" bottom="8pt" color="gray" />
@@ -673,11 +728,20 @@ const BuildDetails = (props) => {
 }
 
 const BuildDigest = (props) => {
-    //const digest = useFetch(`//aws/codebuild/digest/${encodeURIComponent(props.log_group)}/${props.log_stream}?image_tag=${props.image_tag}`);
-    const digest = useFetch(`//aws/codebuild/digest/${encodeURIComponent(props.log_group)}/${props.log_stream}`);
+    const digest = useFetchBuildDigest(props.logGroup, props.logStream, props.imageTag, { nofetch: !props.fetchDigest });
     return <span id={`tooltip-${digest.data?.digest}`} >
-        {digest.data?.digest?.replace("sha256:", "")?.substring(0, 32)}
-        <Tooltip id={`tooltip-${digest.data?.digest}`} text={digest.data?.digest}/>
+        {digest.data?.digest ? <>
+            {digest.data?.digest?.replace("sha256:", "")?.substring(0, 32)}
+            <Tooltip id={`tooltip-${digest.data?.digest}`} text={digest.data?.digest}/>
+        </>:<>
+            { digest.loading ? <>
+                <i>Fetching</i> <PuffSpinnerInline size="16" />
+            </>:<>
+                <span onClick={digest.refresh} className="pointer">
+                    <i>Click to fetch ...</i>
+                </span>
+            </> }
+        </> }
     </span>
 }
 
@@ -744,7 +808,7 @@ const BuildInfo = (props) => {
             :<>
                 <tr>
                     <td style={tdlabel}> Digest: </td>
-                    <td style={tdlabel}> TODO <BuildDigest log_group={props.build?.log_group} log_stream={props.build?.log_stream} /></td>
+                    <td style={tdlabel}> <BuildDigest logGroup={props.build?.log_group} logStream={props.build?.log_stream} imageTag={props.build?.image_tag} fetch={props.fetchDigest} /></td>
                 </tr>
             </>}
             <tr>

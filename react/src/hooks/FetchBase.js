@@ -182,18 +182,20 @@ export const useFetch = (url, args) => {
     //
     const initial = Type.IsObject(url) ? url.initial : (Type.IsObject(args) ? args.initial : null);
     const nofetch = Type.IsObject(url) ? url.nofetch : (Type.IsObject(args) ? args.nofetch : false);
+    const haveUrl = Type.IsObject(url) ? Str.HasValue(url.url) : Str.HasValue(url);
 
     const [ data, setData ] = useState(initial);
-    const [ loading, setLoading ] = useState(nofetch ? false : true);
+    const [ loading, setLoading ] = useState((nofetch || !haveUrl) ? false : true);
     const [ status, setStatus ] = useState(0);
     const [ timeout, setTimeout ] = useState(false);
     const [ error, setError ] = useState(null);
+    const [ promise, setPromise ] = useState(null);
     const fetching = _useFetching();
     const fetched = _useFetched();
 
     function assembleArgs(urlOverride = null, argsOverride = null, nonofetch = false) {
         return _assembleFetchArgs(url, args, urlOverride, argsOverride,
-                                  setData, setLoading, setStatus, setTimeout, setError,
+                                  setData, setLoading, setStatus, setTimeout, setError, setPromise,
                                   fetching, fetched, nonofetch);
     }
 
@@ -204,6 +206,7 @@ export const useFetch = (url, args) => {
         data: data,
         status: status,
         error: error,
+        promise: promise,
         timeout: timeout,
         set: setData,
         //
@@ -391,8 +394,12 @@ let _fetchCache = {};
 function _doFetch(args, current = undefined, fetcher) {
 
     if (args.nofetch || !Str.HasValue(args.url)) {
+        args.setPromise(Promise.resolve());
         return;
     }
+
+    let resolvePromise = null;
+    args.setPromise(args.promise = new Promise((resolve, reject) => { resolvePromise = resolve; }));
 
     function _handleResponse(response, id) {
         const status = response.status;
@@ -418,6 +425,7 @@ function _doFetch(args, current = undefined, fetcher) {
         args.setStatus(status);
         args.setData(data);
         args.setLoading(false);
+        resolvePromise();
         noteFetchEnd(id, data);
         args.onSuccess(fetcher);
         args.onDone(fetcher);
@@ -621,7 +629,7 @@ function _update(setData, newData, currentData = undefined) {
 }
 
 function _assembleFetchArgs(url, args, urlOverride, argsOverride,
-                            setData, setLoading, setStatus, setTimeout, setError,
+                            setData, setLoading, setStatus, setTimeout, setError, setPromise,
                             fetching, fetched, nonofetch) {
     if (Type.IsObject(url)) {
         args = url;
@@ -652,6 +660,7 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
         setStatus:  setStatus,
         setTimeout: setTimeout,
         setError:   setError,
+        setPromise: setPromise,
         fetching:   fetching,
         fetched:    fetched
     };
