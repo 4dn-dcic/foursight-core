@@ -103,6 +103,7 @@ const PortalRedeployPage = (props) => {
     }
     const toggleShowDetail = (cluster) => { showDetails[cluster.cluster_arn] = !showDetails[cluster.cluster_arn]; setShowDetails({...showDetails}); }
     const setShowDetail = (cluster) => { showDetails[cluster.cluster_arn] = true; setShowDetails({...showDetails}); }
+    const setHideDetail = (cluster) => { showDetails[cluster.cluster_arn] = false; setShowDetails({...showDetails}); }
     const isShowDetail = (cluster) => showDetails[cluster.cluster_arn];
 
     const clusters = useFetchClusters((data) => {
@@ -129,6 +130,7 @@ const PortalRedeployPage = (props) => {
                     isShowDetail={isShowDetail}
                     toggleShowDetail={toggleShowDetail}
                     setShowDetail={setShowDetail}
+                    setHideDetail={setHideDetail}
                     previousBuilds={previousBuilds} />
             </> }
         </div>
@@ -144,7 +146,7 @@ const ContentLoading = (props) => {
 const Content = (props) => {
 
     const [selectedCluster, setSelectedCluster] = useState();
-    const selectCluster = (cluster) => { isSelectedCluster(cluster) ? setSelectedCluster(null) : setSelectedCluster(cluster.cluster_arn); }
+    const selectCluster = (cluster) => { if (isSelectedCluster(cluster)) { setSelectedCluster(null); return false; } else { setSelectedCluster(cluster.cluster_arn); return true; } }
     const isSelectedCluster = (cluster) => selectedCluster == cluster.cluster_arn;
     const unselectCluster = () => setSelectedCluster(null);
 
@@ -165,6 +167,7 @@ const Content = (props) => {
                 isShowDetail={props.isShowDetail}
                 toggleShowDetail={props.toggleShowDetail}
                 setShowDetail={props.setShowDetail}
+                setHideDetail={props.setHideDetail}
                 previousBuilds={props.previousBuilds} />
         )}
     </div>
@@ -172,18 +175,25 @@ const Content = (props) => {
 
 const PortalRedeployBox = (props) => {
 
-    const showDetailOnSelect = true;
+    const showHideDetailOnSelectCluster = true;
 
-    const [ showDetail, setShowDetail ] = useState(false);
     const isShowDetail = () => props.isShowDetail(props.cluster);
     const toggleShowDetail = (e) => {
         props.toggleShowDetail(props.cluster);
-        e.stopPropagation(); e.preventDefault();
+        if (e) { e.stopPropagation(); e.preventDefault(); }
     }
     const isSelectedCluster = () => props.isSelectedCluster(props.cluster);
     const selectCluster = () =>  {
-        props.selectCluster(props.cluster);
-        if (showDetailOnSelect) props.setShowDetail(props.cluster);
+        if (props.selectCluster(props.cluster)) {
+            if (showHideDetailOnSelectCluster) {
+                props.setShowDetail(props.cluster);
+            }
+        }
+        else {
+            if (showHideDetailOnSelectCluster) {
+                props.setHideDetail(props.cluster);
+            }
+        }
     }
     const [deployedBranch, setDeployedBranch] = useState();
     const [deployingBranch, setDeployingBranch] = useState();
@@ -724,8 +734,8 @@ const BuildDetails = (props) => {
     return <div>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
-                <td style={{verticalAlign: "top"}} colSpan="2" onClick={toggleShowPrevious}>
-                    <b>Build Details</b>&nbsp;<ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious} bold={true} size="9pt" />
+                <td style={{verticalAlign: "top"}} colSpan="2">
+                    <b className="pointer" onClick={toggleShowPrevious}>Build Details</b>&nbsp;<ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious} bold={true} size="9pt" />
                     <span style={{float: "right"}}>
                         <Refresher bold={true} refresh={build.refresh} refreshing={() => build.loading} />
                     </span>
