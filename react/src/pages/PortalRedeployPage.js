@@ -52,28 +52,31 @@ const useFetchClusters = (onData) => {
     return useFetch("//aws/ecs/clusters_for_update", { onData: (data) => { if (onData) onData(data); return data; } });
 }
 
-const useFetchServices = (clusterArn) => {
-    //return useFetch(`//aws/ecs/services_for_update/${clusterArn}`, { cache: true });
-    return useFetch(`//aws/ecs/services_for_update/${clusterArn}?include_image=false&include_build=false`, { cache: true });
+const useFetchServices = (clusterArn, args = {}) => {
+    const url = `//aws/ecs/services_for_update/${clusterArn}?include_image=false&include_build=false`;
+    return useFetch(url, { ...args, cache: true });
 }
 
-const useFetchStatus = (clusterArn) => {
-    return useFetch(`//aws/ecs/cluster_status/${clusterArn}`, { cache: true });
+const useFetchStatus = (clusterArn, args = {}) => {
+    const url = `//aws/ecs/cluster_status/${clusterArn}`;
+    return useFetch(url, { ...args, cache: true });
 }
 
-const useFetchImageInfo = (imageArn) => {
-    return useFetch(imageArn ? `//aws/ecr/image/${encodeURIComponent(imageArn)}` : null, { cache: true });
+const useFetchImageInfo = (imageArn, args = {}) => {
+    const url = imageArn ? `//aws/ecr/image/${encodeURIComponent(imageArn)}` : null;
+    return useFetch(url, { ...args, cache: true });
 }
 
-const useFetchBuildInfo = (imageArn) => {
-    return useFetch(imageArn ? `//aws/ecr/build/${encodeURIComponent(imageArn)}` : null, { cache: true });
+const useFetchBuildInfo = (imageArn, args = {}) => {
+    return useFetch(imageArn ? `//aws/ecr/build/${encodeURIComponent(imageArn)}` : null, { ...args, cache: true });
 }
 
-const useFetchBuildDigest = (build, args) => {
+const useFetchBuildDigest = (build, args = {}) => {
     const logGroup = build?.log_group;
     const logStream = build?.log_stream;
     const imageTag = build?.image_tag;
-    return useFetch(imageTag ? `//aws/codebuild/digest/${encodeURIComponent(logGroup)}/${logStream}?image_tag=${imageTag}` : null, args);
+    const url = imageTag ? `//aws/codebuild/digest/${encodeURIComponent(logGroup)}/${logStream}?image_tag=${imageTag}` : null;
+    return useFetch(url, args);
 }
 
 const useFetchPortalHealth = () => {
@@ -197,6 +200,7 @@ const PortalRedeployBox = (props) => {
         }
     }
 
+/*
     useEffect(() => {
         if (!services.loading && !status.loading) {
             setDeployedBranchFromServicesAndStatus();
@@ -207,6 +211,7 @@ const PortalRedeployBox = (props) => {
             });
         }
     }, [services, status]);
+*/
 
     return <div style={{marginTop:"4pt"}} className="hover-lighten">
         <table style={{width: "100%"}}><tbody><tr>
@@ -239,21 +244,17 @@ const PortalRedeployBox = (props) => {
                 <br />
                 <small id={`tooltip-${props.cluster.cluster_arn}`}>
                     {props.cluster?.cluster_arn}&nbsp;<ExternalLink href={awsClusterLink(props.cluster?.cluster_arn)} />
-                    { deployedBranch &&
-                        <small style={{float: "right", marginRight:"2pt"}}>
-                            Branch: <b>{deployedBranch}</b>
-                        </small>
-                    }
                 </small>
                 { isSelectedCluster() &&
                     <RedeployButtonsBox cluster={props.cluster}
                         status={status}
                         unselectCluster={props.unselectCluster}
                         isShowDetail={isShowDetail}
-                        toggleShowDetail={toggleShowDetail} />
+                        toggleShowDetail={toggleShowDetail}
+                        deployedBranch={deployedBranch} />
                 }
                 { isShowDetail() &&
-                    <DetailBox services={services} cluster={props.cluster} env={props.cluster?.env} status={status} />
+                    <DetailBox services={services} cluster={props.cluster} env={props.cluster?.env} status={status} setDeployedBranch={setDeployedBranch} />
                 }
                 <Tooltip id={`tooltip-${props.cluster.cluster_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS cluster definition to be updated."} />
             </div>
@@ -270,7 +271,8 @@ const RedeployButtonsBox = (props) => {
                 status={props.status}
                 unselectCluster={props.unselectCluster}
                 isShowDetail={props.isShowDetail}
-                toggleShowDetail={props.toggleShowDetail} />
+                toggleShowDetail={props.toggleShowDetail}
+                deployedBranch={props.deployedBranch} />
         </div>
     </>
 }
@@ -338,9 +340,13 @@ const RedeployButtons = (props) => {
                 <UpdatingButton />
             </span>
         </>:<>
-            { !props.status.loading &&
-                <ToggleShowDetailArrow isShow={props.isShowDetail} toggleShow={props.toggleShowDetail} float="right" text="show details" bold={"onshow"} size={"small"} />
-            }
+            { !props.status.loading && <>
+                { props.deployedBranch ? <small style={{float: "right"}}>
+                    Branch:&nbsp;<ToggleShowDetailArrow isShow={props.isShowDetail} toggleShow={props.toggleShowDetail} text={props.deployedBranch} bold={"onshow"} size={"small"} />
+                </small>:
+                    <ToggleShowDetailArrow isShow={props.isShowDetail} toggleShow={props.toggleShowDetail} float="right" bold={"onshow"} size={"small"} />
+                }
+            </> }
         </> }
         </td></tr></tbody></table>
         { isShowUpdatingWarning() && (!isShowUpdatingButton() || confirmed) && !runResult && <small style={{color: "red"}}>
@@ -444,9 +450,20 @@ const TSeparatorH = ({size = "1px", color = "black", span = "2", double = false,
 const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}) => <div style={{width: "100%", height: size, marginTop: top, marginBottom: bottom, background: color}} />
 
 const DetailBox = (props) => {
-    const services = props.services, cluster = props.cluster, status = props.status
+    const services = props.services;
+    const cluster = props.cluster;
+    const status = props.status;
+    const image = useFetchImageInfo(services.data?.image?.arn);
+    const build = useFetchBuildInfo(services.data?.image?.arn);
     const header = useHeader();
     const health = useFetchPortalHealth();
+
+    useEffect(() => {
+        if (!build.loading && !status.loading) {
+            props.setDeployedBranch(build.data?.latest?.branch);
+        }
+    }, [build, status]);
+
     return <div className="box bigmargin marginbottom" onClick={(e) => e.stopPropagation()}><small>
         <table style={{fontSize: "inherit"}}><tbody>
             <tr>
@@ -462,7 +479,7 @@ const DetailBox = (props) => {
             { !services.loading &&
                 <tr>
                     <td colSpan="5">
-                        <ImageAndBuildDetails imageArn={services.data?.image?.arn} />
+                        <ImageAndBuildDetails imageArn={services.data?.image?.arn} image={image} build={build} />
                     </td>
                 </tr>
             }
@@ -557,12 +574,12 @@ const ServicesDetails = (props) => {
                 </span>
             </td>
         </tr>
-        { props.services.loading && <>
+        { props.services.loading ? <>
             <tr>
                 <td> Services: </td>
                 <td> <span style={{position: "relative", top: "2px"}}>&nbsp;&nbsp;<PuffSpinnerInline size="16" /></span> </td>
             </tr>
-        </> }
+        </>:<>
         { props.services?.data?.services?.map((service, index) => <>
             <tr>
                 <td style={{verticalAlign: "top"}}>
@@ -598,12 +615,15 @@ const ServicesDetails = (props) => {
                 </td>
             </tr>
         </> }
+        </> }
     </tbody></table>
 }
 
 const ImageAndBuildDetails = (props) => {
-    const image = useFetchImageInfo(props.imageArn);
-    const build = useFetchBuildInfo(props.imageArn);
+    const image = props.image;
+    const build = props.build;
+    // const image = useFetchImageInfo(props.imageArn);
+    // const build = useFetchBuildInfo(props.imageArn);
     const digest = useFetchBuildDigest(build.data?.latest, { cache: true });
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
@@ -615,7 +635,7 @@ const ImageAndBuildDetails = (props) => {
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
-                    <ImageDetails image={image.data} build={build} digest={digest} />
+                    <ImageDetails image={image} build={build} digest={digest} />
                 </td>
             </tr>
         </tbody></table>
@@ -627,72 +647,79 @@ const ImageDetails = (props) => {
     const header = useHeader();
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
-    if (!image) return <StandardSpinner label="Loading build info"/>
+    //if (image.loading) return <StandardSpinner label="Loading build info"/>
     return <div>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}} colSpan="2">
                     <b>Image Details</b>
+                    <span style={{float: "right"}}>
+                        <Refresher bold={true} refresh={image.refresh} refreshing={() => image.loading} />
+                    </span>
                 </td>
             </tr>
             <TSeparatorH double={true} />
+            { image.loading ? <>
+                <StandardSpinner label="Loading image info"/>
+            </>:<>
             <tr>
                 <td style={tdlabel}> ARN: </td>
                 <td style={tdcontent}>
-                    {image?.arn}
-                    &nbsp;<ExternalLink href={awsImageTagLink(header.app?.credentials?.aws_account_number, image?.repo, image?.digest)} nudgedown="1px" />
+                    {image.data?.arn}
+                    &nbsp;<ExternalLink href={awsImageTagLink(header.app?.credentials?.aws_account_number, image.data?.repo, image.data?.digest)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Repo: </td>
                 <td style={tdcontent}>
-                    {image?.repo}
-                    &nbsp;<ExternalLink href={awsImageRepoLink(header.app?.credentials?.aws_account_number, image?.repo)} nudgedown="1px" />
+                    {image.data?.repo}
+                    &nbsp;<ExternalLink href={awsImageRepoLink(header.app?.credentials?.aws_account_number, image.data?.repo)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Tag: </td>
                 <td style={tdcontent}>
-                    {image?.tag}
-                    &nbsp;<ExternalLink href={awsImageTagLink(header.app?.credentials?.aws_account_number, image?.repo, image?.digest)} />
+                    {image.data?.tag}
+                    &nbsp;<ExternalLink href={awsImageTagLink(header.app?.credentials?.aws_account_number, image.data?.repo, image.data?.digest)} />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Size: </td>
                 <td style={tdcontent}>
-                    <span id={`tooltip-size-${image?.digest}`}>
-                    {Str.FormatBytes(image?.size)}
+                    <span id={`tooltip-size-${image.data?.digest}`}>
+                    {Str.FormatBytes(image.data?.size)}
                     </span>
-                    <Tooltip id={`tooltip-size-${image?.digest}`} position="right" shape="squared" text={`${image?.size} bytes`} />
+                    <Tooltip id={`tooltip-size-${image.data?.digest}`} position="right" shape="squared" text={`${image.data?.size} bytes`} />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Digest: </td>
                 <td style={tdcontent}>
-                    <span id={`image-digest-${image?.id}`}>{image?.digest?.replace("sha256:", "")?.substring(0, 32)}</span> ...
-                    { props.digest?.data?.digest && image?.digest && <big id={`tooltip-digest-sanity-${props.digest}`}>
-                        { props.digest?.data?.digest === image?.digest ?
+                    <span id={`image-digest-${image.data?.id}`}>{image.data?.digest?.replace("sha256:", "")?.substring(0, 32)}</span> ...
+                    { props.digest?.data?.digest && image.data?.digest && <big id={`tooltip-digest-sanity-${props.digest}`}>
+                        { props.digest?.data?.digest === image.data?.digest ?
                             <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
                         :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
-                        <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text={`This digest and the build digest ${props.digest?.data?.digest !== image?.digest ? "do not" : ""} agree.`} />
+                        <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text={`This digest and the build digest ${props.digest?.data?.digest !== image.data?.digest ? "do not" : ""} agree.`} />
                     </big> }
-                    <Tooltip id={`image-digest-${image?.id}`} position="bottom" size="small" text={image?.digest} />
+                    <Tooltip id={`image-digest-${image.data?.id}`} position="bottom" size="small" text={image.data?.digest} />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Pulled: </td>
                 <td style={tdcontent}>
-                    {DateTime.Format(image?.pulled_at)}
-                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(image?.pulled_at, true, false)}</small>
+                    {DateTime.Format(image.data?.pulled_at)}
+                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(image.data?.pulled_at, true, false)}</small>
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Pushed: </td>
                 <td style={tdcontent}>
-                    {DateTime.Format(image?.pushed_at)}
-                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(image?.pushed_at, true, false)}</small>
+                    {DateTime.Format(image.data?.pushed_at)}
+                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(image.data?.pushed_at, true, false)}</small>
                 </td>
             </tr>
+            </> }
         </tbody></table>
     </div>
 }
@@ -708,33 +735,32 @@ const BuildDetails = (props) => {
     return <div>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
-                <td style={{verticalAlign: "top"}} colSpan="2">
-                    <b>Build Details</b> {showPrevious && <>(latest)</>}
-                    { build.data?.previous && <>
-                        <ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious}
-                            text="show previous" bold={"onhide"} size="9pt" float="right" right="-2pt" nudge="2pt" />
-                    </> }
+                <td style={{verticalAlign: "top"}} className="pointer" colSpan="2" onClick={toggleShowPrevious}>
+                    <b>Build Details</b>&nbsp;<ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious} bold={true} size="9pt" />
+                    <span style={{float: "right"}}>
+                        <Refresher bold={true} refresh={build.refresh} refreshing={() => build.loading} />
+                    </span>
                 </td>
             </tr>
             <TSeparatorH double={true} />
         </tbody></table>
-        <BuildInfo build={build.data?.latest} digest={props.digest} image={props.image} fetchDigest={true} />
+        <BuildInfo build={build} digest={props.digest} image={props.image} fetchDigest={true} which="latest" />
         { showPrevious && <>
             { build.data?.previous && <>
                 <SeparatorH top="2pt" bottom="8pt" color="gray" />
                 <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-                    <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details (previous) </td> </tr>
+                    <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;Previous </td> </tr>
                     <TSeparatorH double={true} />
                 </tbody></table>
-                <BuildInfo build={build.data?.previous} />
+                <BuildInfo build={build} which="previous" />
             </> }
             { build.data?.next_previous && <>
                 <SeparatorH top="2pt" bottom="8pt" color="gray" />
                 <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-                    <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details (next previous) </td> </tr>
+                    <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;Next Previous </td> </tr>
                     <TSeparatorH double={true} />
                 </tbody></table>
-                <BuildInfo build={build.data?.next_previous} />
+                <BuildInfo build={build} which="next_previous" />
             </> }
         </> }
     </div>
@@ -769,71 +795,75 @@ const BuildInfo = (props) => {
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     const header = useHeader();
-    if (!props.build) return <StandardSpinner label="Loading build info"/>
+
+    if (props.build.loading) return <StandardSpinner label="Loading build info"/>
+
+    const build = props.build.data[props.which]
+
     return <>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td style={tdlabel}> ID: </td>
                 <td style={tdcontent}>
-                    <span id={`tooltip-buildno-${props.build?.number}`}>{props.build?.log_stream}</span>
-                    &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, props.build?.project, props.build?.log_group, props.build?.log_stream)} nudgedown="1px" />
-                    <Tooltip id={`tooltip-buildno-${props.build?.number}`} text={`Build number: ${props.build?.number}`} />
+                    <span id={`tooltip-buildno-${build?.number}`}>{build?.log_stream}</span>
+                    &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, build?.project, build?.log_group, build?.log_stream)} nudgedown="1px" />
+                    <Tooltip id={`tooltip-buildno-${build?.number}`} text={`Build number: ${build?.number}`} />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Initiator: </td>
-                <td style={tdcontent}> {props.build?.initiator} </td>
+                <td style={tdcontent}> {build?.initiator} </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Project: </td>
                 <td style={tdcontent}>
-                    {props.build?.project}
-                    &nbsp;<ExternalLink href={awsCodebuildProjectLink(header.app?.credentials?.aws_account_number, props.build?.project)} nudgedown="1px" />
+                    {build?.project}
+                    &nbsp;<ExternalLink href={awsCodebuildProjectLink(header.app?.credentials?.aws_account_number, build?.project)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> GitHub: </td>
                 <td style={tdcontent}>
-                    {props.build?.github}
-                    &nbsp;<ExternalLink href={props.build?.github} nudgedown="1px" />
+                    {build?.github}
+                    &nbsp;<ExternalLink href={build?.github} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Branch: </td>
                 <td style={tdcontent}>
-                    <b>{props.build?.branch}</b>
-                    &nbsp;<ExternalLink href={`${props.build?.github}/tree/${props.build?.branch}`} nudgedown="1px" />
+                    <b>{build?.branch}</b>
+                    &nbsp;<ExternalLink href={`${build?.github}/tree/${build?.branch}`} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Commit: </td>
                 <td style={tdcontent}>
-                    {props.build?.commit}
-                    &nbsp;<ExternalLink href={`${props.build?.github}/commit/${props.build?.commit}`} nudgedown="1px" />
+                    {build?.commit}
+                    &nbsp;<ExternalLink href={`${build?.github}/commit/${build?.commit}`} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Digest: </td>
-                <td style={tdlabel}> <BuildDigest build={props.build} image={props.image} fetch={props.fetchDigest} /></td>
+                <td style={tdlabel}> <BuildDigest build={build} image={props.image} fetch={props.fetchDigest} /></td>
             </tr>
             <tr>
                 <td style={tdlabel}> Status: </td>
                 <td style={tdcontent}>
-                    {props.build?.status}
+                    {build?.status}
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Started: </td>
                 <td style={tdcontent}>
-                    {DateTime.Format(props.build?.started_at)}
-                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(props.build?.started_at, true, false)}</small>
+                    {DateTime.Format(build?.started_at)}
+                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(build?.started_at, true, false)}</small>
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Finished: </td>
                 <td style={tdcontent}>
-                    {DateTime.Format(props.build?.finished_at)}
-                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(props.build?.finished_at, true, false)}</small>
+                    {DateTime.Format(build?.finished_at)}
+                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(build?.finished_at, true, false)}</small>
                 </td>
             </tr>
         </tbody></table>
