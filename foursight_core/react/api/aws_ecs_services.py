@@ -417,8 +417,7 @@ def get_aws_ecr_build_info(image_repo_or_arn: str, image_tag: Optional[str] = No
         next_token = None
         while True:
             if next_token:
-                build_ids = codebuild.list_builds_for_project(projectName=project,
-                                                              sortOrder="DESCENDING", nextToken=next_token)
+                build_ids = codebuild.list_builds_for_project(projectName=project, nextToken=next_token)
             else:
                 build_ids = codebuild.list_builds_for_project(projectName=project, sortOrder="DESCENDING")
             next_token = build_ids.get("nextToken")
