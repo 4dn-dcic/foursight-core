@@ -172,11 +172,11 @@ export const Refresher = ({ refresh = () => null, refreshing = () => false, bold
 
     const fontSize = normalizeFontSize(size)
     const spinnerSize = toPixelSize(fontSize);
-    return <span className="pointer" onClick={(e) => { refresh(); e.stopPropagation(); e.preventDefault(); }}>
+    return <>
         { refreshing() ? <>
             <span style={{position: "relative", top: "1px"}}><PuffSpinnerInline size={`${spinnerSize}`} /></span>
-        </>:<span style={{position: "relative", top: "0px", fontSize: `${fontSize}`, fontWeight: bold ? "bold" : "inherit"}}>
+        </>:<span style={{position: "relative", top: "0px", fontSize: `${fontSize}`, fontWeight: bold ? "bold" : "inherit", cursor: "pointer"}}  onClick={(e) => { refresh(); e.stopPropagation(); e.preventDefault(); }}>
             {Char.Refresh}
         </span> }
-    </span>
+    </>
 }

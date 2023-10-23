@@ -450,6 +450,8 @@ def get_aws_ecr_build_info(image_repo_or_arn: str, image_tag: Optional[str] = No
             if number_of_previous_builds_to_return <= 0:
                 break
             number_of_previous_builds_to_return -= 1
+        if number_of_previous_builds_to_return <= 0:
+            break
 
     return response
 

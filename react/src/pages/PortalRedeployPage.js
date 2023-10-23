@@ -724,7 +724,7 @@ const BuildDetails = (props) => {
     return <div>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
-                <td style={{verticalAlign: "top"}} className="pointer" colSpan="2" onClick={toggleShowPrevious}>
+                <td style={{verticalAlign: "top"}} colSpan="2" onClick={toggleShowPrevious}>
                     <b>Build Details</b>&nbsp;<ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious} bold={true} size="9pt" />
                     <span style={{float: "right"}}>
                         <Refresher bold={true} refresh={build.refresh} refreshing={() => build.loading} />
