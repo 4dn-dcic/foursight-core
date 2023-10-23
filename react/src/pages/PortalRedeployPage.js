@@ -7,6 +7,7 @@ import Duration from '../utils/Duration';
 import { ExternalLink } from '../Components'; 
 import Image from '../utils/Image';
 import { PuffSpinnerInline, StandardSpinner } from '../Spinners';
+import { Refresher } from '../Components'; 
 import Str from '../utils/Str';
 import Time from '../utils/Time';
 import { ToggleShowDetailArrow } from '../Components';
@@ -60,6 +61,10 @@ const useFetchStatus = (clusterArn) => {
     return useFetch(`//aws/ecs/cluster_status/${clusterArn}`, { cache: true });
 }
 
+const useFetchImageInfo = (imageArn) => {
+    return useFetch(imageArn ? `//aws/ecr/image/${encodeURIComponent(imageArn)}` : null, { cache: true });
+}
+
 const useFetchBuildInfo = (imageArn) => {
     return useFetch(imageArn ? `//aws/ecr/build/${encodeURIComponent(imageArn)}` : null, { cache: true });
 }
@@ -69,10 +74,6 @@ const useFetchBuildDigest = (build, args) => {
     const logStream = build?.log_stream;
     const imageTag = build?.image_tag;
     return useFetch(imageTag ? `//aws/codebuild/digest/${encodeURIComponent(logGroup)}/${logStream}?image_tag=${imageTag}` : null, args);
-}
-
-const useFetchImageInfo = (imageArn) => {
-    return useFetch(imageArn ? `//aws/ecr/image/${encodeURIComponent(imageArn)}` : null, { cache: true });
 }
 
 const useFetchPortalHealth = () => {
@@ -163,7 +164,8 @@ const Content = (props) => {
 
 const PortalRedeployBox = (props) => {
 
-    const showDetailOnSelect = false;
+    const showDetailOnSelect = true;
+
     const [ showDetail, setShowDetail ] = useState(false);
     const isShowDetail = () => props.isShowDetail(props.cluster);
     const toggleShowDetail = (e) => {
@@ -199,9 +201,8 @@ const PortalRedeployBox = (props) => {
         if (!services.loading && !status.loading) {
             setDeployedBranchFromServicesAndStatus();
         }
-        else {
+        else if (services.promise && status.promise) {
             Promise.all([services.promise, status.promise]).then(() => {
-                console.log('in promise all')
                 setDeployedBranchFromServicesAndStatus();
             });
         }
@@ -507,7 +508,7 @@ const AccountDetails = (props) => {
         <TSeparatorH top="4pt" bottom="4pt" size="2" />
         <tr>
             <td style={{verticalAlign: "top", fontSize: "small"}}>
-                <b>Portal <Refresher bold={false} refresh={() => props.health.refresh({ delay: 1500})} refreshing={() => props.health.loading} />
+                <b>Portal <Refresher bold={false} refresh={props.health.refresh} refreshing={() => props.health.loading} />
                 <br />Started</b>:
             </td>
             <td style={{whiteSpace: "nowrap"}}>
@@ -518,7 +519,7 @@ const AccountDetails = (props) => {
         <TSeparatorH top="4pt" bottom="4pt" size="1" color="gray" />
         <tr>
             <td style={{verticalAlign: "top"}}>
-                <b>Portal <Refresher bold={false} refresh={() => props.status.refresh({ delay: 1500})} refreshing={() => props.status.loading} />
+                <b>Portal <Refresher bold={false} refresh={props.status.refresh} refreshing={() => props.status.loading} />
                 <br />Deployed</b>:
             </td>
             <td style={{whiteSpace: "nowrap"}}>
@@ -538,14 +539,10 @@ const ServicesDetails = (props) => {
         <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
         <tr><td colSpan="2">
             <b>AWS Cluster Services</b>
-            <span style={{float: "right"}} className="pointer" onClick={() => { props.services.refresh(); props.status.refresh(); props.health.refresh(); }}>
-                { !props.status.loading && <>
-                    {updating() ? <span style={{color: "red"}}>
-                        <b>{Char.Refresh} updating</b> ...
-                    </span>:<>
-                        <b>{Char.Refresh}</b>
-                    </> }
-                </> }
+            <span style={{float: "right"}}>
+                <Refresher bold={true}
+                    refresh={() => { props.services.refresh(); props.status.refresh(); props.health.refresh(); }}
+                    refreshing={() => props.services.loading || props.status.loading || props.health.loading} />
             </span>
         </td></tr>
         <TSeparatorH double={true} />
@@ -757,47 +754,14 @@ const BuildDigest = (props) => {
                     <i>Click to fetch ...</i>
                 </span>
             </> }
+            &nbsp;<Refresher bold={true} refresh={digest.refresh} refreshing={() => digest.loading} />
             { props.image && <big id={`tooltip-digest-build-sanity-${props.digest}`}>
                 { props.image?.digest === digest.data?.digest ?
                     <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
                 :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
                 <Tooltip id={`tooltip-digest-build-sanity-${props.digest}`} text={`This digest and the build digest ${props.image?.digest !== digest.data?.digest ? "do not" : ""} agree.`} />
             </big> }
-            <span className="pointer" onClick={digest.refresh}>
-                &nbsp;{Char.Refresh}
-            </span>
         </> }
-    </span>
-}
-
-function toPixelSize(value) {
-    if (value.endsWith("px")) return value;
-    const numericValue = parseFloat(value);
-    if (isNaN(numericValue)) throw new Error("Invalid size format");
-    return numericValue * 1.5;
-}
-
-function normalizeFontSize(value) {
-    if (value === "xx-small") return "8pt";
-    else if (value === "x-small") return "10pt";
-    else if (value === "small") return "13pt";
-    else if (value === "medium") return "16pt";
-    else if (value === "large") return "18pt";
-    else if (value === "x-large") return "24pt";
-    else if (value === "xx-large") return "32pt";
-    else if (/^\d+$/.test(value)) return `${value}pt`;
-    else return value;
-}
-
-const Refresher = ({ refresh = () => null, refreshing = () => false, bold = false, size = "x-small", nudge = "0px" }) => {
-    const fontSize = normalizeFontSize(size)
-    const spinnerSize = toPixelSize(fontSize);
-    return <span className="pointer" onClick={(e) => { refresh(); e.stopPropagation(); e.preventDefault(); }}>
-        { refreshing() ? <>
-            <span style={{position: "relative", top: "1px"}}><PuffSpinnerInline size={`${spinnerSize}`} /></span>
-        </>:<span style={{position: "relative", top: "0px", fontSize: `${fontSize}`, fontWeight: bold ? "bold" : "inherit"}}>
-            {Char.Refresh}
-        </span> }
     </span>
 }
 

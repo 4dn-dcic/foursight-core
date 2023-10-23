@@ -4,7 +4,7 @@ import Auth from './utils/Auth';
 import Client from './utils/Client';
 import Char from './utils/Char';
 import Image from './utils/Image';
-import { PuffSpinner } from './Spinners';
+import { PuffSpinner, PuffSpinnerInline } from './Spinners';
 import Str from './utils/Str';
 import Styles from './Styles';
 import Time from './utils/Time';
@@ -147,4 +147,36 @@ export const ToggleShowDetailArrow = ({ isShow, toggleShow, text = null, underli
             <Tooltip id={uuid} position="top" text={`Click to ${isShow() ? "hide" : "show"} details`} />
         </span>
     </>
+}
+
+export const Refresher = ({ refresh = () => null, refreshing = () => false, bold = false, size = "x-small", nudge = "0px" }) => {
+
+    function toPixelSize(value) {
+        if (value.endsWith("px")) return value;
+        const numericValue = parseFloat(value);
+        if (isNaN(numericValue)) throw new Error("Invalid size format");
+        return numericValue * 1.5;
+    }
+
+    function normalizeFontSize(value) {
+        if (value === "xx-small") return "8pt";
+        else if (value === "x-small") return "10pt";
+        else if (value === "small") return "13pt";
+        else if (value === "medium") return "16pt";
+        else if (value === "large") return "18pt";
+        else if (value === "x-large") return "24pt";
+        else if (value === "xx-large") return "32pt";
+        else if (/^\d+$/.test(value)) return `${value}pt`;
+        else return value;
+    }
+
+    const fontSize = normalizeFontSize(size)
+    const spinnerSize = toPixelSize(fontSize);
+    return <span className="pointer" onClick={(e) => { refresh(); e.stopPropagation(); e.preventDefault(); }}>
+        { refreshing() ? <>
+            <span style={{position: "relative", top: "1px"}}><PuffSpinnerInline size={`${spinnerSize}`} /></span>
+        </>:<span style={{position: "relative", top: "0px", fontSize: `${fontSize}`, fontWeight: bold ? "bold" : "inherit"}}>
+            {Char.Refresh}
+        </span> }
+    </span>
 }

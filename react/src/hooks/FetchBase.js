@@ -394,14 +394,14 @@ let _fetchCache = {};
 function _doFetch(args, current = undefined, fetcher) {
 
     if (args.nofetch || !Str.HasValue(args.url)) {
-        args.setPromise(Promise.resolve());
+        args.setPromise(args.promise = Promise.resolve());
         return;
     }
 
-    let resolvePromise = null;
-    args.setPromise(args.promise = new Promise((resolve, reject) => { resolvePromise = resolve; }));
+    // let resolvePromise = null;
+    // args.setPromise(args.promise = new Promise((resolve, reject) => { resolvePromise = resolve; }));
 
-    function _handleResponse(response, id) {
+    function _handleResponse(response, id, resolve, rejects) {
         const status = response.status;
         Debug.Info(`FETCH RESPONSE: ${args.method} ${args.url} -> HTTP ${status}`, response.data);
         //
@@ -425,7 +425,8 @@ function _doFetch(args, current = undefined, fetcher) {
         args.setStatus(status);
         args.setData(data);
         args.setLoading(false);
-        resolvePromise();
+        //resolvePromise();
+        resolve();
         noteFetchEnd(id, data);
         args.onSuccess(fetcher);
         args.onDone(fetcher);
@@ -579,6 +580,22 @@ function _doFetch(args, current = undefined, fetcher) {
     // Finally, the actual (Axois based) HTTP fetch happens here.
 
     const id = noteFetchBegin(fetch);
+args.setPromise(args.promise = new Promise((resolve, reject) => {
+    axios(fetch)
+        .then(response => {
+            if (args.delay > 0) {
+                window.setTimeout(() => _handleResponse(response, id, resolve, reject), args.delay);
+            }
+            else {
+                _handleResponse(response, id, resolve, reject);
+            }
+        })
+        .catch(error => {
+            Debug.Info(`FETCH EXCEPTION: ${args.method} ${args.url}`, error);
+            _handleError(error, id);
+        });
+}));
+/*
     axios(fetch)
         .then(response => {
             if (args.delay > 0) {
@@ -592,6 +609,7 @@ function _doFetch(args, current = undefined, fetcher) {
             Debug.Info(`FETCH EXCEPTION: ${args.method} ${args.url}`, error);
             _handleError(error, id);
         });
+*/
 }
 
 // This _update function is a modified version of the React useState setter function,
