@@ -49,7 +49,8 @@ function awsImageTagLink(account_number, repo, sha) {
 }
 
 const useFetchClusters = (onData) => {
-    return useFetch("//aws/ecs/clusters_for_update", { onData: (data) => { if (onData) onData(data); return data; } });
+    const url = "//aws/ecs/clusters_for_update";
+    return useFetch(url, { onData: (data) => { if (onData) onData(data); return data; } });
 }
 
 const useFetchServices = (clusterArn, args = {}) => {
@@ -67,8 +68,9 @@ const useFetchImageInfo = (imageArn, args = {}) => {
     return useFetch(url, { ...args, cache: true });
 }
 
-const useFetchBuildInfo = (imageArn, args = {}) => {
-    return useFetch(imageArn ? `//aws/ecr/build/${encodeURIComponent(imageArn)}` : null, { ...args, cache: true });
+const useFetchBuildInfo = (imageArn, previousBuilds = 2, args = {}) => {
+    const url = imageArn ? `//aws/ecr/build/${encodeURIComponent(imageArn)}?previous_builds=${previousBuilds}` : null;
+    return useFetch(url, { ...args, cache: true });
 }
 
 const useFetchBuildDigest = (build, args = {}) => {
@@ -86,6 +88,7 @@ const useFetchPortalHealth = () => {
 const PortalRedeployPage = (props) => {
 
     const [args, setArgs] = useSearchParams();
+    const previousBuilds = args.get("previous_builds") || 2;
 
     // The top-level up/down arrow toggle can be used to expand/collapse cluster ("env") details;
     // if ANY of the cluster details are expanded, then the top-level toggle collapses all of them;
@@ -125,7 +128,8 @@ const PortalRedeployPage = (props) => {
                     clusters={clusters.data}
                     isShowDetail={isShowDetail}
                     toggleShowDetail={toggleShowDetail}
-                    setShowDetail={setShowDetail} />
+                    setShowDetail={setShowDetail}
+                    previousBuilds={previousBuilds} />
             </> }
         </div>
     </>
@@ -160,7 +164,8 @@ const Content = (props) => {
                 isSelectedCluster={isSelectedCluster}
                 isShowDetail={props.isShowDetail}
                 toggleShowDetail={props.toggleShowDetail}
-                setShowDetail={props.setShowDetail} />
+                setShowDetail={props.setShowDetail}
+                previousBuilds={props.previousBuilds} />
         )}
     </div>
 }
@@ -199,19 +204,6 @@ const PortalRedeployBox = (props) => {
             }
         }
     }
-
-/*
-    useEffect(() => {
-        if (!services.loading && !status.loading) {
-            setDeployedBranchFromServicesAndStatus();
-        }
-        else if (services.promise && status.promise) {
-            Promise.all([services.promise, status.promise]).then(() => {
-                setDeployedBranchFromServicesAndStatus();
-            });
-        }
-    }, [services, status]);
-*/
 
     return <div style={{marginTop:"4pt"}} className="hover-lighten">
         <table style={{width: "100%"}}><tbody><tr>
@@ -254,7 +246,7 @@ const PortalRedeployBox = (props) => {
                         deployedBranch={deployedBranch} />
                 }
                 { isShowDetail() &&
-                    <DetailBox services={services} cluster={props.cluster} env={props.cluster?.env} status={status} setDeployedBranch={setDeployedBranch} />
+                    <DetailBox services={services} cluster={props.cluster} env={props.cluster?.env} status={status} setDeployedBranch={setDeployedBranch} previousBuilds={props.previousBuilds} />
                 }
                 <Tooltip id={`tooltip-${props.cluster.cluster_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS cluster definition to be updated."} />
             </div>
@@ -454,7 +446,7 @@ const DetailBox = (props) => {
     const cluster = props.cluster;
     const status = props.status;
     const image = useFetchImageInfo(services.data?.image?.arn);
-    const build = useFetchBuildInfo(services.data?.image?.arn);
+    const build = useFetchBuildInfo(services.data?.image?.arn, props.previousBuilds);
     const header = useHeader();
     const health = useFetchPortalHealth();
 
@@ -549,9 +541,7 @@ const AccountDetails = (props) => {
 
 const ServicesDetails = (props) => {
     const updating = () => props.status.data?.updating;
-    const serviceStatus = (service_arn) => {
-        return props.status?.data?.services?.find(service => service.arn === service_arn);
-    }
+    const serviceStatus = (service_arn) => props.status?.data?.services?.find(service => service.arn === service_arn);
     return <table style={{fontSize: "inherit"}}><tbody>
         <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
         <tr><td colSpan="2">
@@ -622,8 +612,6 @@ const ServicesDetails = (props) => {
 const ImageAndBuildDetails = (props) => {
     const image = props.image;
     const build = props.build;
-    // const image = useFetchImageInfo(props.imageArn);
-    // const build = useFetchBuildInfo(props.imageArn);
     const digest = useFetchBuildDigest(build.data?.latest, { cache: true });
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
@@ -696,12 +684,14 @@ const ImageDetails = (props) => {
                 <td style={tdlabel}> Digest: </td>
                 <td style={tdcontent}>
                     <span id={`image-digest-${image.data?.id}`}>{image.data?.digest?.replace("sha256:", "")?.substring(0, 32)}</span> ...
+{/*
                     { props.digest?.data?.digest && image.data?.digest && <big id={`tooltip-digest-sanity-${props.digest}`}>
                         { props.digest?.data?.digest === image.data?.digest ?
                             <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
                         :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
                         <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text={`This digest and the build digest ${props.digest?.data?.digest !== image.data?.digest ? "do not" : ""} agree.`} />
                     </big> }
+*/}
                     <Tooltip id={`image-digest-${image.data?.id}`} position="bottom" size="small" text={image.data?.digest} />
                 </td>
             </tr>
@@ -744,7 +734,7 @@ const BuildDetails = (props) => {
             </tr>
             <TSeparatorH double={true} />
         </tbody></table>
-        <BuildInfo build={build} digest={props.digest} image={props.image} fetchDigest={true} which="latest" />
+        <BuildInfo build={build} digest={props.digest} image={props.image} fetchDigest={true} which="latest" expanded={showPrevious} />
         { showPrevious && <>
             { build.data?.previous && <>
                 <SeparatorH top="2pt" bottom="8pt" color="gray" />
@@ -752,7 +742,7 @@ const BuildDetails = (props) => {
                     <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;Previous </td> </tr>
                     <TSeparatorH double={true} />
                 </tbody></table>
-                <BuildInfo build={build} which="previous" />
+                <BuildInfo build={build} which="previous" expanded={showPrevious} />
             </> }
             { build.data?.next_previous && <>
                 <SeparatorH top="2pt" bottom="8pt" color="gray" />
@@ -760,7 +750,17 @@ const BuildDetails = (props) => {
                     <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;Next Previous </td> </tr>
                     <TSeparatorH double={true} />
                 </tbody></table>
-                <BuildInfo build={build} which="next_previous" />
+                <BuildInfo build={build} which="next_previous" expanded={showPrevious} />
+                { build.data?.others?.length > 0 && <>
+                    { build.data?.others?.map((other, index) => <>
+                        <SeparatorH top="2pt" bottom="8pt" color="gray" />
+                        <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+                            <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;{DateTime.Format(other.finished_at)}</td> </tr>
+                            <TSeparatorH double={true} />
+                        </tbody></table>
+                        <BuildInfo build={build} which={other} expanded={showPrevious} />
+                    </> )}
+                </> }
             </> }
         </> }
     </div>
@@ -782,10 +782,8 @@ const BuildDigest = (props) => {
             </> }
             &nbsp;<Refresher bold={true} refresh={digest.refresh} refreshing={() => digest.loading} />
             { props.image && <big id={`tooltip-digest-build-sanity-${props.digest}`}>
-                { props.image?.digest === digest.data?.digest ?
-                    <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
-                :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
-                <Tooltip id={`tooltip-digest-build-sanity-${props.digest}`} text={`This digest and the build digest ${props.image?.digest !== digest.data?.digest ? "do not" : ""} agree.`} />
+                { props.image?.digest === digest.data?.digest && <b style={{color: "green"}}>&nbsp;{Char.Check}</b> }
+                <Tooltip id={`tooltip-digest-build-sanity-${props.digest}`} text={`This digest and the image digest ${props.image?.digest !== digest.data?.digest ? "do not" : ""} match.`} />
             </big> }
         </> }
     </span>
@@ -798,7 +796,7 @@ const BuildInfo = (props) => {
 
     if (props.build.loading) return <StandardSpinner label="Loading build info"/>
 
-    const build = props.build.data[props.which]
+    const build = Str.HasValue(props.which) ? props.build.data[props.which] : props.which;
 
     return <>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
@@ -862,8 +860,14 @@ const BuildInfo = (props) => {
             <tr>
                 <td style={tdlabel}> Finished: </td>
                 <td style={tdcontent}>
-                    {DateTime.Format(build?.finished_at)}
+                    <span style={{...tdlabel, fontWeight: props.expanded ? "bold" : "inherit"}}>{DateTime.Format(build?.finished_at)}</span>
                     <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(build?.finished_at, true, false)}</small>
+                </td>
+            </tr>
+            <tr>
+                <td style={tdlabel}> Duration: </td>
+                <td style={tdcontent}>
+                    {Time.FormatDuration(build?.started_at, build?.finished_at, true)}
                 </td>
             </tr>
         </tbody></table>
