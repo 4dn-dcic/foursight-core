@@ -189,13 +189,12 @@ export const useFetch = (url, args) => {
     const [ status, setStatus ] = useState(0);
     const [ timeout, setTimeout ] = useState(false);
     const [ error, setError ] = useState(null);
-    const [ promise, setPromise ] = useState(null);
     const fetching = _useFetching();
     const fetched = _useFetched();
 
     function assembleArgs(urlOverride = null, argsOverride = null, nonofetch = false) {
         return _assembleFetchArgs(url, args, urlOverride, argsOverride,
-                                  setData, setLoading, setStatus, setTimeout, setError, setPromise,
+                                  setData, setLoading, setStatus, setTimeout, setError,
                                   fetching, fetched, nonofetch);
     }
 
@@ -206,7 +205,6 @@ export const useFetch = (url, args) => {
         data: data,
         status: status,
         error: error,
-        promise: promise,
         timeout: timeout,
         set: setData,
         //
@@ -394,14 +392,10 @@ let _fetchCache = {};
 function _doFetch(args, current = undefined, fetcher) {
 
     if (args.nofetch || !Str.HasValue(args.url)) {
-        args.setPromise(args.promise = Promise.resolve());
         return;
     }
 
-    // let resolvePromise = null;
-    // args.setPromise(args.promise = new Promise((resolve, reject) => { resolvePromise = resolve; }));
-
-    function _handleResponse(response, id, resolve, rejects) {
+    function _handleResponse(response, id) {
         const status = response.status;
         Debug.Info(`FETCH RESPONSE: ${args.method} ${args.url} -> HTTP ${status}`, response.data);
         //
@@ -425,8 +419,6 @@ function _doFetch(args, current = undefined, fetcher) {
         args.setStatus(status);
         args.setData(data);
         args.setLoading(false);
-        //resolvePromise();
-        resolve();
         noteFetchEnd(id, data);
         args.onSuccess(fetcher);
         args.onDone(fetcher);
@@ -580,22 +572,6 @@ function _doFetch(args, current = undefined, fetcher) {
     // Finally, the actual (Axois based) HTTP fetch happens here.
 
     const id = noteFetchBegin(fetch);
-args.setPromise(args.promise = new Promise((resolve, reject) => {
-    axios(fetch)
-        .then(response => {
-            if (args.delay > 0) {
-                window.setTimeout(() => _handleResponse(response, id, resolve, reject), args.delay);
-            }
-            else {
-                _handleResponse(response, id, resolve, reject);
-            }
-        })
-        .catch(error => {
-            Debug.Info(`FETCH EXCEPTION: ${args.method} ${args.url}`, error);
-            _handleError(error, id);
-        });
-}));
-/*
     axios(fetch)
         .then(response => {
             if (args.delay > 0) {
@@ -609,7 +585,6 @@ args.setPromise(args.promise = new Promise((resolve, reject) => {
             Debug.Info(`FETCH EXCEPTION: ${args.method} ${args.url}`, error);
             _handleError(error, id);
         });
-*/
 }
 
 // This _update function is a modified version of the React useState setter function,
@@ -647,7 +622,7 @@ function _update(setData, newData, currentData = undefined) {
 }
 
 function _assembleFetchArgs(url, args, urlOverride, argsOverride,
-                            setData, setLoading, setStatus, setTimeout, setError, setPromise,
+                            setData, setLoading, setStatus, setTimeout, setError,
                             fetching, fetched, nonofetch) {
     if (Type.IsObject(url)) {
         args = url;
@@ -678,7 +653,6 @@ function _assembleFetchArgs(url, args, urlOverride, argsOverride,
         setStatus:  setStatus,
         setTimeout: setTimeout,
         setError:   setError,
-        setPromise: setPromise,
         fetching:   fetching,
         fetched:    fetched
     };

@@ -635,7 +635,6 @@ const ImageDetails = (props) => {
     const header = useHeader();
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
-    //if (image.loading) return <StandardSpinner label="Loading build info"/>
     return <div>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
@@ -734,32 +733,36 @@ const BuildDetails = (props) => {
             </tr>
             <TSeparatorH double={true} />
         </tbody></table>
-        <BuildInfo build={build} digest={props.digest} image={props.image} fetchDigest={true} which="latest" expanded={showPrevious} />
-        { showPrevious && <>
-            { build.data?.previous && <>
-                <SeparatorH top="2pt" bottom="8pt" color="gray" />
-                <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-                    <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;Previous </td> </tr>
-                    <TSeparatorH double={true} />
-                </tbody></table>
-                <BuildInfo build={build} which="previous" expanded={showPrevious} />
-            </> }
-            { build.data?.next_previous && <>
-                <SeparatorH top="2pt" bottom="8pt" color="gray" />
-                <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-                    <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;Next Previous </td> </tr>
-                    <TSeparatorH double={true} />
-                </tbody></table>
-                <BuildInfo build={build} which="next_previous" expanded={showPrevious} />
-                { build.data?.others?.length > 0 && <>
-                    { build.data?.others?.map((other, index) => <>
-                        <SeparatorH top="2pt" bottom="8pt" color="gray" />
-                        <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-                            <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;{DateTime.Format(other.finished_at)}</td> </tr>
-                            <TSeparatorH double={true} />
-                        </tbody></table>
-                        <BuildInfo build={build} which={other} expanded={showPrevious} />
-                    </> )}
+        { build.loading ? <>
+            <StandardSpinner label="Loading build info" />
+        </>:<>
+            <BuildInfo build={build} digest={props.digest} image={props.image} fetchDigest={true} which="latest" expanded={showPrevious} />
+            { showPrevious && <>
+                { build.data?.previous && <>
+                    <SeparatorH top="2pt" bottom="8pt" color="gray" />
+                    <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+                        <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;Previous </td> </tr>
+                        <TSeparatorH double={true} />
+                    </tbody></table>
+                    <BuildInfo build={build} which="previous" expanded={showPrevious} />
+                </> }
+                { build.data?.next_previous && <>
+                    <SeparatorH top="2pt" bottom="8pt" color="gray" />
+                    <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+                        <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;Next Previous </td> </tr>
+                        <TSeparatorH double={true} />
+                    </tbody></table>
+                    <BuildInfo build={build} which="next_previous" expanded={showPrevious} />
+                    { build.data?.others?.length > 0 && <>
+                        { build.data?.others?.map((other, index) => <>
+                            <SeparatorH top="2pt" bottom="8pt" color="gray" />
+                            <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+                                <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;{DateTime.Format(other.finished_at)}</td> </tr>
+                                <TSeparatorH double={true} />
+                            </tbody></table>
+                            <BuildInfo build={build} which={other} expanded={showPrevious} />
+                        </> )}
+                    </> }
                 </> }
             </> }
         </> }
@@ -794,10 +797,10 @@ const BuildInfo = (props) => {
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     const header = useHeader();
 
-    if (props.build.loading) return <StandardSpinner label="Loading build info"/>
+    if (props.build.loading) return <></>
 
-    const build = Str.HasValue(props.which) ? props.build.data[props.which] : props.which;
-
+    const build = Str.HasValue(props.which) ? props.build.get(props.which) : props.which;
+;
     return <>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
