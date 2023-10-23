@@ -288,12 +288,15 @@ def get_aws_ecr_image_info(image_repo_or_arn: str, image_tag: Optional[str] = No
     Returns AWS ECR image info for the given image repo and tag.
     """
     if not image_tag:
-        image_repo, image_tag = get_image_repo_and_tag(image_repo_or_arn)
+        image_arn = image_repo_or_arn
+        image_repo, image_tag = get_image_repo_and_tag(image_arn)
     else:
+        image_arn = None
         image_repo = image_repo_or_arn
 
     def create_image_info(image_repo: str, image_tag: str, image: Dict) -> Dict:
         return {
+            "arn": image_arn,
             "id": image.get("registryId"),
             "repo": image_repo,
             "tag": image_tag,
@@ -318,7 +321,10 @@ def get_aws_ecr_image_info(image_repo_or_arn: str, image_tag: Optional[str] = No
                 images = images["imageDetails"]
                 for image in images:
                     if image_tag in image.get("imageTags", []):
-                        return create_image_info(image_repo, image_tag, image)
+                        image_info = create_image_info(image_repo, image_tag, image)
+                        if not image_info["arn"]:
+                            image_info["arn"] = repo.get("repositoryUri", "") + ":" + image_tag
+                        return image_info
                 if not next_token:
                     break
     return {}

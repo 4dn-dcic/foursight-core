@@ -47,8 +47,13 @@ function awsImageTagLink(account_number, repo, sha) {
     return `https://${region}.console.aws.amazon.com/ecr/repositories/private/${account_number}/${repo}/_/image/${sha}/details`
 }
 
+const useFetchClusters = (onData) => {
+    return useFetch("//aws/ecs/clusters_for_update", { onData: (data) => { if (onData) onData(data); return data; } });
+}
+
 const useFetchServices = (clusterArn) => {
-    return useFetch(`//aws/ecs/services_for_update/${clusterArn}`, { cache: true });
+    //return useFetch(`//aws/ecs/services_for_update/${clusterArn}`, { cache: true });
+    return useFetch(`//aws/ecs/services_for_update/${clusterArn}?include_image=false&include_build=false`, { cache: true });
 }
 
 const useFetchStatus = (clusterArn) => {
@@ -56,26 +61,27 @@ const useFetchStatus = (clusterArn) => {
 }
 
 const useFetchBuildInfo = (imageArn) => {
-    return useFetch(`//aws/ecr/build/${imageArn}`);
+    return useFetch(imageArn ? `//aws/ecr/build/${encodeURIComponent(imageArn)}` : null, { cache: true });
 }
 
-const useFetchBuildDigest = (logGroup, logStream, imageTag, args) => {
-    return useFetch(`//aws/codebuild/digest/${encodeURIComponent(logGroup)}/${logStream}?image_tag=${imageTag}`, args);
+const useFetchBuildDigest = (build, args) => {
+    const logGroup = build?.log_group;
+    const logStream = build?.log_stream;
+    const imageTag = build?.image_tag;
+    return useFetch(imageTag ? `//aws/codebuild/digest/${encodeURIComponent(logGroup)}/${logStream}?image_tag=${imageTag}` : null, args);
+}
+
+const useFetchImageInfo = (imageArn) => {
+    return useFetch(imageArn ? `//aws/ecr/image/${encodeURIComponent(imageArn)}` : null, { cache: true });
+}
+
+const useFetchPortalHealth = () => {
+    return useFetch("/portal_health");
 }
 
 const PortalRedeployPage = (props) => {
 
     const [args, setArgs] = useSearchParams();
-
-    const clusters = useFetch("//aws/ecs/clusters_for_update", {
-        onData: (data) => {
-            setShowDetails(data.reduce((result, cluster) => {
-                result[cluster.cluster_arn] = false;
-                return result;
-            }, {}));
-            return data;
-        }
-    });
 
     // The top-level up/down arrow toggle can be used to expand/collapse cluster ("env") details;
     // if ANY of the cluster details are expanded, then the top-level toggle collapses all of them;
@@ -91,6 +97,13 @@ const PortalRedeployPage = (props) => {
     const toggleShowDetail = (cluster) => { showDetails[cluster.cluster_arn] = !showDetails[cluster.cluster_arn]; setShowDetails({...showDetails}); }
     const setShowDetail = (cluster) => { showDetails[cluster.cluster_arn] = true; setShowDetails({...showDetails}); }
     const isShowDetail = (cluster) => showDetails[cluster.cluster_arn];
+
+    const clusters = useFetchClusters((data) => {
+        setShowDetails(data.reduce((result, cluster) => {
+            result[cluster.cluster_arn] = false;
+            return result;
+        }, {}));
+    });
 
     return <>
         <div className="container">
@@ -166,18 +179,18 @@ const PortalRedeployBox = (props) => {
     const [deployingBranch, setDeployingBranch] = useState();
 
     const services = useFetchServices(props.cluster?.cluster_arn);
-    const status = useFetchStatus(props.cluster?.cluster_arn, services, setDeployedBranch, setDeployingBranch);
+    const status = useFetchStatus(props.cluster?.cluster_arn);
 
     const setDeployedBranchFromServicesAndStatus = () => {
         if (status.data?.started_at) {
             if (services.data?.build?.latest?.finished_at < status.data?.started_at) {
-                setDeployedBranch(services.data?.build?.latest?.commit);
+                setDeployedBranch(services.data?.build?.latest?.branch);
             }
             else if (services.data?.build?.previous?.finished_at < status.data?.started_at) {
-                setDeployedBranch(services.data?.build?.previous?.commit);
+                setDeployedBranch(services.data?.build?.previous?.branch);
             }
             else if (services.data?.build?.next_previous?.finished_at < status.data?.started_at) {
-                setDeployedBranch(services.data?.build?.next_previous?.commit);
+                setDeployedBranch(services.data?.build?.next_previous?.branch);
             }
         }
     }
@@ -213,7 +226,7 @@ const PortalRedeployBox = (props) => {
                 <small style={{float: "right", marginRight: "2pt"}}>
                     &nbsp;&nbsp;<ExternalLink href={props.cluster.env?.portal_url} />
                 </small>
-                { false && (props.cluster?.env?.is_production || props.cluster?.env?.is_staging || props.cluster?.env?.color) &&
+                { (props.cluster?.env?.is_production || props.cluster?.env?.is_staging || props.cluster?.env?.color) &&
                     <small style={{float: "right", color: props.cluster?.env?.color == "blue" ? "blue" : (props.cluster?.env?.color == "green" ? "green" : "")}} onClick={toggleShowDetail}>
                         {props.cluster?.env?.is_production && <b>PRODUCTION</b>}
                         {props.cluster?.env?.is_staging && <b>STAGING</b>}
@@ -432,8 +445,7 @@ const SeparatorH = ({size = "1px", color = "black", top = "8pt", bottom = "8pt"}
 const DetailBox = (props) => {
     const services = props.services, cluster = props.cluster, status = props.status
     const header = useHeader();
-    const image = useFetch(services.loading ? null : `//aws/ecr/image/${encodeURIComponent(services.data.image.arn)}`);
-    const health = useFetch(`//${cluster?.env?.full_name}/portal_health`);
+    const health = useFetchPortalHealth();
     return <div className="box bigmargin marginbottom" onClick={(e) => e.stopPropagation()}><small>
         <table style={{fontSize: "inherit"}}><tbody>
             <tr>
@@ -449,7 +461,7 @@ const DetailBox = (props) => {
             { !services.loading &&
                 <tr>
                     <td colSpan="5">
-                        <ImageAndBuildDetails services={services} />
+                        <ImageAndBuildDetails imageArn={services.data?.image?.arn} />
                     </td>
                 </tr>
             }
@@ -493,23 +505,25 @@ const AccountDetails = (props) => {
             <td> Yes {props.cluster.env?.color && <>{Char.RightArrow} {Str.Title(props.cluster.env?.color)}</>} </td>
         </tr> }
         <TSeparatorH top="4pt" bottom="4pt" size="2" />
-        <tr className="pointer" onClick={props.health.refresh}>
-            <td style={{verticalAlign: "top"}}><small><b>Portal {!props.health.loading && <>{Char.Refresh}</>}<br />Started</b>:</small></td>
+        <tr>
+            <td style={{verticalAlign: "top", fontSize: "small"}}>
+                <b>Portal <Refresher bold={false} refresh={() => props.health.refresh({ delay: 1500})} refreshing={() => props.health.loading} />
+                <br />Started</b>:
+            </td>
             <td style={{whiteSpace: "nowrap"}}>
-                { props.health.loading ? <> <PuffSpinnerInline size="16" /> </>:<>
-                    {DateTime.Format(props.health.data?.started)} <br />
-                    <small>{Time.Ago(props.health.data?.started, true, false)}</small>
-               </> }
+                {DateTime.Format(props.health.data?.started)} <br />
+                <small>{Time.Ago(props.health.data?.started, true, false)}</small>
             </td>
         </tr>
         <TSeparatorH top="4pt" bottom="4pt" size="1" color="gray" />
-        <tr className="pointer" onClick={props.status.refresh}>
-            <td style={{verticalAlign: "top"}}><small><b>Portal {!props.status.loading && <>{Char.Refresh}</>}<br />Deployed</b>:</small></td>
+        <tr>
+            <td style={{verticalAlign: "top"}}>
+                <b>Portal <Refresher bold={false} refresh={() => props.status.refresh({ delay: 1500})} refreshing={() => props.status.loading} />
+                <br />Deployed</b>:
+            </td>
             <td style={{whiteSpace: "nowrap"}}>
-                { props.status.loading ? <> <PuffSpinnerInline size="16" /> </>:<>
-                    {DateTime.Format(props.status.data?.started_at)} <br />
-                    <small>{Time.Ago(props.status.data?.started_at, true, true)}</small>
-               </> }
+                {DateTime.Format(props.status.data?.started_at)} <br />
+                <small>{Time.Ago(props.status.data?.started_at, true, true)}</small>
             </td>
        </tr>
     </tbody></table>
@@ -591,21 +605,20 @@ const ServicesDetails = (props) => {
 }
 
 const ImageAndBuildDetails = (props) => {
-    const imageTag = props.services.data?.image?.tag;
-    const logGroup = props.services.data?.build?.latest?.log_group;
-    const logStream = props.services.data?.build?.latest?.log_stream;
-    const digest = useFetchBuildDigest(logGroup, logStream, imageTag);
+    const image = useFetchImageInfo(props.imageArn);
+    const build = useFetchBuildInfo(props.imageArn);
+    const digest = useFetchBuildDigest(build.data?.latest, { cache: true });
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     return <div className="box darken">
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}}>
-                    <BuildDetails services={props.services} digest={digest} />
+                    <BuildDetails build={build} image={image.data} />
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
-                    <ImageDetails services={props.services} digest={digest} />
+                    <ImageDetails image={image.data} build={build} digest={digest} />
                 </td>
             </tr>
         </tbody></table>
@@ -613,9 +626,11 @@ const ImageAndBuildDetails = (props) => {
 }
 
 const ImageDetails = (props) => {
+    const image = props.image;
     const header = useHeader();
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
+    if (!image) return <StandardSpinner label="Loading build info"/>
     return <div>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
@@ -627,58 +642,58 @@ const ImageDetails = (props) => {
             <tr>
                 <td style={tdlabel}> ARN: </td>
                 <td style={tdcontent}>
-                    {props.services.data?.image?.arn}
-                    &nbsp;<ExternalLink href={awsImageTagLink(header.app?.credentials?.aws_account_number, props.services.data?.image?.repo, props.services.data?.image?.digest)} nudgedown="1px" />
+                    {image?.arn}
+                    &nbsp;<ExternalLink href={awsImageTagLink(header.app?.credentials?.aws_account_number, image?.repo, image?.digest)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Repo: </td>
                 <td style={tdcontent}>
-                    {props.services.data?.image?.repo}
-                    &nbsp;<ExternalLink href={awsImageRepoLink(header.app?.credentials?.aws_account_number, props.services.data?.image?.repo)} nudgedown="1px" />
+                    {image?.repo}
+                    &nbsp;<ExternalLink href={awsImageRepoLink(header.app?.credentials?.aws_account_number, image?.repo)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Tag: </td>
                 <td style={tdcontent}>
-                    {props.services.data?.image?.tag}
-                    &nbsp;<ExternalLink href={awsImageTagLink(header.app?.credentials?.aws_account_number, props.services.data?.image?.repo, props.services.data?.image?.digest)} />
+                    {image?.tag}
+                    &nbsp;<ExternalLink href={awsImageTagLink(header.app?.credentials?.aws_account_number, image?.repo, image?.digest)} />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Size: </td>
                 <td style={tdcontent}>
-                    <span id={`tooltip-${props.services.data?.image?.digest}`}>
-                    {Str.FormatBytes(props.services.data?.image?.size)}
+                    <span id={`tooltip-size-${image?.digest}`}>
+                    {Str.FormatBytes(image?.size)}
                     </span>
-                    <Tooltip id={`tooltip-${props.services.data?.image?.digest}`} position="right" shape="squared" text={`${props.services.data?.image?.size} bytes`} />
+                    <Tooltip id={`tooltip-size-${image?.digest}`} position="right" shape="squared" text={`${image?.size} bytes`} />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Digest: </td>
                 <td style={tdcontent}>
-                    <span id={`image-digest-${props.services.data?.image?.id}`}>{props.services.data?.image?.digest?.replace("sha256:", "")?.substring(0, 32)}</span> ...
-                    { props.digest.data?.digest && props.services.data?.image?.digest && <big id={`tooltip-digest-sanity-${props.digest}`}>
-                        { props.digest.data?.digest === props.services.data?.image?.digest ?
+                    <span id={`image-digest-${image?.id}`}>{image?.digest?.replace("sha256:", "")?.substring(0, 32)}</span> ...
+                    { props.digest?.data?.digest && image?.digest && <big id={`tooltip-digest-sanity-${props.digest}`}>
+                        { props.digest?.data?.digest === image?.digest ?
                             <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
                         :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
-                        <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text="This digest and the build digest agree." />
+                        <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text={`This digest and the build digest ${props.digest?.data?.digest !== image?.digest ? "do not" : ""} agree.`} />
                     </big> }
-                    <Tooltip id={`image-digest-${props.services.data?.image?.id}`} position="bottom" size="small" text={props.services.data?.image?.digest} />
+                    <Tooltip id={`image-digest-${image?.id}`} position="bottom" size="small" text={image?.digest} />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Pulled: </td>
                 <td style={tdcontent}>
-                    {DateTime.Format(props.services.data?.image?.pulled_at)}
-                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(props.services.data?.image?.pulled_at, true, false)}</small>
+                    {DateTime.Format(image?.pulled_at)}
+                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(image?.pulled_at, true, false)}</small>
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Pushed: </td>
                 <td style={tdcontent}>
-                    {DateTime.Format(props.services.data?.image?.pushed_at)}
-                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(props.services.data?.image?.pushed_at, true, false)}</small>
+                    {DateTime.Format(image?.pushed_at)}
+                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(image?.pushed_at, true, false)}</small>
                 </td>
             </tr>
         </tbody></table>
@@ -686,6 +701,7 @@ const ImageDetails = (props) => {
 }
 
 const BuildDetails = (props) => {
+    const build = props.build;
     const [showPrevious, setShowPrevious] = useState(false);
     const toggleShowPrevious = () => setShowPrevious(!showPrevious);
     const isShowPrevious = () => showPrevious;
@@ -697,7 +713,7 @@ const BuildDetails = (props) => {
             <tr>
                 <td style={{verticalAlign: "top"}} colSpan="2">
                     <b>Build Details</b> {showPrevious && <>(latest)</>}
-                    { props.services.data?.build?.previous && <>
+                    { build.data?.previous && <>
                         <ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious}
                             text="show previous" bold={"onhide"} size="9pt" float="right" right="-2pt" nudge="2pt" />
                     </> }
@@ -705,43 +721,83 @@ const BuildDetails = (props) => {
             </tr>
             <TSeparatorH double={true} />
         </tbody></table>
-        <BuildInfo build={props.services.data?.build?.latest} digest={props.digest} image={props.services.data?.image} fetchDigest={true} />
+        <BuildInfo build={build.data?.latest} digest={props.digest} image={props.image} fetchDigest={true} />
         { showPrevious && <>
-            { props.services.data?.build?.previous && <>
+            { build.data?.previous && <>
                 <SeparatorH top="2pt" bottom="8pt" color="gray" />
                 <table style={{fontSize: "inherit", width: "100%"}}><tbody>
                     <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details (previous) </td> </tr>
                     <TSeparatorH double={true} />
                 </tbody></table>
-                <BuildInfo build={props.services.data?.build?.previous} />
+                <BuildInfo build={build.data?.previous} />
             </> }
-            { props.services.data?.build?.next_previous && <>
+            { build.data?.next_previous && <>
                 <SeparatorH top="2pt" bottom="8pt" color="gray" />
                 <table style={{fontSize: "inherit", width: "100%"}}><tbody>
                     <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details (next previous) </td> </tr>
                     <TSeparatorH double={true} />
                 </tbody></table>
-                <BuildInfo build={props.services.data?.build?.next_previous} />
+                <BuildInfo build={build.data?.next_previous} />
             </> }
         </> }
     </div>
 }
 
 const BuildDigest = (props) => {
-    const digest = useFetchBuildDigest(props.logGroup, props.logStream, props.imageTag, { nofetch: !props.fetchDigest });
-    return <span id={`tooltip-${digest.data?.digest}`} >
-        {digest.data?.digest ? <>
-            {digest.data?.digest?.replace("sha256:", "")?.substring(0, 32)}
-            <Tooltip id={`tooltip-${digest.data?.digest}`} text={digest.data?.digest}/>
+    const digest = useFetchBuildDigest(props.build, { nofetch: !props.fetch, cache: true });
+    return <span>
+        { digest.loading ? <>
+            <i>Fetching </i>&nbsp;<PuffSpinnerInline size="14" />
         </>:<>
-            { digest.loading ? <>
-                <i>Fetching</i> <PuffSpinnerInline size="16" />
-            </>:<>
-                <span onClick={digest.refresh} className="pointer">
+            {digest.data?.digest ? <span  id={`tooltip-${digest.data?.digest}`} >
+                {digest.data?.digest?.replace("sha256:", "")?.substring(0, 32)} ...
+                <Tooltip id={`tooltip-${digest.data?.digest}`} text={digest.data?.digest}/>
+            </span>:<>
+                <span onClick={digest.fetch} className="pointer">
                     <i>Click to fetch ...</i>
                 </span>
             </> }
+            { props.image && <big id={`tooltip-digest-build-sanity-${props.digest}`}>
+                { props.image?.digest === digest.data?.digest ?
+                    <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
+                :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
+                <Tooltip id={`tooltip-digest-build-sanity-${props.digest}`} text={`This digest and the build digest ${props.image?.digest !== digest.data?.digest ? "do not" : ""} agree.`} />
+            </big> }
+            <span className="pointer" onClick={digest.refresh}>
+                &nbsp;{Char.Refresh}
+            </span>
         </> }
+    </span>
+}
+
+function toPixelSize(value) {
+    if (value.endsWith("px")) return value;
+    const numericValue = parseFloat(value);
+    if (isNaN(numericValue)) throw new Error("Invalid size format");
+    return numericValue * 1.5;
+}
+
+function normalizeFontSize(value) {
+    if (value === "xx-small") return "8pt";
+    else if (value === "x-small") return "10pt";
+    else if (value === "small") return "13pt";
+    else if (value === "medium") return "16pt";
+    else if (value === "large") return "18pt";
+    else if (value === "x-large") return "24pt";
+    else if (value === "xx-large") return "32pt";
+    else if (/^\d+$/.test(value)) return `${value}pt`;
+    else return value;
+}
+
+const Refresher = ({ refresh = () => null, refreshing = () => false, bold = false, size = "x-small", nudge = "0px" }) => {
+    const fontSize = normalizeFontSize(size)
+    const spinnerSize = toPixelSize(fontSize);
+    return <span className="pointer" onClick={(e) => { refresh(); e.stopPropagation(); e.preventDefault(); }}>
+        { refreshing() ? <>
+            <span style={{position: "relative", top: "1px"}}><PuffSpinnerInline size={`${spinnerSize}`} /></span>
+        </>:<span style={{position: "relative", top: "0px", fontSize: `${fontSize}`, fontWeight: bold ? "bold" : "inherit"}}>
+            {Char.Refresh}
+        </span> }
     </span>
 }
 
@@ -749,6 +805,7 @@ const BuildInfo = (props) => {
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     const header = useHeader();
+    if (!props.build) return <StandardSpinner label="Loading build info"/>
     return <>
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
@@ -791,26 +848,10 @@ const BuildInfo = (props) => {
                     &nbsp;<ExternalLink href={`${props.build?.github}/commit/${props.build?.commit}`} nudgedown="1px" />
                 </td>
             </tr>
-            { props.digest?.data?.digest ?
-                <tr onClick={props.digest.refresh}>
-                    <td style={tdlabel}> Digest: </td>
-                    <td style={tdcontent}>
-                        <span id={props.digest}>{props.digest.data?.digest?.replace("sha256:", "")?.substring(0, 32)}</span> ...
-                        <Tooltip id={props.digest.data?.digest} position="bottom" size="small" text={props.digest.data?.digest} />
-                        { props.digest.data?.digest && props.image?.digest && <big id={`tooltip-digest-sanity-${props.digest.data?.digest}`}>
-                            { props.digest.data?.digest === props.image?.digest ?
-                                <b style={{color: "green"}}>&nbsp;{Char.Check}</b>
-                            :   <b style={{color: "red"}}>&nbsp;{Char.X}</b> }
-                            <Tooltip id={`tooltip-digest-sanity-${props.digest}`} text="This digest and the image digest agree." />
-                        </big> }
-                    </td>
-                </tr>
-            :<>
-                <tr>
-                    <td style={tdlabel}> Digest: </td>
-                    <td style={tdlabel}> <BuildDigest logGroup={props.build?.log_group} logStream={props.build?.log_stream} imageTag={props.build?.image_tag} fetch={props.fetchDigest} /></td>
-                </tr>
-            </>}
+            <tr>
+                <td style={tdlabel}> Digest: </td>
+                <td style={tdlabel}> <BuildDigest build={props.build} image={props.image} fetch={props.fetchDigest} /></td>
+            </tr>
             <tr>
                 <td style={tdlabel}> Status: </td>
                 <td style={tdcontent}>

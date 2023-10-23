@@ -83,6 +83,10 @@ export const StandardSpinner = ({condition, color = "var(--box-fg)", size = 100,
     </tr></tbody></table>
 }
 
-export const PuffSpinnerInline = ({loading, color, size}) => {
-    return <PuffLoader color={color} loading={loading} cssOverride={{display:"inline-block",margin:"-2px"}} size={size} />
+export const PuffSpinnerInline = ({loading, color, size, nudge}) => {
+    const style = {
+        display: "inline-block",
+        marginBottom: `-${(nudge || "2px")}`
+    };
+    return <PuffLoader color={color} loading={loading} cssOverride={style} size={size} />
 }
