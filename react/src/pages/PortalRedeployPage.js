@@ -41,6 +41,10 @@ function awsCodebuildLogLink(account_number, project, logGroup, logStream) {
     return `https://${region}.console.aws.amazon.com/codesuite/codebuild/${account_number}/projects/${project}/build/${project}:${logStream}/?region=${region}`;
 }
 
+function awsCodebuildFullLogLink(account_number, project, logGroup, logStream) {
+    return `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${encodeURIComponent(logGroup)}/log-events/${logStream}`;
+}
+
 function awsCodebuildProjectLink(account_number, project) {
     return `https://${region}.console.aws.amazon.com/codesuite/codebuild/${account_number}/projects/${project}/history`;
 }
@@ -460,8 +464,12 @@ const DetailBox = (props) => {
     const services = props.services;
     const cluster = props.cluster;
     const status = props.status;
+    const [previousBuilds, setPreviousBuilds] = useState(props.previousBuilds);
+    const setMoreBuilds = (more) => {
+        setPreviousBuilds(more ? props.previousBuilds + 7 : props.previousBuilds);
+    }
     const image = useFetchImageInfo(services.data?.image?.arn);
-    const build = useFetchBuildInfo(services.data?.image?.arn, props.previousBuilds);
+    const build = useFetchBuildInfo(services.data?.image?.arn, previousBuilds);
     const header = useHeader();
     const health = useFetchPortalHealth();
 
@@ -486,7 +494,7 @@ const DetailBox = (props) => {
             { !services.loading &&
                 <tr>
                     <td colSpan="5">
-                        <ImageAndBuildDetails imageArn={services.data?.image?.arn} image={image} build={build} />
+                        <ImageAndBuildDetails imageArn={services.data?.image?.arn} image={image} build={build} setMoreBuilds={setMoreBuilds} />
                     </td>
                 </tr>
             }
@@ -652,7 +660,7 @@ const ImageAndBuildDetails = (props) => {
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}}>
-                    <BuildDetails build={build} image={image.data} />
+                    <BuildDetails build={build} image={image.data} setMoreBuilds={props.setMoreBuilds} />
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
@@ -751,6 +759,60 @@ const BuildDetails = (props) => {
     const [showPrevious, setShowPrevious] = useState(false);
     const toggleShowPrevious = () => setShowPrevious(!showPrevious);
     const isShowPrevious = () => showPrevious;
+    const [moreBuilds, setMoreBuilds] = useState(false);
+    const toggleMoreBuilds = () => {
+         const more = moreBuilds;
+         props.setMoreBuilds(!more);
+         setMoreBuilds(!more);
+    }
+    const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
+    const tdcontent = {whiteSpace: "nowrap", width: "99%"};
+    const header = useHeader();
+    return <div>
+        <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+            <tr>
+                <td style={{verticalAlign: "top"}} colSpan="2">
+                    <b id={`tooltip-build-details-${build.data?.latest?.commit}`}
+                        className="pointer" onClick={toggleShowPrevious}>Build Details</b>&nbsp;<ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious} bold={true} size="9pt"/>
+                    <Tooltip id={`tooltip-build-details-${build.data?.latest?.commit}`} position="top" text={`Click to ${isShowPrevious() ? "hide" : "show" } more builds.`}/>
+                    <span style={{float: "right"}}>
+                        <Refresher bold={true} refresh={build.refresh} refreshing={() => build.loading} />
+                    </span>
+                </td>
+            </tr>
+            <TSeparatorH double={true} />
+        </tbody></table>
+        { build.loading ? <>
+            <StandardSpinner label="Loading build info" />
+        </>:<>
+            <BuildInfo build={build} digest={props.digest} image={props.image} fetchDigest={true} which="latest" expanded={showPrevious} />
+            { showPrevious && build.data?.others?.length > 0 && <>
+                { build.data?.others?.map((other, index) => <>
+                    <SeparatorH top="2pt" bottom="8pt" color="gray" />
+                    <table style={{fontSize: "inherit", width: "100%"}}><tbody>
+                        <tr><td style={{verticalAlign: "top"}} colSpan="2">
+                            Build Details&nbsp;{Char.Diamond}&nbsp;
+                            { index == 0 ? <>Previous</> : <>{ index == 1 ? <>Next Previous</> : <>{DateTime.Format(other.finished_at)}</> }</> }
+                            { index == build.data.others.length - 1 &&
+                                <span style={{float: "right"}} className="pointer" onClick={toggleMoreBuilds}>
+                                    <b>show { moreBuilds ? <>less</> : <>more</> }</b>
+                                </span>
+                            }
+                        </td></tr>
+                        <TSeparatorH double={true} />
+                    </tbody></table>
+                    <BuildInfo build={build} which={other} index={index} expanded={showPrevious} />
+                </> )}
+            </> }
+        </> }
+    </div>
+}
+
+const OldBuildDetails = (props) => {
+    const build = props.build;
+    const [showPrevious, setShowPrevious] = useState(false);
+    const toggleShowPrevious = () => setShowPrevious(!showPrevious);
+    const isShowPrevious = () => showPrevious;
     const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
     const tdcontent = {whiteSpace: "nowrap", width: "99%"};
     const header = useHeader();
@@ -792,7 +854,12 @@ const BuildDetails = (props) => {
                         { build.data?.others?.map((other, index) => <>
                             <SeparatorH top="2pt" bottom="8pt" color="gray" />
                             <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-                                <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;{DateTime.Format(other.finished_at)}</td> </tr>
+                                foooox
+                                <tr><td style={{verticalAlign: "top"}} colSpan="2">
+                                    Build Details&nbsp;{Char.Diamond}&nbsp; foo
+                                    { index == 0 ? <>Previous</> : <>{ index == 1 ? <>Next Previous</> : <>{DateTime.Format(other.finished_at)} [{index}]</> }</> }
+                                goo
+                                </td></tr>
                                 <TSeparatorH double={true} />
                             </tbody></table>
                             <BuildInfo build={build} which={other} expanded={showPrevious} />
@@ -844,6 +911,7 @@ const BuildInfo = (props) => {
                     <span id={`tooltip-buildno-${build?.number}`}>{build?.log_stream}</span>
                     &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, build?.project, build?.log_group, build?.log_stream)} nudgedown="1px" />
                     <Tooltip id={`tooltip-buildno-${build?.number}`} position="top" text={`Build number: ${build?.number}`} />
+                    &nbsp;|&nbsp;Logs&nbsp;<ExternalLink href={awsCodebuildFullLogLink(header.app?.credentials?.aws_account_number, build?.project, build?.log_group, build?.log_stream)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>

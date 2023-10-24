@@ -14,8 +14,8 @@ from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_
 from .envs import Envs
 from .misc_utils import run_concurrently, run_functions_concurrently
 
-# Functions to get AWS cluster and services info with the
-# original end purpose of supporting redeploying via Foursight.
+# Functions to get AWS cluster and services info with the original
+# end purpose of supporting redeploying Portal from the Foursight UI.
 
 record_reindex_kickoff_via_tags = True
 
@@ -197,6 +197,175 @@ def get_aws_ecs_cluster_status(cluster_arn: str) -> Optional[Dict]:
     return response
 
 
+def get_aws_ecr_image_info(image_repo_or_arn: str, image_tag: Optional[str] = None) -> Dict:
+    """
+    Returns AWS ECR image info for the given image repo and tag.
+    """
+    if not image_tag:
+        image_arn = image_repo_or_arn
+        image_repo, image_tag = _get_image_repo_and_tag(image_arn)
+    else:
+        image_arn = None
+        image_repo = image_repo_or_arn
+
+    def create_image_info(image_repo: str, image_tag: str, image: Dict) -> Dict:
+        return {
+            "arn": image_arn,
+            "id": image.get("registryId"),
+            "repo": image_repo,
+            "tag": image_tag,
+            "size": image.get("imageSizeInBytes"),
+            "digest": image.get("imageDigest"),
+            "pushed_at": datetime_string(image.get("imagePushedAt")),
+            "pulled_at": datetime_string(image.get("lastRecordedPullTime"))
+        }
+
+    ecr = boto3.client("ecr")
+    repos = ecr.describe_repositories()["repositories"]
+    for repo in repos:
+        repo_name = repo["repositoryName"]
+        if repo_name == image_repo:
+            next_token = None
+            while True:
+                if next_token:
+                    images = ecr.describe_images(repositoryName=repo_name, nextToken=next_token)
+                else:
+                    images = ecr.describe_images(repositoryName=repo_name)
+                next_token = images.get("nextToken")
+                images = images["imageDetails"]
+                for image in images:
+                    if image_tag in image.get("imageTags", []):
+                        image_info = create_image_info(image_repo, image_tag, image)
+                        if not image_info["arn"]:
+                            image_info["arn"] = repo.get("repositoryUri", "") + ":" + image_tag
+                        return image_info
+                if not next_token:
+                    break
+    return {}
+
+
+def get_aws_ecr_build_info(image_repo_or_arn: str, image_tag: Optional[str] = None, previous_builds: int = 2) -> Dict:
+    """
+    Returns a dictionary with info about the three most recent CodeBuild builds
+    for the given image repo and tag, or None if none found.
+    """
+    if not image_tag:
+        image_repo, image_tag = _get_image_repo_and_tag(image_repo_or_arn)
+    else:
+        image_repo = image_repo_or_arn
+
+    codebuild = boto3.client("codebuild")
+
+    def get_projects() -> List[str]:
+
+        projects = codebuild.list_projects()["projects"]
+
+        # If there is a project with the same name as the image_repo then look at that one first,
+        # or secondarily, prefer projects whose names contain the image_repo and/or image_tag;
+        # we do this just for performance, to try to reduce the number of boto calls we make.
+
+        def prefer_project(preferred_project: str):
+            projects.remove(preferred_project)
+            return [preferred_project, *projects]
+
+        preferred_project = [project for project in projects if project == image_repo]
+        if preferred_project:
+            return prefer_project(preferred_project[0])
+        preferred_project = [project for project in projects
+                             if image_repo.lower() in project.lower() and image_tag.lower() in project.lower()]
+        if preferred_project:
+            return prefer_project(preferred_project[0])
+        preferred_project = [project for project in projects if image_repo.lower() in project.lower()]
+        if preferred_project:
+            return prefer_project(preferred_project[0])
+        preferred_project = [project for project in projects if image_tag.lower() in project.lower()]
+        if preferred_project:
+            return prefer_project(preferred_project[0])
+        return projects
+
+    def get_relevant_builds(project: str) -> Generator[Optional[Dict], None, None]:
+
+        # For efficiency, and the most common actual case, get builds three at a time; i.e. since we
+        # want to the three most recent (relevant) builds, and they are usually together at the start
+        # of the (list_build_for_projects) list ordered (descending) by build (creation) time;
+        # but of course, just in case, we need to handle the general case.
+
+        def get_relevant_build_info(build: Optional[Dict]) -> Optional[Dict]:
+
+            def create_build_info(build: Dict) -> Dict:
+                return {
+                    "arn": _shortened_arn(build["arn"]),
+                    "project": project,
+                    "image_repo": image_repo,
+                    "image_tag": image_tag,
+                    "github": build.get("source", {}).get("location"),
+                    "branch": build.get("sourceVersion"),
+                    "commit": build.get("resolvedSourceVersion"),
+                    "number": build.get("buildNumber"),
+                    "initiator": _shortened_arn(build.get("initiator")),
+                    "status": build.get("buildStatus"),
+                    "success": is_build_success(build),
+                    "finished": build.get("buildComplete"),
+                    "started_at": datetime_string(build.get("startTime")),
+                    "finished_at": datetime_string(build.get("endTime")),
+                    "log_group": build.get("logs", {}).get("groupName"),
+                    "log_stream": build.get("logs", {}).get("streamName")
+                }
+
+            def is_build_success(build: Dict) -> bool:
+                return build.get("buildStatus", "").upper() in ["SUCCEEDED", "SUCCESS"]
+
+            def find_environment_variable(environment_variables: List[Dict], name: str) -> Optional[str]:
+                value = [item["value"] for item in environment_variables if item["name"] == name]
+                return value[0] if len(value) == 1 else None
+
+            if build and is_build_success(build):
+                environment_variables = build.get("environment", {}).get("environmentVariables", {})
+                build_image_repo = find_environment_variable(environment_variables, "IMAGE_REPO_NAME")
+                build_image_tag = find_environment_variable(environment_variables, "IMAGE_TAG")
+                if build_image_repo == image_repo and build_image_tag == image_tag:
+                    return create_build_info(build)
+            return None
+
+        get_builds_from_boto_this_many_at_a_time = 4
+        next_token = None
+        while True:
+            if next_token:
+                build_ids = codebuild.list_builds_for_project(projectName=project, nextToken=next_token)
+            else:
+                build_ids = codebuild.list_builds_for_project(projectName=project, sortOrder="DESCENDING")
+            next_token = build_ids.get("nextToken")
+            build_ids = build_ids["ids"]
+            while build_ids:
+                build_ids_batch = build_ids[:get_builds_from_boto_this_many_at_a_time]
+                build_ids = build_ids[get_builds_from_boto_this_many_at_a_time:]
+                builds = codebuild.batch_get_builds(ids=build_ids_batch)["builds"]
+                for build in builds:
+                    build = get_relevant_build_info(build)
+                    if build:
+                        yield build
+            if not next_token:
+                break
+
+    number_of_previous_builds_to_return = previous_builds
+    response = {}
+    for project in get_projects():
+        for build in get_relevant_builds(project):
+            if not response.get("latest"):
+                response["latest"] = build
+            else:
+                if not response.get("others"):
+                    response["others"] = []
+                response["others"].append(build)
+            if number_of_previous_builds_to_return <= 0:
+                break
+            number_of_previous_builds_to_return -= 1
+        if number_of_previous_builds_to_return <= 0:
+            break
+
+    return response
+
+
 def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
                                          include_image: bool,
                                          include_build: bool,
@@ -273,7 +442,7 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
     # Now get the image/build info for each service; concurrently for performance only.
     if include_image or include_build:
         for service in services:
-            image_repo, image_tag = get_image_repo_and_tag(service["image"]["arn"])
+            image_repo, image_tag = _get_image_repo_and_tag(service["image"]["arn"])
             info = run_functions_concurrently([
                 (lambda: get_image_info(image_repo, image_tag)) if include_image else None,
                 (lambda: get_build_info(image_repo, image_tag)) if include_build else None
@@ -283,179 +452,7 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
     return services
 
 
-def get_aws_ecr_image_info(image_repo_or_arn: str, image_tag: Optional[str] = None) -> Dict:
-    """
-    Returns AWS ECR image info for the given image repo and tag.
-    """
-    if not image_tag:
-        image_arn = image_repo_or_arn
-        image_repo, image_tag = get_image_repo_and_tag(image_arn)
-    else:
-        image_arn = None
-        image_repo = image_repo_or_arn
-
-    def create_image_info(image_repo: str, image_tag: str, image: Dict) -> Dict:
-        return {
-            "arn": image_arn,
-            "id": image.get("registryId"),
-            "repo": image_repo,
-            "tag": image_tag,
-            "size": image.get("imageSizeInBytes"),
-            "digest": image.get("imageDigest"),
-            "pushed_at": datetime_string(image.get("imagePushedAt")),
-            "pulled_at": datetime_string(image.get("lastRecordedPullTime"))
-        }
-
-    ecr = boto3.client("ecr")
-    repos = ecr.describe_repositories()["repositories"]
-    for repo in repos:
-        repo_name = repo["repositoryName"]
-        if repo_name == image_repo:
-            next_token = None
-            while True:
-                if next_token:
-                    images = ecr.describe_images(repositoryName=repo_name, nextToken=next_token)
-                else:
-                    images = ecr.describe_images(repositoryName=repo_name)
-                next_token = images.get("nextToken")
-                images = images["imageDetails"]
-                for image in images:
-                    if image_tag in image.get("imageTags", []):
-                        image_info = create_image_info(image_repo, image_tag, image)
-                        if not image_info["arn"]:
-                            image_info["arn"] = repo.get("repositoryUri", "") + ":" + image_tag
-                        return image_info
-                if not next_token:
-                    break
-    return {}
-
-
-def get_aws_ecr_build_info(image_repo_or_arn: str, image_tag: Optional[str] = None, previous_builds: int = 2) -> Dict:
-    """
-    Returns a dictionary with info about the three most recent CodeBuild builds
-    for the given image repo and tag, or None if none found.
-    """
-    if not image_tag:
-        image_repo, image_tag = get_image_repo_and_tag(image_repo_or_arn)
-    else:
-        image_repo = image_repo_or_arn
-
-    codebuild = boto3.client("codebuild")
-
-    def get_projects() -> List[str]:
-
-        projects = codebuild.list_projects()["projects"]
-
-        # If there is a project with the same name as the image_repo then look at that one first,
-        # or secondarily, prefer projects whose names contain the image_repo and/or image_tag;
-        # we do this just for performance, to try to reduce the number of boto calls we make.
-
-        def prefer_project(preferred_project: str):
-            projects.remove(preferred_project)
-            return [preferred_project, *projects]
-
-        preferred_project = [project for project in projects if project == image_repo]
-        if preferred_project:
-            return prefer_project(preferred_project[0])
-        preferred_project = [project for project in projects
-                             if image_repo.lower() in project.lower() and image_tag.lower() in project.lower()]
-        if preferred_project:
-            return prefer_project(preferred_project[0])
-        preferred_project = [project for project in projects if image_repo.lower() in project.lower()]
-        if preferred_project:
-            return prefer_project(preferred_project[0])
-        preferred_project = [project for project in projects if image_tag.lower() in project.lower()]
-        if preferred_project:
-            return prefer_project(preferred_project[0])
-        return projects
-
-    def get_relevant_builds(project: str) -> Generator[Optional[Dict], None, None]:
-
-        # For efficiency, and the most common actual case, get builds three at a time; i.e. since we
-        # want to the three most recent (relevant) builds, and they are usually together at the start
-        # of the (list_build_for_projects) list ordered (descending) by build (creation) time;
-        # but of course, just in case, we need to handle the general case.
-
-        def get_relevant_build_info(build: Optional[Dict]) -> Optional[Dict]:
-
-            def create_build_info(build: Dict) -> Dict:
-                return {
-                    "arn": _shortened_arn(build["arn"]),
-                    "project": project,
-                    "image_repo": image_repo,
-                    "image_tag": image_tag,
-                    "github": build.get("source", {}).get("location"),
-                    "branch": build.get("sourceVersion"),
-                    "commit": build.get("resolvedSourceVersion"),
-                    "number": build.get("buildNumber"),
-                    "initiator": _shortened_arn(build.get("initiator")),
-                    "status": build.get("buildStatus"),
-                    "success": build.get("buildStatus", "").upper() == "SUCCEEDED" or build["buildStatus"].upper() == "SUCCESS",
-                    "finished": build.get("buildComplete"),
-                    "started_at": datetime_string(build.get("startTime")),
-                    "finished_at": datetime_string(build.get("endTime")),
-                    "log_group": build.get("logs", {}).get("groupName"),
-                    "log_stream": build.get("logs", {}).get("streamName")
-                }
-
-            def is_build_success(build: Dict) -> bool:
-                return build.get("buildStatus", "").upper() in ["SUCCEEDED", "SUCCESS"]
-
-            def find_environment_variable(environment_variables: List[Dict], name: str) -> Optional[str]:
-                value = [item["value"] for item in environment_variables if item["name"] == name]
-                return value[0] if len(value) == 1 else None
-
-            if build and is_build_success(build):
-                environment_variables = build.get("environment", {}).get("environmentVariables", {})
-                build_image_repo = find_environment_variable(environment_variables, "IMAGE_REPO_NAME")
-                build_image_tag = find_environment_variable(environment_variables, "IMAGE_TAG")
-                if build_image_repo == image_repo and build_image_tag == image_tag:
-                    return create_build_info(build)
-            return None
-
-        get_builds_from_boto_this_many_at_a_time = 4
-        next_token = None
-        while True:
-            if next_token:
-                build_ids = codebuild.list_builds_for_project(projectName=project, nextToken=next_token)
-            else:
-                build_ids = codebuild.list_builds_for_project(projectName=project, sortOrder="DESCENDING")
-            next_token = build_ids.get("nextToken")
-            build_ids = build_ids["ids"]
-            while build_ids:
-                build_ids_batch = build_ids[:get_builds_from_boto_this_many_at_a_time]
-                build_ids = build_ids[get_builds_from_boto_this_many_at_a_time:]
-                builds = codebuild.batch_get_builds(ids=build_ids_batch)["builds"]
-                for build in builds:
-                    build = get_relevant_build_info(build)
-                    if build:
-                        yield build
-            if not next_token:
-                break
-
-    number_of_previous_builds_to_return = previous_builds
-    response = {}
-    for project in get_projects():
-        for build in get_relevant_builds(project):
-            if not response.get("latest"):
-                response["latest"] = build
-            elif not response.get("previous"):
-                response["previous"] = build
-            elif not response.get("next_previous"):
-                response["next_previous"] = build
-            else:
-                if not response.get("others"):
-                    response["others"] = []
-                response["others"].append(build)
-            if number_of_previous_builds_to_return <= 0:
-                break
-            number_of_previous_builds_to_return -= 1
-        if number_of_previous_builds_to_return <= 0:
-            break
-
-    return response
-
-def get_image_repo_and_tag(image_arn: str) -> Tuple[Optional[str], Optional[str]]:
+def _get_image_repo_and_tag(image_arn: str) -> Tuple[Optional[str], Optional[str]]:
     image_arn = _shortened_arn(image_arn)
     parts = image_arn.split(":")
     return (parts[0], parts[1]) if len(parts) == 2 else (None, None)
