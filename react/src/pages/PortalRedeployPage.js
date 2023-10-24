@@ -794,8 +794,9 @@ const BuildDetails = (props) => {
                             Build Details&nbsp;{Char.Diamond}&nbsp;
                             { index == 0 ? <>Previous</> : <>{ index == 1 ? <>Next Previous</> : <>{DateTime.Format(other.finished_at)}</> }</> }
                             { index == build.data.others.length - 1 &&
-                                <span style={{float: "right"}} className="pointer" onClick={toggleMoreBuilds}>
-                                    <b>show { moreBuilds ? <>less</> : <>more</> }</b>
+                                <span style={{float: "right"}} className="pointer" onClick={toggleMoreBuilds} id={`tooltip-more-${build.data?.latest?.commit}`} >
+                                    <b>{ moreBuilds ? <>less</> : <>more</> }</b>
+                                    <Tooltip id={`tooltip-more-${build.data?.latest?.commit}`} position="top" text={`Click to show ${!moreBuilds ? "even more" : "fewer"} builds.`}/>
                                 </span>
                             }
                         </td></tr>
