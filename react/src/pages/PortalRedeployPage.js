@@ -613,7 +613,10 @@ const ServicesDetails = (props) => {
                 <td colSpan="2">
                     <table><tbody style={{fontSize: "small"}}>
                         <tr>
-                            <td><b>Last redeployed</b>:&nbsp;</td>
+                            <td>
+                                <b id={`tooltip-last-redeployed-${props.cluster.cluster_arn}`} >Last redeployed</b>:&nbsp;
+                                <Tooltip id={`tooltip-last-redeployed-${props.cluster.cluster_arn}`} position="top" text={`Last redeployed using thie UI.`} />
+                            </td>
                             <td>
                                 <u>{DateTime.Format(props.status.data?.last_redeploy_kickoff_at)}</u>
                                 <small>&nbsp;{Char.RightArrow} {Time.Ago(props.status.data?.last_redeploy_kickoff_at, true, true)}</small>
@@ -754,7 +757,7 @@ const BuildDetails = (props) => {
                 <td style={{verticalAlign: "top"}} colSpan="2">
                     <b id={`tooltip-build-details-${build.data?.latest?.commit}`}
                         className="pointer" onClick={toggleShowPrevious}>Build Details</b>&nbsp;<ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious} bold={true} size="9pt"/>
-                    <Tooltip id={`tooltip-build-details-${build.data?.latest?.commit}`} text={`Click to ${isShowPrevious() ? "hide" : "show" } more builds.`}/>
+                    <Tooltip id={`tooltip-build-details-${build.data?.latest?.commit}`} position="top" text={`Click to ${isShowPrevious() ? "hide" : "show" } more builds.`}/>
                     <span style={{float: "right"}}>
                         <Refresher bold={true} refresh={build.refresh} refreshing={() => build.loading} />
                     </span>
@@ -837,7 +840,7 @@ const BuildInfo = (props) => {
                 <td style={tdcontent}>
                     <span id={`tooltip-buildno-${build?.number}`}>{build?.log_stream}</span>
                     &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, build?.project, build?.log_group, build?.log_stream)} nudgedown="1px" />
-                    <Tooltip id={`tooltip-buildno-${build?.number}`} text={`Build number: ${build?.number}`} />
+                    <Tooltip id={`tooltip-buildno-${build?.number}`} position="top" text={`Build number: ${build?.number}`} />
                 </td>
             </tr>
             <tr>
