@@ -24,6 +24,11 @@ function awsClusterLink(id) {
     return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${id}/services?region=${region}`;
 }
 
+function awsClusterTagsLink(id) {
+    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${id}/tags`;
+    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${id}/services?region=${region}`;
+}
+
 function awsServiceLink(cluster_arn, service_arn) {
     return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${cluster_arn}/services/${service_arn}/health?${region}`;
 }
@@ -526,7 +531,7 @@ const AccountDetails = (props) => {
         </tr> }
         <TSeparatorH top="4pt" bottom="4pt" size="2" />
         <tr>
-            <td style={{verticalAlign: "top", fontSize: "small"}}>
+            <td style={{verticalAlign: "top"}}>
                 <b>Portal <Refresher bold={false} refresh={props.health.refresh} refreshing={() => props.health.loading} />
                 <br />Started</b>:
             </td>
@@ -606,16 +611,28 @@ const ServicesDetails = (props) => {
             <TSeparatorH top="4pt" bottom="4pt" />
             <tr>
                 <td colSpan="2">
-                    <b>Redeploy last kicked off</b>: <u>{DateTime.Format(props.status.data?.last_redeploy_kickoff_at)}</u>
-                    <small>&nbsp;{Char.RightArrow} {Time.Ago(props.status.data?.last_redeploy_kickoff_at, true, true)}</small>
-                    { props.status.data?.last_redeploy_kickoff_by && <>
-                        <br />
-                        Redeploy last kicked off by: {props.status.data.last_redeploy_kickoff_by}
-                    </> }
+                    <table><tbody style={{fontSize: "small"}}>
+                        <tr>
+                            <td><b>Last redeployed</b>:&nbsp;</td>
+                            <td>
+                                <u>{DateTime.Format(props.status.data?.last_redeploy_kickoff_at)}</u>
+                                <small>&nbsp;{Char.RightArrow} {Time.Ago(props.status.data?.last_redeploy_kickoff_at, true, true)}</small>
+                            </td>
+                        </tr>
+                        { props.status.data?.last_redeploy_kickoff_by && <>
+                            <tr>
+                                <td>Last redeployed by:&nbsp;</td>
+                                <td>
+                                    {props.status.data.last_redeploy_kickoff_by.toLowerCase()}
+                                        &nbsp;<ExternalLink href={awsClusterTagsLink(props.cluster.cluster_arn)} nudgedown="1px" />
+                                </td>
+                            </tr>
+                        </> }
+                    </tbody></table>
                 </td>
             </tr>
         </> }
-        </> }
+    </> }
     </tbody></table>
 }
 
@@ -735,7 +752,9 @@ const BuildDetails = (props) => {
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}} colSpan="2">
-                    <b className="pointer" onClick={toggleShowPrevious}>Build Details</b>&nbsp;<ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious} bold={true} size="9pt" />
+                    <b id={`tooltip-build-details-${build.data?.latest?.commit}`}
+                        className="pointer" onClick={toggleShowPrevious}>Build Details</b>&nbsp;<ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious} bold={true} size="9pt"/>
+                    <Tooltip id={`tooltip-build-details-${build.data?.latest?.commit}`} text={`Click to ${isShowPrevious() ? "hide" : "show" } more builds.`}/>
                     <span style={{float: "right"}}>
                         <Refresher bold={true} refresh={build.refresh} refreshing={() => build.loading} />
                     </span>
@@ -823,7 +842,7 @@ const BuildInfo = (props) => {
             </tr>
             <tr>
                 <td style={tdlabel}> Initiator: </td>
-                <td style={tdcontent}> {build?.initiator} </td>
+                <td style={tdcontent}> {build?.initiator?.toLowerCase()} </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Project: </td>

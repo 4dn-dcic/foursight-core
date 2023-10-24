@@ -413,7 +413,7 @@ def get_aws_ecr_build_info(image_repo_or_arn: str, image_tag: Optional[str] = No
                     return create_build_info(build)
             return None
 
-        get_builds_from_boto_this_many_at_a_time = 5
+        get_builds_from_boto_this_many_at_a_time = 4
         next_token = None
         while True:
             if next_token:
