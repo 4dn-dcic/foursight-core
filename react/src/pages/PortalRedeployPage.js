@@ -518,7 +518,10 @@ const AccountDetails = (props) => {
             <td style={{verticalAlign: "top", whiteSpace: "nowrap", paddingRight:"4pt"}}> Environment: </td>
             <td style={{verticalAlign: "top", whiteSpace: "nowrap"}}>
                 {props.cluster?.env?.full_name}
-                {uniqueNonFullEnvNames().map(env => <><br />{env}</>)}
+                <span id={`tooltip-env-${props.cluster.cluster_arn}`}>
+                    {uniqueNonFullEnvNames().map(env => <><br />{env}</>)}
+                </span>
+                <Tooltip id={`tooltip-env-${props.cluster.cluster_arn}`} position="top" text={`These are environment name aliases.`} />
             </td>
         </tr>
         { props.cluster.env?.is_production && <tr>
