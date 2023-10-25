@@ -90,8 +90,9 @@ const useFetchBuildDigest = (build, args = {}) => {
     return useFetch(url, args);
 }
 
-const useFetchPortalHealth = () => {
-    return useFetch("/portal_health");
+const useFetchPortalHealth = (env) => {
+    const url = env ? `//${env}/portal_health` : null;
+    return useFetch(url);
 }
 
 const PortalRedeployPage = (props) => {
@@ -471,7 +472,7 @@ const DetailBox = (props) => {
     const image = useFetchImageInfo(services.data?.image?.arn);
     const build = useFetchBuildInfo(services.data?.image?.arn, previousBuilds);
     const header = useHeader();
-    const health = useFetchPortalHealth();
+    const health = useFetchPortalHealth(services.data?.env?.full_name);
 
     useEffect(() => {
         if (!build.loading && !status.loading) {
