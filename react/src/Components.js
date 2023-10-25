@@ -108,8 +108,9 @@ export const RefreshButton = (props) => {
 
 export const ExternalLink = (props) => {
     let style = {...props.style};
-    if (props.nudgedown) {
-        style = {...style, position: "relative", bottom: `-${props.nudgedown}`};
+    const nudge = props.nudgedown || props.nudge;
+    if (nudge) {
+        style = {...style, position: "relative", bottom: `-${nudge}`};
     }
     return <span style={style}>
         <a id={props.href} href={props.href} style={{color:props.color || "var(--box-fg)"}} rel="noreferrer" target="_blank" onClick={(e) => e.stopPropagation()}>

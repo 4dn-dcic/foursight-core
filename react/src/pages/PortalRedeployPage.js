@@ -257,6 +257,7 @@ const PortalRedeployBox = (props) => {
                 <small id={`tooltip-${props.cluster.cluster_arn}`}>
                     {props.cluster?.cluster_arn}&nbsp;<ExternalLink href={awsClusterLink(props.cluster?.cluster_arn)} />
                 </small>
+                <WarningUnknownService services={services.data?.unknown_services} clusterArn={props.cluster.cluster_arn} />
                 { isSelectedCluster() &&
                     <RedeployButtonsBox cluster={props.cluster}
                         status={status}
@@ -948,6 +949,22 @@ const BuildInfo = (props) => {
                 </td>
             </tr>
         </tbody></table>
+    </>
+}
+
+const WarningUnknownService = (props) => {
+    return <>
+        { props?.services &&
+            <div className="box thickborder error" style={{fontSize: "small", marginTop: "3pt", marginBottom: "4pt"}}>
+                <b>Warning: Unknown service{props.services.length !== 1 ? "s" : ""} found</b>
+                &nbsp;{Char.RightArrow}&nbsp;{props.services.length !== 1 ? "These" : "This"} will be ignored on redeploy.
+                <br />
+                <SeparatorH top="4pt" bottom="4pt" color="darkred" />
+                { props.services.map((service, index) => <>
+                    Service ARN: <b>{service.arn}</b> <ExternalLink href={awsServiceLink(props.clusterArn, service.arn)} color="darkred" nudge="1px" /> <br />
+                </> )}
+            </div>
+        }
     </>
 }
 

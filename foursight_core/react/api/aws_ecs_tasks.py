@@ -129,7 +129,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
     subnets = get_subnets()
 
     for task_definition_arn in task_definition_arns:
-        task_definition_type = _get_task_definition_type(task_definition_arn)
+        task_definition_type = _get_task_definition_type(task_definition_arn) or task_definition_arn
         if given_task_definition_type and given_task_definition_type != task_definition_type:
             continue
         task_env = envs.get_associated_env(task_definition_arn)
@@ -169,7 +169,7 @@ def get_aws_ecs_task_running(envs: Envs,
     task_arns = _get_task_arns(cluster_arn, task_definition_arn)
     task_is_running = len(task_arns) > 0
     # TODO: See if the given task is running in any other cluser
-    task_definition_type = _get_task_definition_type(task_definition_arn)
+    task_definition_type = _get_task_definition_type(task_definition_arn) or task_definition_arn
     response = {
         "cluster_arn": cluster_arn,
         "task_definition_arn": task_definition_arn,
@@ -196,7 +196,7 @@ def get_aws_ecs_task_last_run(envs: Envs, cluster_arn: str, task_definition_arn:
     # the entrypoint_deployment.bash script creates this as its last step.
     # This is only separate from get_aws_ecs_task_running for performance
     # and responsiveness response within the (React) UI.
-    task_definition_type = _get_task_definition_type(task_definition_arn)
+    task_definition_type = _get_task_definition_type(task_definition_arn) or task_definition_arn
     response = {
         "cluster_arn": cluster_arn,
         "task_definition_arn": task_definition_arn,
@@ -234,7 +234,7 @@ def get_aws_ecs_tasks_running(cluster_arn: Optional[str] = None,
             task_definition_arn = _shortened_task_definition_arn(task.get("taskDefinitionArn"))
             if given_task_definition_arn and given_task_definition_arn != task_definition_arn:
                 continue
-            task_definition_type = _get_task_definition_type(task_definition_arn)
+            task_definition_type = _get_task_definition_type(task_definition_arn) or task_definition_arn
             if given_task_definition_type and given_task_definition_type != task_definition_type:
                 continue
             task = {
@@ -250,12 +250,12 @@ def get_aws_ecs_tasks_running(cluster_arn: Optional[str] = None,
                 existing_task[0]["tasks"].append(task)
             elif not given_task_definition_arn:
                 response.append({"task_definition_arn": task_definition_arn,
-                                 "type": _get_task_definition_type(task_definition_arn),
+                                 "type": _get_task_definition_type(task_definition_arn) or task_definition_arn,
                                  "tasks": [task]})
             else:
                 response.append({"cluster_arn": cluster_arn,
                                  "task_definition_arn": given_task_definition_arn,
-                                 "type": _get_task_definition_type(task_definition_arn),
+                                 "type": _get_task_definition_type(task_definition_arn) or task_definition_arn,
                                  "tasks": [task]})
     return response
 
@@ -353,7 +353,7 @@ def _shortened_task_definition_arn(task_definition_arn: str) -> str:
     return arn_parts[0] if len(arn_parts) > 1 else task_definition_arn
 
 
-def _get_task_definition_type(task_definition_arn: str) -> str:
+def _get_task_definition_type(task_definition_arn: str) -> Optional[str]:
     if "deploy" in task_definition_arn.lower():
         if "initial" in task_definition_arn.lower():
             return "deploy_initial"
@@ -366,7 +366,7 @@ def _get_task_definition_type(task_definition_arn: str) -> str:
     elif "portal" in task_definition_arn.lower():
         return "portal"
     else:
-        return task_definition_arn
+        return None
 
 
 def _get_task_running_id(task_arn: str) -> str:

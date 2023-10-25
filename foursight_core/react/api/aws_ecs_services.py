@@ -10,6 +10,7 @@ from .aws_ecs_tasks import (
     _get_cluster_arns, _get_task_running_id,
     _get_task_definition_type, _shortened_arn, _shortened_task_definition_arn
 )
+from ...app import app
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
 from .misc_utils import name_value_list_to_dict, run_concurrently, run_functions_concurrently
@@ -77,17 +78,35 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
 
     identical_metadata = True
     previous_service = None
+
     services = _get_aws_ecs_services_for_update_raw(cluster_arn,
                                                     include_image=include_image,
                                                     include_build=include_build,
                                                     include_build_digest=include_build_digest,
                                                     previous_builds=previous_builds)
+
+    # This "unknown services" code was added to handle for example cgap-devtest where there
+    # was a sort of extraneous/unknown service called c4-ecs-cgap-devtest-qualys-private;
+    # we really want to deal here, for redeploy purposes, with the known services, i.e. the
+    # portal, indexer, ingester; these services are identified by _get_task_definition_type.
+
+    unknown_services = [service for service in services if service.get("type_unknown", False)]
+    services = [service for service in services if not service.get("type_unknown", False)]
+
     for service in services:
         service["env"] = envs.get_associated_env(service["task_definition_arn"])
         if previous_service and not has_identical_metadata(service, previous_service):
             identical_metadata = False
         previous_service = service
-    return reorganize_response(services) if identical_metadata and not raw else services
+
+    if identical_metadata and not raw:
+        services = reorganize_response(services)
+        for unknown_service in unknown_services:
+            if not services.get("unknown_services"):
+                services["unknown_services"] = []
+            services["unknown_services"].append(unknown_service)
+
+    return services
 
 
 def get_aws_codebuild_digest(log_group: str, log_stream: str, image_tag: Optional[str] = None) -> Optional[str]:
@@ -115,11 +134,10 @@ def get_aws_codebuild_digest(log_group: str, log_stream: str, image_tag: Optiona
 
 def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> Dict:
 
+    services = get_aws_ecs_services_for_update(app.core._envs, cluster_arn, include_image=False, include_build=False)
+
     def get_latest_build_info(cluster_arn: str) -> Optional[Tuple[str, str]]:
         try:
-            from ...app import app
-            envs = app.core._envs
-            services = get_aws_ecs_services_for_update(envs, cluster_arn, include_image=False, include_build=False)
             build = get_aws_ecr_build_info(services["image"]["arn"], previous_builds=0)["latest"]
             return (build["github"], build["branch"], build["commit"])
         except Exception as e:
@@ -138,7 +156,15 @@ def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> Dict
                 {"key": "last_redeploy_kickoff_branch", "value": build_branch or "unknown"}
             ]
         ecs.client.tag_resource(resourceArn=full_cluster_arn, tags=tags)
-    return {"status": ecs.update_all_services(cluster_name=cluster_arn)}
+
+
+    # We do not call ecs.update_all_services because we want full control over what services
+    # are actually restarted; namely only those that have been presented to the user in the UI.
+    if services.get("services"):
+        for service in services.get("services"):
+            response = ecs.update_ecs_services(cluster_name=cluster_arn, service_name=service["full_arn"])
+
+    return {"status": response }
 
 
 def get_aws_ecs_cluster_status(cluster_arn: str) -> Optional[Dict]:
@@ -205,16 +231,6 @@ def get_aws_ecs_cluster_status(cluster_arn: str) -> Optional[Dict]:
         last_redeploy_kickoff_repo = tags.get("last_redeploy_kickoff_repo")
         last_redeploy_kickoff_branch = tags.get("last_redeploy_kickoff_branch")
         last_redeploy_kickoff_commit = tags.get("last_redeploy_kickoff_commit")
-        #last_redeploy_kickoff_at = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_at"]
-        #last_redeploy_kickoff_at = last_redeploy_kickoff_at[0] if last_redeploy_kickoff_at else None
-        #last_redeploy_kickoff_by = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_by"]
-        #last_redeploy_kickoff_by = last_redeploy_kickoff_by[0] if last_redeploy_kickoff_by else None
-        #last_redeploy_kickoff_repo = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_repo"]
-        #last_redeploy_kickoff_repo = last_redeploy_kickoff_repo[0] if last_redeploy_kickoff_repo else None
-        #last_redeploy_kickoff_branch = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_branch"]
-        #last_redeploy_kickoff_branch = last_redeploy_kickoff_branch[0] if last_redeploy_kickoff_branch else None
-        #last_redeploy_kickoff_commit = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_commit"]
-        #last_redeploy_kickoff_commit = last_redeploy_kickoff_commit[0] if last_redeploy_kickoff_commit else None
         if last_redeploy_kickoff_at:
             response["last_redeploy_kickoff_at"] = last_redeploy_kickoff_at
             if response["started_at"] and response["started_at"] < last_redeploy_kickoff_at:
@@ -419,6 +435,7 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
             return service_arn
 
         response = {}
+        full_service_arn = service_arn
         service_arn = shortened_service_arn(service_arn, cluster_arn)
         service_description = ecs.describe_services(cluster=cluster_arn, services=[service_arn])["services"][0]
         task_definition_arn = _shortened_task_definition_arn(service_description["taskDefinition"])
@@ -430,15 +447,19 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
             tasks_desired_count = service_description.get("desiredCount")
             has_multiple_containers = len(container_definitions) > 1
             container_definition = task_definition["containerDefinitions"][0]
+            service_type = get_service_type(service_arn)
             response = {
                 "arn": service_arn,
-                "type": get_service_type(service_arn),
+                "full_arn": full_service_arn,
+                "type": service_type or service_arn,
                 "task_definition_arn": task_definition_arn,
                 "tasks_running_count": tasks_running_count,
                 "tasks_pending_count": tasks_pending_count,
                 "tasks_desired_count": tasks_desired_count,
                 "updating": tasks_pending_count > 0 or tasks_desired_count != tasks_running_count
             }
+            if not service_type:
+                response["type_unknown"] = True
             response["image"] = {"arn": container_definition["image"]}
             if has_multiple_containers:
                 response["warning_has_multiple_containers"] = True
