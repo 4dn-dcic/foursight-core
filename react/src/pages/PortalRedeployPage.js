@@ -615,7 +615,7 @@ const ServicesDetails = (props) => {
                         </> }
                         {serviceStatus(service.arn)?.tasks_pending_count > 0 && <> | tasks pending: {serviceStatus(service.arn)?.tasks_pending_count || 0}</>}
                         {serviceStatus(service.arn)?.tasks_desired_count > 0 && serviceStatus(service.arn)?.tasks_desired_count != serviceStatus(service.arn)?.tasks_running_count && <> | tasks desired: {serviceStatus(service.arn)?.tasks_desired_count || 0}</>}
-                        {serviceStatus(service.arn)?.updating && <> | <span style={{color: "red"}}>updating ...</span></>}
+                        {serviceStatus(service.arn)?.updating && <> | <i style={{color: "red"}}>updating ...</i></>}
                     </small>
                     <br /> {service.arn}&nbsp;<small><ExternalLink href={awsServiceLink(props.cluster.cluster_arn, service.arn)} /></small>
                     <br /> <i>Task Definition: {service.task_definition_arn}</i>&nbsp;<small><ExternalLink href={awsTaskDefinitionLink(service.task_definition_arn)} /></small>
