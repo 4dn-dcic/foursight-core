@@ -619,18 +619,19 @@ const ServicesDetails = (props) => {
             </tr>
         </>)}
         { props.status.data?.last_redeploy_kickoff_at && <>
-            <TSeparatorH top="4pt" bottom="4pt" />
+            <TSeparatorH size="2" top="4pt" bottom="4pt" />
             <tr>
                 <td colSpan="2">
                     <table><tbody style={{fontSize: "small"}}>
                         <tr>
                             <td>
                                 <b id={`tooltip-last-redeployed-${props.cluster.cluster_arn}`} >Last redeployed</b>:&nbsp;
-                                <Tooltip id={`tooltip-last-redeployed-${props.cluster.cluster_arn}`} position="top" text={`Last redeployed using thie UI.`} />
+                                <Tooltip id={`tooltip-last-redeployed-${props.cluster.cluster_arn}`} position="top" text={`Last redeployed using this UI.`} />
                             </td>
                             <td>
                                 <u>{DateTime.Format(props.status.data?.last_redeploy_kickoff_at)}</u>
                                 <small>&nbsp;{Char.RightArrow} {Time.Ago(props.status.data?.last_redeploy_kickoff_at, true, true)}</small>
+                                &nbsp;&nbsp;<ExternalLink href={awsClusterTagsLink(props.cluster.cluster_arn)} nudgedown="1px" />
                             </td>
                         </tr>
                         { props.status.data?.last_redeploy_kickoff_by && <>
@@ -638,7 +639,34 @@ const ServicesDetails = (props) => {
                                 <td>Last redeployed by:&nbsp;</td>
                                 <td>
                                     {props.status.data.last_redeploy_kickoff_by.toLowerCase()}
-                                        &nbsp;<ExternalLink href={awsClusterTagsLink(props.cluster.cluster_arn)} nudgedown="1px" />
+                                </td>
+                            </tr>
+                        </> }
+                        { props.status.data?.last_redeploy_kickoff_repo && <>
+                            <tr>
+                                <td style={{whiteSpace: "nowrap", verticalAlign: "top"}}>Last redeployed code:&nbsp;</td>
+                                <td>
+                                    <span id={`tooltip-repo-${props.status.data.last_redeploy_kickoff_commit}`} >
+                                        {props.status.data.last_redeploy_kickoff_repo.replace("https://github.com/", "")}
+                                        &nbsp;<ExternalLink href={props.status.data.last_redeploy_kickoff_repo} />
+                                        <Tooltip id={`tooltip-repo-${props.status.data.last_redeploy_kickoff_commit}`} position="bottom" text="Redeployed GitHub repo." />
+                                    </span>
+                                    { props.status.data.last_redeploy_kickoff_branch &&
+                                        <span id={`tooltip-branch-${props.status.data.last_redeploy_kickoff_commit}`} >
+                                            &nbsp;|&nbsp;
+                                            {props.status.data.last_redeploy_kickoff_branch}
+                                            &nbsp;<ExternalLink href={`${props.status.data.last_redeploy_kickoff_repo}/tree/${props.status.data.last_redeploy_kickoff_branch}`} />
+                                            <Tooltip id={`tooltip-branch-${props.status.data.last_redeploy_kickoff_commit}`} position="bottom" text="Redeployed GitHub repo branch." />
+                                        </span>
+                                    }
+                                    { props.status.data.last_redeploy_kickoff_commit &&
+                                        <span id={`tooltip-commit-${props.status.data.last_redeploy_kickoff_commit}`} >
+                                            &nbsp;|&nbsp;
+                                            {props.status.data.last_redeploy_kickoff_commit}
+                                            &nbsp;<ExternalLink href={`${props.status.data.last_redeploy_kickoff_repo}/commit/${props.status.data.last_redeploy_kickoff_commit}`} />
+                                            <Tooltip id={`tooltip-commit-${props.status.data.last_redeploy_kickoff_commit}`} position="bottom" text="Redeployed GitHub repo commit." />
+                                        </span>
+                                    }
                                 </td>
                             </tr>
                         </> }
@@ -910,9 +938,8 @@ const BuildInfo = (props) => {
                 <td style={tdlabel}> ID: </td>
                 <td style={tdcontent}>
                     <span id={`tooltip-buildno-${build?.number}`}>{build?.log_stream}</span>
-                    &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, build?.project, build?.log_group, build?.log_stream)} nudgedown="1px" />
+                    &nbsp;<ExternalLink href={awsCodebuildLogLink(header.app?.credentials?.aws_account_number, build?.project, build?.log_group, build?.log_stream)} />
                     <Tooltip id={`tooltip-buildno-${build?.number}`} position="top" text={`Build number: ${build?.number}`} />
-                    &nbsp;|&nbsp;Logs&nbsp;<ExternalLink href={awsCodebuildFullLogLink(header.app?.credentials?.aws_account_number, build?.project, build?.log_group, build?.log_stream)} nudgedown="1px" />
                 </td>
             </tr>
             <tr>
@@ -923,28 +950,28 @@ const BuildInfo = (props) => {
                 <td style={tdlabel}> Project: </td>
                 <td style={tdcontent}>
                     {build?.project}
-                    &nbsp;<ExternalLink href={awsCodebuildProjectLink(header.app?.credentials?.aws_account_number, build?.project)} nudgedown="1px" />
+                    &nbsp;<ExternalLink href={awsCodebuildProjectLink(header.app?.credentials?.aws_account_number, build?.project)} />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> GitHub: </td>
                 <td style={tdcontent}>
                     {build?.github}
-                    &nbsp;<ExternalLink href={build?.github} nudgedown="1px" />
+                    &nbsp;<ExternalLink href={build?.github} />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Branch: </td>
                 <td style={tdcontent}>
                     <b>{build?.branch}</b>
-                    &nbsp;<ExternalLink href={`${build?.github}/tree/${build?.branch}`} nudgedown="1px" />
+                    &nbsp;<ExternalLink href={`${build?.github}/tree/${build?.branch}`} />
                 </td>
             </tr>
             <tr>
                 <td style={tdlabel}> Commit: </td>
                 <td style={tdcontent}>
                     {build?.commit}
-                    &nbsp;<ExternalLink href={`${build?.github}/commit/${build?.commit}`} nudgedown="1px" />
+                    &nbsp;<ExternalLink href={`${build?.github}/commit/${build?.commit}`} />
                 </td>
             </tr>
             <tr>
@@ -955,6 +982,8 @@ const BuildInfo = (props) => {
                 <td style={tdlabel}> Status: </td>
                 <td style={tdcontent}>
                     {build?.status}
+                    &nbsp;|&nbsp;Build Number:&nbsp;{build?.number}
+                    &nbsp;|&nbsp;Logs&nbsp;<ExternalLink href={awsCodebuildFullLogLink(header.app?.credentials?.aws_account_number, build?.project, build?.log_group, build?.log_stream)} />
                 </td>
             </tr>
             <tr>

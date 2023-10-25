@@ -12,7 +12,7 @@ from .aws_ecs_tasks import (
 )
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
-from .misc_utils import run_concurrently, run_functions_concurrently
+from .misc_utils import name_value_list_to_dict, run_concurrently, run_functions_concurrently
 
 # Functions to get AWS cluster and services info with the original
 # end purpose of supporting redeploying Portal from the Foursight UI.
@@ -114,13 +114,29 @@ def get_aws_codebuild_digest(log_group: str, log_stream: str, image_tag: Optiona
 
 
 def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> Dict:
+
+    def get_latest_build_info(cluster_arn: str) -> Optional[Tuple[str, str]]:
+        try:
+            from ...app import app
+            envs = app.core._envs
+            services = get_aws_ecs_services_for_update(envs, cluster_arn, include_image=False, include_build=False)
+            build = get_aws_ecr_build_info(services["image"]["arn"], previous_builds=0)["latest"]
+            return (build["github"], build["branch"], build["commit"])
+        except Exception as e:
+            return None
+
     ecs = ECSUtils()
+    import pdb ; pdb.set_trace()
     if record_reindex_kickoff_via_tags:
         full_cluster_arn = ecs.client.describe_clusters(clusters=[cluster_arn])["clusters"][0]["clusterArn"]
         if record_reindex_kickoff_via_tags:
+            build_repo, build_branch, build_commit = get_latest_build_info(cluster_arn)
             tags = [
                 {"key": "last_redeploy_kickoff_at", "value": datetime_string(datetime.datetime.now(pytz.UTC))},
-                {"key": "last_redeploy_kickoff_by", "value": user or "unknown"}
+                {"key": "last_redeploy_kickoff_by", "value": user or "unknown"},
+                {"key": "last_redeploy_kickoff_repo", "value": build_repo or "unknown"},
+                {"key": "last_redeploy_kickoff_commit", "value": build_branch or "unknown"},
+                {"key": "last_redeploy_kickoff_branch", "value": build_commit or "unknown"}
             ]
         ecs.client.tag_resource(resourceArn=full_cluster_arn, tags=tags)
     return {"status": ecs.update_all_services(cluster_name=cluster_arn)}
@@ -184,16 +200,34 @@ def get_aws_ecs_cluster_status(cluster_arn: str) -> Optional[Dict]:
                             response["tasks_running_count"] < len(tasks))
     if record_reindex_kickoff_via_tags:
         tags = ecs.list_tags_for_resource(resourceArn=full_cluster_arn).get("tags")
-        last_redeploy_kickoff_at = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_at"]
-        last_redeploy_kickoff_at = last_redeploy_kickoff_at[0] if last_redeploy_kickoff_at else None
-        last_redeploy_kickoff_by = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_by"]
-        last_redeploy_kickoff_by = last_redeploy_kickoff_by[0] if last_redeploy_kickoff_by else None
+        tags = name_value_list_to_dict(tags, name_property_name="key", value_property_name="value")
+        last_redeploy_kickoff_at = tags.get("last_redeploy_kickoff_at")
+        last_redeploy_kickoff_by = tags.get("last_redeploy_kickoff_by")
+        last_redeploy_kickoff_repo = tags.get("last_redeploy_kickoff_repo")
+        last_redeploy_kickoff_branch = tags.get("last_redeploy_kickoff_branch")
+        last_redeploy_kickoff_commit = tags.get("last_redeploy_kickoff_commit")
+        #last_redeploy_kickoff_at = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_at"]
+        #last_redeploy_kickoff_at = last_redeploy_kickoff_at[0] if last_redeploy_kickoff_at else None
+        #last_redeploy_kickoff_by = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_by"]
+        #last_redeploy_kickoff_by = last_redeploy_kickoff_by[0] if last_redeploy_kickoff_by else None
+        #last_redeploy_kickoff_repo = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_repo"]
+        #last_redeploy_kickoff_repo = last_redeploy_kickoff_repo[0] if last_redeploy_kickoff_repo else None
+        #last_redeploy_kickoff_branch = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_branch"]
+        #last_redeploy_kickoff_branch = last_redeploy_kickoff_branch[0] if last_redeploy_kickoff_branch else None
+        #last_redeploy_kickoff_commit = [tag.get("value") for tag in tags if tag.get("key") == "last_redeploy_kickoff_commit"]
+        #last_redeploy_kickoff_commit = last_redeploy_kickoff_commit[0] if last_redeploy_kickoff_commit else None
         if last_redeploy_kickoff_at:
             response["last_redeploy_kickoff_at"] = last_redeploy_kickoff_at
             if response["started_at"] and response["started_at"] < last_redeploy_kickoff_at:
                 response["updating"] = True
         if last_redeploy_kickoff_by:
             response["last_redeploy_kickoff_by"] = last_redeploy_kickoff_by
+        if last_redeploy_kickoff_repo:
+            response["last_redeploy_kickoff_repo"] = last_redeploy_kickoff_repo
+        if last_redeploy_kickoff_branch:
+            response["last_redeploy_kickoff_branch"] = last_redeploy_kickoff_branch
+        if last_redeploy_kickoff_commit:
+            response["last_redeploy_kickoff_commit"] = last_redeploy_kickoff_commit
     return response
 
 
