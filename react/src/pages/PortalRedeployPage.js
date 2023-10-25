@@ -572,6 +572,9 @@ const ServicesDetails = (props) => {
         <tr><td /><td width="800pt"/></tr> {/* dummy to make it expand to right */}
         <tr><td colSpan="2">
             <b>AWS Cluster Services</b>
+            { updating() && <b>
+                &nbsp;{Char.RightArrow}&nbsp;<i style={{color: "red"}}>Updating ...</i>
+            </b> }
             <span style={{float: "right"}}>
                 <Refresher bold={true}
                     refresh={() => { props.services.refresh(); props.status.refresh(); props.health.refresh(); }}
@@ -832,69 +835,6 @@ const BuildDetails = (props) => {
                     </tbody></table>
                     <BuildInfo build={build} which={other} index={index} expanded={showPrevious} />
                 </> )}
-            </> }
-        </> }
-    </div>
-}
-
-const OldBuildDetails = (props) => {
-    const build = props.build;
-    const [showPrevious, setShowPrevious] = useState(false);
-    const toggleShowPrevious = () => setShowPrevious(!showPrevious);
-    const isShowPrevious = () => showPrevious;
-    const tdlabel = {whiteSpace: "nowrap", paddingRight: "4pt", width: "1%"};
-    const tdcontent = {whiteSpace: "nowrap", width: "99%"};
-    const header = useHeader();
-    return <div>
-        <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-            <tr>
-                <td style={{verticalAlign: "top"}} colSpan="2">
-                    <b id={`tooltip-build-details-${build.data?.latest?.commit}`}
-                        className="pointer" onClick={toggleShowPrevious}>Build Details</b>&nbsp;<ToggleShowDetailArrow isShow={isShowPrevious} toggleShow={toggleShowPrevious} bold={true} size="9pt"/>
-                    <Tooltip id={`tooltip-build-details-${build.data?.latest?.commit}`} position="top" text={`Click to ${isShowPrevious() ? "hide" : "show" } more builds.`}/>
-                    <span style={{float: "right"}}>
-                        <Refresher bold={true} refresh={build.refresh} refreshing={() => build.loading} />
-                    </span>
-                </td>
-            </tr>
-            <TSeparatorH double={true} />
-        </tbody></table>
-        { build.loading ? <>
-            <StandardSpinner label="Loading build info" />
-        </>:<>
-            <BuildInfo build={build} digest={props.digest} image={props.image} fetchDigest={true} which="latest" expanded={showPrevious} />
-            { showPrevious && <>
-                { build.data?.previous && <>
-                    <SeparatorH top="2pt" bottom="8pt" color="gray" />
-                    <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-                        <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;Previous </td> </tr>
-                        <TSeparatorH double={true} />
-                    </tbody></table>
-                    <BuildInfo build={build} which="previous" expanded={showPrevious} />
-                </> }
-                { build.data?.next_previous && <>
-                    <SeparatorH top="2pt" bottom="8pt" color="gray" />
-                    <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-                        <tr> <td style={{verticalAlign: "top"}} colSpan="2"> Build Details&nbsp;{Char.Diamond}&nbsp;Next Previous </td> </tr>
-                        <TSeparatorH double={true} />
-                    </tbody></table>
-                    <BuildInfo build={build} which="next_previous" expanded={showPrevious} />
-                    { build.data?.others?.length > 0 && <>
-                        { build.data?.others?.map((other, index) => <>
-                            <SeparatorH top="2pt" bottom="8pt" color="gray" />
-                            <table style={{fontSize: "inherit", width: "100%"}}><tbody>
-                                foooox
-                                <tr><td style={{verticalAlign: "top"}} colSpan="2">
-                                    Build Details&nbsp;{Char.Diamond}&nbsp; foo
-                                    { index == 0 ? <>Previous</> : <>{ index == 1 ? <>Next Previous</> : <>{DateTime.Format(other.finished_at)} [{index}]</> }</> }
-                                goo
-                                </td></tr>
-                                <TSeparatorH double={true} />
-                            </tbody></table>
-                            <BuildInfo build={build} which={other} expanded={showPrevious} />
-                        </> )}
-                    </> }
-                </> }
             </> }
         </> }
     </div>

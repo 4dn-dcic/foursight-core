@@ -126,7 +126,6 @@ def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> Dict
             return None
 
     ecs = ECSUtils()
-    import pdb ; pdb.set_trace()
     if record_reindex_kickoff_via_tags:
         full_cluster_arn = ecs.client.describe_clusters(clusters=[cluster_arn])["clusters"][0]["clusterArn"]
         if record_reindex_kickoff_via_tags:
@@ -135,8 +134,8 @@ def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> Dict
                 {"key": "last_redeploy_kickoff_at", "value": datetime_string(datetime.datetime.now(pytz.UTC))},
                 {"key": "last_redeploy_kickoff_by", "value": user or "unknown"},
                 {"key": "last_redeploy_kickoff_repo", "value": build_repo or "unknown"},
-                {"key": "last_redeploy_kickoff_commit", "value": build_branch or "unknown"},
-                {"key": "last_redeploy_kickoff_branch", "value": build_commit or "unknown"}
+                {"key": "last_redeploy_kickoff_commit", "value": build_commit or "unknown"},
+                {"key": "last_redeploy_kickoff_branch", "value": build_branch or "unknown"}
             ]
         ecs.client.tag_resource(resourceArn=full_cluster_arn, tags=tags)
     return {"status": ecs.update_all_services(cluster_name=cluster_arn)}
