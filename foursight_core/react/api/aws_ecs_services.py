@@ -162,7 +162,7 @@ def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> Dict
     # are actually restarted; namely only those that have been presented to the user in the UI.
     if services.get("services"):
         for service in services.get("services"):
-            response = ecs.update_ecs_services(cluster_name=cluster_arn, service_name=service["full_arn"])
+            response = ecs.update_ecs_service(cluster_name=cluster_arn, service_name=service["full_arn"])
 
     return {"status": response }
 
