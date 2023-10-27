@@ -656,7 +656,7 @@ const ServicesDetails = (props) => {
                                         &nbsp;<ExternalLink href={props.status.data.last_redeploy_kickoff_repo} />
                                         <Tooltip id={`tooltip-repo-${props.status.data.last_redeploy_kickoff_commit}`} position="bottom" text="Redeployed GitHub repo." />
                                     </span>
-                                    { props.status.data.last_redeploy_kickoff_branch &&
+                                    { props.status.data?.last_redeploy_kickoff_branch &&
                                         <span id={`tooltip-branch-${props.status.data.last_redeploy_kickoff_commit}`} >
                                             &nbsp;|&nbsp;
                                             {props.status.data.last_redeploy_kickoff_branch}
@@ -664,12 +664,12 @@ const ServicesDetails = (props) => {
                                             <Tooltip id={`tooltip-branch-${props.status.data.last_redeploy_kickoff_commit}`} position="bottom" text="Redeployed GitHub repo branch." />
                                         </span>
                                     }
-                                    { props.status.data.last_redeploy_kickoff_commit &&
+                                    { props.status.data?.last_redeploy_kickoff_commit &&
                                         <span id={`tooltip-commit-${props.status.data.last_redeploy_kickoff_commit}`} >
                                             &nbsp;|&nbsp;
-                                            {props.status.data.last_redeploy_kickoff_commit}
+                                            {props.status.data.last_redeploy_kickoff_commit.substring(0, 16)}
                                             &nbsp;<ExternalLink href={`${props.status.data.last_redeploy_kickoff_repo}/commit/${props.status.data.last_redeploy_kickoff_commit}`} />
-                                            <Tooltip id={`tooltip-commit-${props.status.data.last_redeploy_kickoff_commit}`} position="bottom" text="Redeployed GitHub repo commit." />
+                                            <Tooltip id={`tooltip-commit-${props.status.data.last_redeploy_kickoff_commit}`} position="bottom" text={`Redeployed GitHub repo commit: ${props.status.data.last_redeploy_kickoff_commit}`} />
                                         </span>
                                     }
                                 </td>
