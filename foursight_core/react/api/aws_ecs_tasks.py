@@ -3,6 +3,7 @@ import json
 from typing import Dict, List, Optional
 from dcicutils.ecs_utils import ECSUtils
 from dcicutils.misc_utils import get_error_message
+from .aws_ecs_types import get_task_definition_type
 from .aws_network import aws_get_security_groups, aws_get_subnets, aws_get_vpcs
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
@@ -31,13 +32,15 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
         if len(vpcs) == 1:
             vpc = vpcs[0]
         else:
+            # Note that this check for the string "main" in the VPC is important
+            # and specific/idiosyncratic to our (Harvard) infrastructure.
             vpcs = [item for item in vpcs if "main" in (item.get("name") or "").lower()]
             vpc = vpcs[0] if len(vpcs) == 1 else None
         if vpc:
             vpc = {"id": vpc["id"], "name": vpc["name"]}
         return vpc
 
-    def get_security_groups(vpc: Optional[Dict]) -> List[Dict]:
+    def get_container_security_groups(vpc: Optional[Dict]) -> List[Dict]:
         if not vpc:
             return []
         security_groups = aws_get_security_groups(vpc_id=vpc["id"]) if vpc else []
@@ -53,6 +56,8 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
         return security_groups
 
     def get_security_group_for_env(security_groups: List[Dict], env: Optional[Dict]) -> Optional[Dict]:
+        # TODO: From PR-56 feedback (2023-11-01): Can probably greatly simplify
+        # this just by looking for the env identifier within; will only be one.
         if not env:
             return None
         env_specific_security_group = None
@@ -66,7 +71,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
                 break
         return env_specific_security_group
 
-    def get_subnets() -> List[Dict]:
+    def get_private_subnets() -> List[Dict]:
         subnets = aws_get_subnets()
         subnets = [item for item in subnets if item.get("type") == "private"]
         return [{"id": subnet["id"], "name": subnet["name"]} for subnet in subnets]
@@ -85,7 +90,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
     def add_task_for_running(task: Dict) -> None:
         # Add the given task to the given task list, but make sure we don't have a duplicate,
         # meaning more than one task with the same "name" (i.e. e.g. "deploy") as determined
-        # by the _get_task_definition_type function definition, above); and for the same
+        # by the get_task_definition_type function definition, above); and for the same
         # environment, as determined by the get_assocated_env function call, below.
         duplicate_tasks = [existing_task for existing_task in tasks_for_running
                            if existing_task["type"] == task["type"]
@@ -125,11 +130,11 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
 
     clusters = _get_cluster_arns()
     vpc = get_vpc()
-    security_groups = get_security_groups(vpc)
-    subnets = get_subnets()
+    security_groups = get_container_security_groups(vpc)
+    subnets = get_private_subnets()
 
     for task_definition_arn in task_definition_arns:
-        task_definition_type = _get_task_definition_type(task_definition_arn) or task_definition_arn
+        task_definition_type = get_task_definition_type(task_definition_arn) or task_definition_arn
         if given_task_definition_type and given_task_definition_type != task_definition_type:
             continue
         task_env = envs.get_associated_env(task_definition_arn)
@@ -169,7 +174,7 @@ def get_aws_ecs_task_running(envs: Envs,
     task_arns = _get_task_arns(cluster_arn, task_definition_arn)
     task_is_running = len(task_arns) > 0
     # TODO: See if the given task is running in any other cluser
-    task_definition_type = _get_task_definition_type(task_definition_arn) or task_definition_arn
+    task_definition_type = get_task_definition_type(task_definition_arn) or task_definition_arn
     response = {
         "cluster_arn": cluster_arn,
         "task_definition_arn": task_definition_arn,
@@ -196,7 +201,7 @@ def get_aws_ecs_task_last_run(envs: Envs, cluster_arn: str, task_definition_arn:
     # the entrypoint_deployment.bash script creates this as its last step.
     # This is only separate from get_aws_ecs_task_running for performance
     # and responsiveness response within the (React) UI.
-    task_definition_type = _get_task_definition_type(task_definition_arn) or task_definition_arn
+    task_definition_type = get_task_definition_type(task_definition_arn) or task_definition_arn
     response = {
         "cluster_arn": cluster_arn,
         "task_definition_arn": task_definition_arn,
@@ -234,7 +239,7 @@ def get_aws_ecs_tasks_running(cluster_arn: Optional[str] = None,
             task_definition_arn = _shortened_task_definition_arn(task.get("taskDefinitionArn"))
             if given_task_definition_arn and given_task_definition_arn != task_definition_arn:
                 continue
-            task_definition_type = _get_task_definition_type(task_definition_arn) or task_definition_arn
+            task_definition_type = get_task_definition_type(task_definition_arn) or task_definition_arn
             if given_task_definition_type and given_task_definition_type != task_definition_type:
                 continue
             task = {
@@ -250,12 +255,12 @@ def get_aws_ecs_tasks_running(cluster_arn: Optional[str] = None,
                 existing_task[0]["tasks"].append(task)
             elif not given_task_definition_arn:
                 response.append({"task_definition_arn": task_definition_arn,
-                                 "type": _get_task_definition_type(task_definition_arn) or task_definition_arn,
+                                 "type": get_task_definition_type(task_definition_arn) or task_definition_arn,
                                  "tasks": [task]})
             else:
                 response.append({"cluster_arn": cluster_arn,
                                  "task_definition_arn": given_task_definition_arn,
-                                 "type": _get_task_definition_type(task_definition_arn) or task_definition_arn,
+                                 "type": get_task_definition_type(task_definition_arn) or task_definition_arn,
                                  "tasks": [task]})
     return response
 
@@ -290,6 +295,13 @@ def aws_ecs_run_task(cluster_arn: str, task_definition_arn: str, args: Dict) -> 
     security_group = args.get("security_group")
     subnets = [item["id"] for item in subnets]
     security_group = security_group["id"]
+    network_configuration = {
+        "awsvpcConfiguration": {
+            "subnets": subnets,
+            "securityGroups": [security_group],
+            "assignPublicIp": "DISABLED"
+        }
+    }
     # TODO: The dcicutils.ecs_utils.run_ecs_task function does not specify specify
     # container launchType (FARGATE), for some reason, one of which is required.
     # ecs = ECSUtils()
@@ -312,7 +324,8 @@ def aws_ecs_run_task(cluster_arn: str, task_definition_arn: str, args: Dict) -> 
             count=1,
             cluster=cluster_arn,
             taskDefinition=task_definition_arn,
-            networkConfiguration={"awsvpcConfiguration": {"subnets": subnets, "securityGroups": [security_group]}}
+            networkConfiguration=network_configuration
+          # networkConfiguration={"awsvpcConfiguration": {"subnets": subnets, "securityGroups": [security_group]}}
         )
         response["task_running_id"] = _get_task_running_id(run_task_response.get("tasks", [{}])[0].get("taskArn"))
         response["response"] = json.loads(json.dumps(run_task_response, default=str))
@@ -351,22 +364,6 @@ def _shortened_task_definition_arn(task_definition_arn: str) -> str:
     task_definition_arn = _shortened_arn(task_definition_arn)
     arn_parts = task_definition_arn.rsplit(":", 1) if task_definition_arn else []
     return arn_parts[0] if len(arn_parts) > 1 else task_definition_arn
-
-
-def _get_task_definition_type(task_definition_arn: str) -> Optional[str]:
-    if "deploy" in task_definition_arn.lower():
-        if "initial" in task_definition_arn.lower():
-            return "deploy_initial"
-        else:
-            return "deploy"
-    elif "index" in task_definition_arn.lower():
-        return "indexer"
-    elif "ingest" in task_definition_arn.lower():
-        return "ingester"
-    elif "portal" in task_definition_arn.lower():
-        return "portal"
-    else:
-        return None
 
 
 def _get_task_running_id(task_arn: str) -> str:

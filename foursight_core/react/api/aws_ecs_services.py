@@ -8,8 +8,9 @@ from typing import Dict, List, Generator, Optional, Tuple, Union
 from dcicutils.ecs_utils import ECSUtils
 from .aws_ecs_tasks import (
     _get_cluster_arns, _get_task_running_id,
-    _get_task_definition_type, _shortened_arn, _shortened_task_definition_arn
+    _shortened_arn, _shortened_task_definition_arn
 )
+from .aws_ecs_types import get_service_type
 from ...app import app
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
@@ -47,8 +48,9 @@ def get_aws_ecs_services_for_update(envs: Envs, cluster_arn: str,
     is the associated image, build, and environment info. If a "sanity_check" boolean argument is passed
     in which is "true", then also included is the digest information for the build; this is not the default
     since to get it we have to go read the build logs; there is another function (get_aws_codebuild_digest)
-    to get this specifically, so that (for example) this could be called asynchronously from a UI; this
-    digest information is useful to sanity check the the image and associated build digest match.
+    to get this specifically, so that (for example) this could be called asynchronously from a UI. Note
+    that this digest information is not critical to the functioning of the Redeploy page; it is merely
+    useful to sanity check the the image and associated build digest match.
     """
 
     def reorganize_response(services: Dict) -> Dict:
@@ -118,7 +120,8 @@ def get_aws_codebuild_digest(log_group: str, log_stream: str, image_tag: Optiona
     while ntries > 0:
         if ntries > 1:
             time.sleep(0.2)
-        log_events = logs.get_log_events(logGroupName=log_group, logStreamName=log_stream, startFromHead=True)["events"]
+        log_events = logs.get_log_events(logGroupName=log_group,
+                                         logStreamName=log_stream, startFromHead=False)["events"]
         for log_event in log_events:
             msg = log_event.get("message")
             # The entrypoint_deployment.bash script at least partially
@@ -140,7 +143,7 @@ def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> Dict
         try:
             build = get_aws_ecr_build_info(services["image"]["arn"], previous_builds=0)["latest"]
             return (build["github"], build["branch"], build["commit"])
-        except Exception as e:
+        except Exception:
             return None
 
     ecs = ECSUtils()
@@ -157,14 +160,13 @@ def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> Dict
             ]
         ecs.client.tag_resource(resourceArn=full_cluster_arn, tags=tags)
 
-
     # We do not call ecs.update_all_services because we want full control over what services
     # are actually restarted; namely only those that have been presented to the user in the UI.
     if services.get("services"):
         for service in services.get("services"):
             response = ecs.update_ecs_service(cluster_name=cluster_arn, service_name=service["full_arn"])
 
-    return {"status": response }
+    return {"status": response}
 
 
 def get_aws_ecs_cluster_status(cluster_arn: str) -> Optional[Dict]:
@@ -424,9 +426,6 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
     ecs = boto3.client("ecs")
 
     def get_service_info(service_arn: str) -> Dict:
-
-        def get_service_type(service_arn: str) -> str:
-            return _get_task_definition_type(service_arn)
 
         def shortened_service_arn(service_arn: str, cluster_arn: str) -> str:
             service_arn = _shortened_arn(service_arn)

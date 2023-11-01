@@ -14,34 +14,35 @@ import useFetchFunction from '../hooks/FetchFunction';
 import useHeader from '../hooks/Header';
 import Yaml from '../utils/Yaml';
 
-const region = "us-east-1";
+const awsRegion = "us-east-1";
+const awsBaseUrl = `https://${awsRegion}.console.aws.amazon.com`;
 
 function awsTaskRunLink(id) {
-    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${id}/run-task`;
+    return `${awsBaseUrl}/ecs/v2/task-definitions/${id}/run-task`;
 }
 
 function awsTaskLink(id) {
-    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${id}`;
+    return `${awsBaseUrl}/ecs/v2/task-definitions/${id}`;
 }
 
 function awsTaskRunningLink(cluster, id) {
-    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${cluster}/tasks/${id}/logs`;
+    return `${awsBaseUrl}/ecs/v2/clusters/${cluster}/tasks/${id}/configuration`;
 }
 
 function awsClusterLink(id) {
-    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${id}/services?region=${region}`;
+    return `${awsBaseUrl}/ecs/v2/clusters/${id}/services?region=${awsRegion}`;
 }
 
 function awsVpcLink(id) {
-    return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#VpcDetails:VpcId=${id}`;
+    return `${awsBaseUrl}/vpc/home?region=${awsRegion}#VpcDetails:VpcId=${id}`;
 }
 
 function awsSecurityGroupLink(id) {
-    return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#SecurityGroup:groupId=${id}`;
+    return `${awsBaseUrl}/vpc/home?region=${awsRegion}#SecurityGroup:groupId=${id}`;
 }
 
 function awsSubnetLink(id) {
-    return `https://${region}.console.aws.amazon.com/vpc/home?region=${region}#SubnetDetails:subnetId=${id}`;
+    return `${awsBaseUrl}/vpc/home?region=${awsRegion}#SubnetDetails:subnetId=${id}`;
 }
 
 function errorsExist(task) {
@@ -828,7 +829,7 @@ const TasksRunning = (props) => {
                                 { task?.tasks?.map((task, index) => <>
                                     <tr>
                                         <td style={{paddingRight: "4pt"}}>
-                                            {task.id} <ExternalLink href={awsTaskRunningLink(task.id)} />
+                                            {task.id} <ExternalLink href={awsTaskRunningLink(props.task.cluster_arn, task.id)} />
                                         </td>
                                         <td>
                                             | Started: {DateTime.Format(task.started_at)} {Char.RightArrow} {Duration.Ago(task.started_at, true, false)}

@@ -18,43 +18,44 @@ import useFetchFunction from '../hooks/FetchFunction';
 import useHeader from '../hooks/Header';
 import Yaml from '../utils/Yaml';
 
-const region = "us-east-1";
+const awsRegion = "us-east-1";
+const awsBaseUrl = `https://${awsRegion}.console.aws.amazon.com`;
 
 function awsClusterLink(id) {
-    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${id}/services?region=${region}`;
+    return `${awsBaseUrl}/ecs/v2/clusters/${id}/services?region=${awsRegion}`;
 }
 
 function awsClusterTagsLink(id) {
-    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${id}/tags`;
-    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${id}/services?region=${region}`;
+    return `${awsBaseUrl}/ecs/v2/clusters/${id}/tags`;
+    return `${awsBaseUrl}/ecs/v2/clusters/${id}/services?region=${awsRegion}`;
 }
 
 function awsServiceLink(cluster_arn, service_arn) {
-    return `https://${region}.console.aws.amazon.com/ecs/v2/clusters/${cluster_arn}/services/${service_arn}/health?${region}`;
+    return `${awsBaseUrl}/ecs/v2/clusters/${cluster_arn}/services/${service_arn}/health?${awsRegion}`;
 }
 
 function awsTaskDefinitionLink(id) {
-    return `https://${region}.console.aws.amazon.com/ecs/v2/task-definitions/${id}`;
+    return `${awsBaseUrl}/ecs/v2/task-definitions/${id}`;
 }
 
 function awsCodebuildLogLink(account_number, project, logGroup, logStream) {
-    return `https://${region}.console.aws.amazon.com/codesuite/codebuild/${account_number}/projects/${project}/build/${project}:${logStream}/?region=${region}`;
+    return `${awsBaseUrl}/codesuite/codebuild/${account_number}/projects/${project}/build/${project}:${logStream}/?region=${awsRegion}`;
 }
 
 function awsCodebuildFullLogLink(account_number, project, logGroup, logStream) {
-    return `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${encodeURIComponent(logGroup)}/log-events/${logStream}`;
+    return `${awsBaseUrl}/cloudwatch/home?region=${awsRegion}#logsV2:log-groups/log-group/${encodeURIComponent(logGroup)}/log-events/${logStream}`;
 }
 
 function awsCodebuildProjectLink(account_number, project) {
-    return `https://${region}.console.aws.amazon.com/codesuite/codebuild/${account_number}/projects/${project}/history`;
+    return `${awsBaseUrl}/codesuite/codebuild/${account_number}/projects/${project}/history`;
 }
 
 function awsImageRepoLink(account_number, project) {
-    return `https://${region}.console.aws.amazon.com/ecr/repositories/private/${account_number}/${project}`
+    return `${awsBaseUrl}/ecr/repositories/private/${account_number}/${project}`
 }
 
 function awsImageTagLink(account_number, repo, sha) {
-    return `https://${region}.console.aws.amazon.com/ecr/repositories/private/${account_number}/${repo}/_/image/${sha}/details`
+    return `${awsBaseUrl}/ecr/repositories/private/${account_number}/${repo}/_/image/${sha}/details`
 }
 
 const useFetchClusters = (onData) => {
@@ -364,7 +365,7 @@ const RedeployButtons = (props) => {
         </td></tr></tbody></table>
         { isShowUpdatingWarning() && (!isShowUpdatingButton() || confirmed) && !runResult && <small style={{color: "red"}}>
             <SeparatorH color="red" />
-            <b>Warning</b>: A cluseter update appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
+            <b>Warning</b>: A cluster update appears to be already <u><b>running</b></u>. Run this <u><b>only</b></u> if you know what you are doing!
                 <small style={{float: "right"}} className="pointer" onClick={toggleShowDetail}>
                     { props.isShowDetail() ? <>
                         Hide Details {Char.DownArrow}
