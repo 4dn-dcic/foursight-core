@@ -8,7 +8,7 @@ Change Log
 
 5.1.0
 =====
-* New tasks page (initially to kick off Portal reindex).
+* New tasks page (initially to kick off Portal reindex and redeploy).
 * Update poetry to 1.4.2.
 
 
