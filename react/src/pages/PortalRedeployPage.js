@@ -105,6 +105,7 @@ const PortalRedeployPage = (props) => {
     // if ANY of the cluster details are expanded, then the top-level toggle collapses all of them;
     // if NONE of the cluster details are expanded, then the top-level toggle expands all of them.
 
+    const header = useHeader();
     const [showDetails, setShowDetails] = useState({});
     const isShowDetails = () => { for (const key of Object.keys(showDetails)) if (showDetails[key]) return true; return false; }
     const toggleShowDetails = () => {
@@ -128,6 +129,10 @@ const PortalRedeployPage = (props) => {
         <div className="container">
             <div>
                 <b style={{fontSize: "x-large"}}>Portal Redeploy</b>
+                <span id={`tooltip-account-${header.app?.credentials.aws_account_number}`} style={{float: "right", fontSize: "small", position: "relative", top: "10pt"}}>
+                    {header.app?.credentials.aws_account_name || header.app?.credentials.aws_account_number}&nbsp;&nbsp;
+                 </span>
+                <Tooltip id={`tooltip-account-${header.app?.credentials.aws_account_number}`} position="top" size="small" text={`AWS Account: ${header.app?.credentials.aws_account_number}`} />
             </div>
             { clusters.loading ?
                 <ContentLoading />
