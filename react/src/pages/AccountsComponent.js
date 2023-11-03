@@ -356,10 +356,10 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
              tooltip={[`From the S3_AWS_ACCESS_KEY_ID environment variable.`,
                        `tooltip-s3-aws-access-key-id${account.get("foursight.s3.access_key")}`]}>
             &nbsp;
-            { account.get("foursight.s3.access_key_error") ? <>
-                <b style={{color:"red"}}>{Char.X}</b>
-            </>:<>
+            { account.get("foursight.s3.access_key_okay") ? <>
                 <b style={{color:"green"}}>{Char.Check}</b>
+            </>:<>
+                { account.get("foursight.s3.access_key_error") && <b style={{color:"red"}}>{Char.X}</b> }
             </> }
         </Row>
         <Separator />
@@ -374,7 +374,7 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                 <Tooltip id={"tooltip-aws-user-arn"} text={`Associated IAM ARN: ${info.data?.app?.credentials?.aws_user_arn}`} position="bottom" />
         </Row>
         <Row title="Environments" value={`Default: ${account.get("foursight.default_env.short_name")}`} xadditionalValue={account.get("foursight.env_count") ? `${account.get("foursight.env_count")} total` : ""}>
-            { isCurrentAccount(header, account) && <>
+            { isCurrentAccount(header, account) ? <>
                 &nbsp;|&nbsp;Current: {Env.Current(header)}
                 &nbsp;|&nbsp;
                 { !showKnownEnvs ? <>
@@ -403,6 +403,10 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
                 { showKnownEnvs && <> <KnownEnvsBox header={header} account={account} /> </>}
                 { showEcosystem && <EcosystemBox bucket={account.get("foursight.s3.global_env_bucket")} /> }
                 { showEnvVariables && <> <EnvVariablesBox header={header} account={account} /> </>}
+            </>:<>
+                { account.get("foursight.env_count") && <>
+                    &nbsp;|&nbsp;Total: {account.get("foursight.env_count")}
+                </> }
             </> }
         </Row>
         <Row title="Auth0 Client ID" value={account.get("foursight.auth0_client")} externalLink={`${account.get("foursight.url")}/reactapi/auth0_config`}>

@@ -1552,7 +1552,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             except Exception:
                 return False
 
-        def check_s3_aws_access_key() -> bool:
+        def check_s3_aws_access_key() -> Optional[bool]:
             s3_aws_access_key_id = os.environ.get("S3_AWS_ACCESS_KEY_ID")
             s3_secret_access_key = os.environ.get("S3_SECRET_ACCESS_KEY")
             global_env_bucket = self.get_global_env_bucket()
@@ -1560,9 +1560,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 s3 = boto3.client("s3")
                 try:
                     s3.list_objects_v2(Bucket=global_env_bucket)
+                    return True
                 except Exception:
                     return False
-            return True
+            return None
 
         def get_foursight_info(foursight_url: str, response: dict) -> Optional[str]:
             if not response.get("foursight"):
@@ -1615,9 +1616,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 response["foursight"]["s3"]["encrypt_key_id"] = foursight_header_json_s3.get("encrypt_key_id")
                 response["foursight"]["s3"]["has_encryption"] = foursight_header_json_s3.get("has_encryption")
                 response["foursight"]["s3"]["buckets"] = foursight_header_json_s3.get("buckets")
-            response["foursight"]["s3"]["access_key"] = os.environ.get("S3_AWS_ACCESS_KEY_ID")
-            if not check_s3_aws_access_key():
-                response["foursight"]["s3"]["access_key_error"] = True
+            if is_this_server(response["foursight"]["url"]):
+                response["foursight"]["s3"]["access_key"] = os.environ.get("S3_AWS_ACCESS_KEY_ID")
+                aws_access_key_check = check_s3_aws_access_key()
+                if aws_access_key_check is not None:
+                    if aws_access_key_check:
+                        response["foursight"]["s3"]["access_key_okay"] = True
+                    else:
+                        response["foursight"]["s3"]["access_key_error"] = True
             response["foursight"]["aws_account_number"] = foursight_app["credentials"].get("aws_account_number")
             response["foursight"]["aws_account_name"] = foursight_app["credentials"].get("aws_account_name")
             response["foursight"]["re_captcha_key"] = foursight_app["credentials"].get("re_captcha_key")
