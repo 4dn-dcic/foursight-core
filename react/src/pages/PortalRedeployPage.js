@@ -359,7 +359,7 @@ const RedeployButtons = (props) => {
                 <UpdatingButton />
             </span>
         </>:<>
-            { !props.status.loading && <>
+            { !props.status.loading && !running && !runDone && <>
                 { props.deployedBranch ? <small style={{float: "right"}}>
                     Branch:&nbsp;<ToggleShowDetailArrow isShow={props.isShowDetail} toggleShow={props.toggleShowDetail} text={props.deployedBranch} bold={"onshow"} size={"small"} />
                 </small>:
@@ -401,7 +401,8 @@ const RunResult = (props) => {
                 <SeparatorH color="red" />
                 {props.runResult.data.error}
             </span>:<>
-                <b>Kicked off redeploy {Char.RightArrow}</b> <b>{props.runResult?.data?.status === true ? <>OK</> : <>ERROR</>}</b>&nbsp;
+                <b>Kicked off redeploy {Char.RightArrow}</b> <b>{props.runResult?.data?.status}</b>&nbsp;
+                    { showJson ? <small>{Char.DownArrow}</small> : <small>{Char.UpArrow}</small> }
             </> }
             { showJson && <>
                 <SeparatorH />
@@ -945,7 +946,7 @@ const BuildInfo = (props) => {
                 <td style={tdlabel}> Finished: </td>
                 <td style={tdcontent}>
                     <span style={{...tdlabel, fontWeight: props.expanded ? "bold" : "inherit"}}>{DateTime.Format(build?.finished_at)}</span>
-                    <small>&nbsp;{Char.RightArrow}&nbsp;{Time.Ago(build?.finished_at, true, false)}</small>
+                    <small>{Char.RightArrow}&nbsp;{Time.Ago(build?.finished_at, true, false)}</small>
                 </td>
             </tr>
             <tr>

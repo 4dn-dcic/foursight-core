@@ -162,11 +162,21 @@ def aws_ecs_update_cluster(cluster_arn: str, user: Optional[str] = None) -> Dict
 
     # We do not call ecs.update_all_services because we want full control over what services
     # are actually restarted; namely only those that have been presented to the user in the UI.
+
+    responses = []
+    status = "OK"
     if services.get("services"):
         for service in services.get("services"):
-            response = ecs.update_ecs_service(cluster_name=cluster_arn, service_name=service["full_arn"])
-
-    return {"status": response}
+            service_arn = service["full_arn"]
+            try:
+                # FYI: ecs.update_ecs_service does not return anything currently.
+                ecs.update_ecs_service(cluster_name=cluster_arn, service_name=service_arn)
+                responses.append({"cluster_arn": cluster_arn, "service_arn": service_arn})
+            except Exception as e:
+                status = "ERROR"
+                responses.append({"cluster_arn": cluster_arn, "service_arn": service_arn, "exception": str(e)})
+    
+    return {"status": status, "services": responses}
 
 
 def get_aws_ecs_cluster_status(cluster_arn: str) -> Optional[Dict]:
