@@ -1299,7 +1299,6 @@ class ReactApi(ReactApiBase, ReactRoutes):
         sort = args.get("sort", "timestamp.desc") if args else "timestamp.desc"
         sort = urllib.parse.unquote(sort)
 
-        import pdb ; pdb.set_trace()
         connection = app.core.init_connection(env)
         history, total = app.core.get_foursight_history(connection, check, offset, limit, sort)
         history_kwargs = list(set(chain.from_iterable([item[2] for item in history])))
