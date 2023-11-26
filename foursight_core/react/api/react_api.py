@@ -1552,7 +1552,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
             except Exception:
                 return False
 
-        def check_s3_aws_access_key() -> bool:
+        def check_s3_aws_access_key() -> Optional[bool]:
             s3_aws_access_key_id = os.environ.get("S3_AWS_ACCESS_KEY_ID")
             s3_secret_access_key = os.environ.get("S3_SECRET_ACCESS_KEY")
             global_env_bucket = self.get_global_env_bucket()
@@ -1560,9 +1560,10 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 s3 = boto3.client("s3")
                 try:
                     s3.list_objects_v2(Bucket=global_env_bucket)
+                    return True
                 except Exception:
                     return False
-            return True
+            return None
 
         def get_foursight_info(foursight_url: str, response: dict) -> Optional[str]:
             if not response.get("foursight"):
@@ -1615,9 +1616,14 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 response["foursight"]["s3"]["encrypt_key_id"] = foursight_header_json_s3.get("encrypt_key_id")
                 response["foursight"]["s3"]["has_encryption"] = foursight_header_json_s3.get("has_encryption")
                 response["foursight"]["s3"]["buckets"] = foursight_header_json_s3.get("buckets")
-            response["foursight"]["s3"]["access_key"] = os.environ.get("S3_AWS_ACCESS_KEY_ID")
-            if not check_s3_aws_access_key():
-                response["foursight"]["s3"]["access_key_error"] = True
+            if is_this_server(response["foursight"]["url"]):
+                response["foursight"]["s3"]["access_key"] = os.environ.get("S3_AWS_ACCESS_KEY_ID")
+                aws_access_key_check = check_s3_aws_access_key()
+                if aws_access_key_check is not None:
+                    if aws_access_key_check:
+                        response["foursight"]["s3"]["access_key_okay"] = True
+                    else:
+                        response["foursight"]["s3"]["access_key_error"] = True
             response["foursight"]["aws_account_number"] = foursight_app["credentials"].get("aws_account_number")
             response["foursight"]["aws_account_name"] = foursight_app["credentials"].get("aws_account_name")
             response["foursight"]["re_captcha_key"] = foursight_app["credentials"].get("re_captcha_key")
@@ -1862,6 +1868,17 @@ class ReactApi(ReactApiBase, ReactRoutes):
         if accounts_file_data is None:
             return self.create_response(404, {"message": f"Account file not found: {self._get_accounts_file_name()}"})
         return self.create_success_response(self._get_accounts_file_data())
+
+    def reactapi_portal_health(self, env: str) -> Response:
+        portal_url = app.core.get_portal_url(env or self._envs.get_default_env, raise_exception=False)
+        portal_health_url = f"{portal_url}/health?format=json"
+        portal_health_response = requests.get(portal_health_url)
+        if portal_health_response.status_code == 200:
+            portal_health_json = portal_health_response.json()
+            portal_uptime = portal_health_json.get("uptime")
+            portal_health_json["started"] = (
+                convert_datetime_to_utc_datetime_string(convert_uptime_to_datetime(portal_uptime)))
+            return portal_health_json
 
     # ----------------------------------------------------------------------------------------------
     # END OF EXPERIMENTAL - /accounts page
