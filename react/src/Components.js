@@ -4,12 +4,13 @@ import Auth from './utils/Auth';
 import Client from './utils/Client';
 import Char from './utils/Char';
 import Image from './utils/Image';
-import { PuffSpinner } from './Spinners';
+import { PuffSpinner, PuffSpinnerInline } from './Spinners';
 import Str from './utils/Str';
 import Styles from './Styles';
 import Time from './utils/Time';
 import Tooltip from './components/Tooltip';
 import Type from './utils/Type';
+import Uuid from 'react-uuid';
 
 export const Link = ({to, env = true, bold = true, id = null, children}) => {
     return <>
@@ -107,8 +108,9 @@ export const RefreshButton = (props) => {
 
 export const ExternalLink = (props) => {
     let style = {...props.style};
-    if (props.nudgedown) {
-        style = {...style, position: "relative", bottom: `-${props.nudgedown}`};
+    const nudge = props.nudgedown || props.nudge;
+    if (nudge) {
+        style = {...style, position: "relative", bottom: `-${nudge}`};
     }
     return <span style={style}>
         <a id={props.href} href={props.href} style={{color:props.color || "var(--box-fg)"}} rel="noreferrer" target="_blank" onClick={(e) => e.stopPropagation()}>
@@ -125,4 +127,57 @@ export const GitHubLink = (props) => {
         <a id={props.href} rel="noreferrer" target="_blank" href={props.href}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
         <Tooltip id={props.href} text={`Click to view source code for this ${props.type} (in new tab).`} />
     </span>
+}
+
+export const ToggleShowDetailArrow = ({ isShow, toggleShow, text = null, underline = null, size = null, left = null, right = null, float = null, color = null, bold = true, nudge = "" }) => {
+    const uuid = Uuid();
+    const style= {
+        position: "relative",
+        float: float || "inherit",
+        top: nudge,
+        left: left || "inherit",
+        right: right || "inherit",
+        color: color || "inherit",
+        fontSize: size || "inherit",
+        fontWeight: (bold === true) || (bold === "onshow" && isShow()) || (bold === "onhide" && !isShow()) ? "bold" : "inherit"
+    };
+    return <>
+        <span className="pointer" style={style} onClick={toggleShow} id={uuid}>
+            { text && <span style={{textDecoration: underline ? "underline" : "inherit", paddingRight: "2pt"}}>{text}</span> }
+            { isShow() ? <>{Char.DownArrow}</> : <>{Char.UpArrow}</> }
+            <Tooltip id={uuid} position="top" text={`Click to ${isShow() ? "hide" : "show"} details`} />
+        </span>
+    </>
+}
+
+export const Refresher = ({ refresh = () => null, refreshing = () => false, bold = false, size = "x-small", nudge = "0px" }) => {
+
+    function toPixelSize(value) {
+        if (value.endsWith("px")) return value;
+        const numericValue = parseFloat(value);
+        if (isNaN(numericValue)) throw new Error("Invalid size format");
+        return numericValue * 1.5;
+    }
+
+    function normalizeFontSize(value) {
+        if (value === "xx-small") return "8pt";
+        else if (value === "x-small") return "10pt";
+        else if (value === "small") return "13pt";
+        else if (value === "medium") return "16pt";
+        else if (value === "large") return "18pt";
+        else if (value === "x-large") return "24pt";
+        else if (value === "xx-large") return "32pt";
+        else if (/^\d+$/.test(value)) return `${value}pt`;
+        else return value;
+    }
+
+    const fontSize = normalizeFontSize(size)
+    const spinnerSize = toPixelSize(fontSize);
+    return <>
+        { refreshing() ? <>
+            <span style={{position: "relative", top: "1px"}}><PuffSpinnerInline size={`${spinnerSize}`} /></span>
+        </>:<span style={{position: "relative", top: "0px", fontSize: `${fontSize}`, fontWeight: bold ? "bold" : "inherit", cursor: "pointer"}}  onClick={(e) => { refresh(); e.stopPropagation(); e.preventDefault(); }}>
+            {Char.Refresh}
+        </span> }
+    </>
 }

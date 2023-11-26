@@ -33,15 +33,6 @@ function awsDataLink(bucket, uuid, file) {
     return `https://s3.console.aws.amazon.com/s3/object/${bucket}?region=${region}&prefix=${uuid}/${file}`
 }
 
-
-function formatFileSize(bytes) {
-    if (!Type.IsInteger(bytes)) return "-";
-    if (bytes <= 1000) return `${bytes} bytes`;
-    const sizes = ["b", "K", "M", "G", "T"];
-    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    return (Math.round((bytes / Math.pow(1024, i)) * 100) / 100).toFixed(1) + sizes[i];
-}
-
 const IngestionSubmissionPage = (props) => {
 
     const header = useHeader();
@@ -109,7 +100,7 @@ const IngestionSubmissionPage = (props) => {
             sortable: false,
             value: (data, columnData) => {
                 const file = data.files?.find(item => item.file == data.file);
-                return formatFileSize(file?.size);
+                return Str.FormatBytes(file?.size);
             }
         },
         {
@@ -395,7 +386,7 @@ const FileInfoRowRight = ({ bucket, uuid, data }) => {
         </div>
         { data.files.map((file, index) => <React.Fragment key={index}>
             {index > 0 && <br />}
-            {file.file} ({formatFileSize(file.size)})<ExternalLink href={awsLink(bucket, uuid, file.file)} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
+            {file.file} ({Str.FormatBytes(file.size)})<ExternalLink href={awsLink(bucket, uuid, file.file)} style={{marginLeft: "5pt"}} tooltip="Click to view in AWS S3." />
         </React.Fragment>)}
     </>
 }
@@ -431,7 +422,7 @@ const DetailRow = ({ data, uuid, bucket, prestyle, widthRef }) => {
                 { showDetail ? <>
                     <DetailRowDetail uuid={uuid} bucket={bucket} prestyle={prestyle} widthRef={widthRef} />
                 </>:<>
-                    <span onClick={toggleDetail} className="pointer">Click to retreive details ... {detailFileSize() && `(${formatFileSize(detailFileSize())})`} </span>
+                    <span onClick={toggleDetail} className="pointer">Click to retreive details ... {detailFileSize() && `(${Str.FormatBytes(detailFileSize())})`} </span>
                 </>}
             </pre>
         </>}

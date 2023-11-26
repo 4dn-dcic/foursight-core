@@ -53,7 +53,7 @@ class FSConnection(object):
                 self.redis_url = fs_environ_info['redis']
             elif 'REDIS_HOST' in os.environ:  # temporary patch in until env config is fully sorted - Will
                 self.redis_url = os.environ['REDIS_HOST']
-            if self.redis_url:
+            if self.redis_url and ("redis://" in self.redis_url or "rediss://" in self.redis_url):
                 self.redis = RedisBase(create_redis_client(url=self.redis_url))
             else:
                 PRINT("Redis URL was not specified in any way so running without Redis.")

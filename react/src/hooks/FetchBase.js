@@ -182,9 +182,10 @@ export const useFetch = (url, args) => {
     //
     const initial = Type.IsObject(url) ? url.initial : (Type.IsObject(args) ? args.initial : null);
     const nofetch = Type.IsObject(url) ? url.nofetch : (Type.IsObject(args) ? args.nofetch : false);
+    const haveUrl = Type.IsObject(url) ? Str.HasValue(url.url) : Str.HasValue(url);
 
     const [ data, setData ] = useState(initial);
-    const [ loading, setLoading ] = useState(nofetch ? false : true);
+    const [ loading, setLoading ] = useState((nofetch || !haveUrl) ? false : true);
     const [ status, setStatus ] = useState(0);
     const [ timeout, setTimeout ] = useState(false);
     const [ error, setError ] = useState(null);

@@ -7,9 +7,10 @@ function HasValue(value) {
 }
 
 function FormatBytes(bytes, decimals = 2) {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-    let i = 0; for (i; bytes > 1024; i++) bytes /= 1024;
-    return parseFloat(bytes.toFixed(decimals)) + ' ' + units[i];
+    const K = 1000;
+    const units = ['b', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    let i = 0; for (i; bytes > K; i++) bytes /= K;
+    return parseFloat(bytes?.toFixed(decimals)) + ' ' + units[i];
 }
 
 function LongestCommonInitialSubstring(stringArray, f = null) {
@@ -45,5 +46,6 @@ const exports = {
     HasValue: HasValue,
     FormatBytes: FormatBytes,
 	LongestCommonInitialSubstring: LongestCommonInitialSubstring,
-    StringArrayToCommaSeparatedListOfTitles: StringArrayToCommaSeparatedListOfTitles
+    StringArrayToCommaSeparatedListOfTitles: StringArrayToCommaSeparatedListOfTitles,
+    Title: (s) => s?.charAt(0)?.toUpperCase() + s?.slice(1)
 }; export default exports;

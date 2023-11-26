@@ -40,9 +40,9 @@ class Auth:
             # 2023-09-21: Moved this from __init__ to here;
             # it speeds up provision/deploy from 4dn-cloud-infra.
             try:
-                self._redis = RedisBase(create_redis_client(
-                    url=os.environ['REDIS_HOST'])
-                ) if 'REDIS_HOST' in os.environ else None
+                redis_url = os.environ['REDIS_HOST']
+                if redis_url and ("redis://" in redis_url or "rediss://" in redis_url):
+                    self._redis = RedisBase(create_redis_client(url=redis_url))
             except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
                 PRINT('Cannot connect to Redis')
                 PRINT('This error is expected when deploying with remote (ElastiCache) Redis')
