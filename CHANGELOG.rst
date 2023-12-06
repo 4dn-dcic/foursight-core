@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+5.1.1
+=====
+* Minor UI fixes to the Ingestion page.
+
+
 5.1.0
 =====
 * New tasks page (initially to kick off Portal reindex and redeploy).
