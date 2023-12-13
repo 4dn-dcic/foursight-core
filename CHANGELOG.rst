@@ -6,7 +6,7 @@ foursight-core
 Change Log
 ----------
 
-5.1.1
+5.2.0
 =====
 * Minor UI fixes to the Ingestion page.
 * Changed to NOT get Auth0 info from Portal; see foursight_core/react/api/auth0_config.py/PULL_AUTH0_INFO_FROM_PORTAL.
