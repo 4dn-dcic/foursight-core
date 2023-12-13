@@ -9,6 +9,7 @@ from .misc_utils import get_request_domain, is_running_locally
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
+PULL_AUTH0_INFO_FROM_PORTAL = False
 
 # Class to encapsulate the Auth0 configuration
 # parameters from the Portal /auth0_config endpoint,
@@ -60,16 +61,16 @@ class Auth0Config:
     }
 
     def __init__(self, portal_url: str) -> None:
-        if not portal_url:
+        if not portal_url and PULL_AUTH0_INFO_FROM_PORTAL:
             raise ValueError("Portal URL required for Auth0Config usage.")
         self._portal_url = portal_url
-        self._config_url = f"{portal_url}{'/' if not portal_url.endswith('/') else ''}auth0_config?format=json"
+        self._portal_config_url = f"{portal_url}{'/' if not portal_url.endswith('/') else ''}auth0_config?format=json"
 
     def get_portal_url(self) -> str:
         return self._portal_url
 
-    def get_config_url(self) -> str:
-        return self._config_url
+    def get_portal_config_url(self) -> str:
+        return self._portal_config_url
 
     @function_cache(nocache={})
     def get_config_data(self) -> dict:
@@ -114,8 +115,10 @@ class Auth0Config:
         """
         Returns raw data (dictionary) from the Auth0 config URL.
         """
+        if not PULL_AUTH0_INFO_FROM_PORTAL:
+            return {}
         try:
-            auth0_config_response = requests.get(self.get_config_url()).json() or {}
+            auth0_config_response = requests.get(self.get_portal_config_url()).json() or {}
             allowed_connections = auth0_config_response.get("auth0Options", {}).get("allowedConnections")
             if isinstance(allowed_connections, str):
                 # Slight temporary hack to deal with fact that at some points in
@@ -124,7 +127,7 @@ class Auth0Config:
                 auth0_config_response["auth0Options"]["allowedConnections"] = json.loads(allowed_connections)
             return auth0_config_response
         except Exception as e:
-            logger.error(f"Exception fetching Auth0 config ({self.get_config_url()}): {get_error_message(e)}")
+            logger.error(f"Exception fetching Auth0 config ({self.get_portal_config_url()}): {get_error_message(e)}")
             return {}
 
     def get_client(self) -> str:
