@@ -88,8 +88,11 @@ const IngestionSubmissionPage = (props) => {
                 if      (columnData?.endsWith(".json"))   return "JSON";
                 else if (columnData?.endsWith(".txt"))    return "Text";
                 else if (columnData?.endsWith(".xlsx"))   return "Excel";
+                else if (columnData?.endsWith(".xls"))    return "Excel";
                 else if (columnData?.endsWith(".zip"))    return "ZIP";
                 else if (columnData?.endsWith(".tar.gz")) return "Tarball";
+                else if (columnData?.endsWith(".xlsx.gz")) return "Excel (GZIP)";
+                else if (columnData?.endsWith(".xlsx.gz")) return "Excel (GZIP)";
                 else                                      return columnData || "Unknown";
             }
         },
@@ -399,7 +402,7 @@ const SummaryRow = ({ summary, uuid, bucket, prestyle }) => {
             <ExternalLink href={awsDataLink(bucket, uuid, summary.data?.file)} tooltip="Click to view in AWS S3." />&nbsp;&nbsp;&ndash;&nbsp;&nbsp;<small><i>{summary.data?.file}</i></small><br />
             <pre style={prestyle}>
                 { showSummary ? <>
-                    { summary?.data?.summary?.map((item, index) => <React.Fragment key={index}>{index > 0 && <br />}{item.trim()}</React.Fragment>)}
+                    {Yaml.Format(summary?.data?.summary)}
                 </>:<>
                     <span onClick={toggleSummary} className="pointer">Click to show ...</span>
                 </>}

@@ -40,8 +40,7 @@ class Auth:
             # 2023-09-21: Moved this from __init__ to here;
             # it speeds up provision/deploy from 4dn-cloud-infra.
             try:
-                redis_url = os.environ['REDIS_HOST']
-                if redis_url and ("redis://" in redis_url or "rediss://" in redis_url):
+                if (redis_url := os.environ.get('REDIS_HOST')) and ("redis://" in redis_url or "rediss://" in redis_url):
                     self._redis = RedisBase(create_redis_client(url=redis_url))
             except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
                 PRINT('Cannot connect to Redis')
