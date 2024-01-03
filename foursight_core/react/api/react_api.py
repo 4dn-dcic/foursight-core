@@ -438,12 +438,22 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 data["portal_access_key_erro"] = True
         return self.create_success_response(data)
 
-    def _get_gitinfo(self) -> dict:
+    @function_cache
+    def _get_gitinfo(self, package: str = None) -> Optional[dict]:
+        if not package:
+            if gitinfo := self._get_gitinfo("chalicelib_smaht"):
+                return gitinfo
+            elif gitinfo := self._get_gitinfo("chalicelib_fourfront"):
+                return gitinfo
+            elif gitinfo := self._get_gitinfo("chalicelib_cgap"):
+                return gitinfo
+            else:
+                return None
         try:
-            with open("gitinfo.json", "r") as f:
+            with open(f"{package}/gitinfo.json", "r") as f:
                 return json.load(f)
-        except Exception as e:
-            return {"error": str(e)}
+        except Exception:
+            return None
 
     @function_cache(key=lambda self, request, env: env)  # new as of 2023-04-27
     def _reactapi_header_cache(self, request: dict, env: str) -> dict:
