@@ -35,16 +35,6 @@ jobs:
           sudo ln -s /usr/bin/redis-cli /usr/local/bin/redis-cli
           make build
 
-      - name: Create the gitinfo file
-        run: |
-          echo "{\"repo\": \"https://github.com/${{ github.repository }}\", \"ref\": \"${GITHUB_REF}\", \"branch\": \"${GITHUB_REF##*/}\", \"commit\": \"${GITHUB_SHA}\"}" > foursight_core/gitinfo.json
-
-      - name: Upload the gitinfo.json file as an artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: gitinfo
-          path: foursight_core/gitinfo.json
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
