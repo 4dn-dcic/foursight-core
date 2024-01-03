@@ -438,6 +438,13 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 data["portal_access_key_erro"] = True
         return self.create_success_response(data)
 
+    def _get_getinfo(self) -> dict:
+        try:
+            with open("gitinfo.json", "r") as f:
+                return json.load(f)
+        except Exception as e:
+            return {"error": str(e)}
+
     @function_cache(key=lambda self, request, env: env)  # new as of 2023-04-27
     def _reactapi_header_cache(self, request: dict, env: str) -> dict:
         """
@@ -471,7 +478,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 },
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified(),
-                "accounts_file": self._get_accounts_file_name()
+                "accounts_file": self._get_accounts_file_name(),
+                "git": self._get_gitinfo()
             },
             "versions": self._get_versions_object(),
             "portal": {

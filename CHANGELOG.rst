@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+5.3.0
+=====
+* Added generation of a gitinfo.json file in GitHub Actions (.github/workflows/main-CI.yml).
+
+
 5.2.0
 =====
 * Minor UI fixes to the Ingestion page.
