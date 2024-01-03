@@ -438,7 +438,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 data["portal_access_key_erro"] = True
         return self.create_success_response(data)
 
-    def _get_getinfo(self) -> dict:
+    def _get_gitinfo(self) -> dict:
         try:
             with open("gitinfo.json", "r") as f:
                 return json.load(f)
