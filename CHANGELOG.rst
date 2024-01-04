@@ -8,7 +8,7 @@ Change Log
 
 5.3.0
 =====
-* Added generation of a gitinfo.json file in GitHub Actions (.github/workflows/main-publish.yml).
+* Added update of a gitinfo.json file in GitHub Actions (.github/workflows/main-publish.yml).
 
 
 5.2.0
