@@ -9,6 +9,7 @@ Change Log
 5.3.0
 =====
 * Added update of a gitinfo.json file in GitHub Actions (.github/workflows/main-publish.yml).
+* Fix to the API /aws/ecs/tasks_for_running/deploy to NOT match the "initial" deploy task.
 
 
 5.2.0
