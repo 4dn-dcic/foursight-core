@@ -3,8 +3,8 @@ from typing import Optional
 
 
 KNOWN_TASK_DEFINITION_OR_SERVICE_MAP = {re.compile(key, re.IGNORECASE): value for key, value in {
-    r".*deploy.*initial.*": "deploy_initial",
-    r".*deploy.*": "deploy",
+    r"(.*deploy.*initial.*)|(.*deploy.*initial.*)": "deploy_initial",
+    r"^(?!.*initial).*deploy.*$": "deploy",  # matches string containing 'deploy' but not 'initial'.
     r".*index.*": "indexer",
     r".*ingest.*": "ingester",
     r".*portal.*": "portal",
