@@ -450,10 +450,19 @@ class ReactApi(ReactApiBase, ReactRoutes):
             else:
                 return None
         try:
-            with open(f"{package}/gitinfo.json", "r") as f:
-                return json.load(f)
+            gitinfo = {}
+            if os.path.exists(f"{package}/gitinfo.json"):
+                with open(f"{package}/gitinfo.json", "r") as f:
+                    if package_gitinfo := json.load(f):
+                        gitinfo[package] = package_gitinfo
+            if os.path.exists(f"foursight_core/gitinfo.json"):
+                with open(f"foursight_core/gitinfo.json", "r") as f:
+                    if package_gitinfo := json.load(f):
+                        gitinfo["foursight_core"] = package_gitinfo
+            return gitinfo
         except Exception:
-            return None
+            pass
+        return None
 
     @function_cache(key=lambda self, request, env: env)  # new as of 2023-04-27
     def _reactapi_header_cache(self, request: dict, env: str) -> dict:
