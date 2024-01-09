@@ -106,9 +106,21 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
                 ecs.describe_task_definition(taskDefinition=task["task_definition_arn"])["taskDefinition"])
             existing_task_registered_at = existing_task_definition.get("registeredAt")
             this_task_registered_at = this_task_definition.get("registeredAt")
+            if (("mirror" in this_task_definition.get("taskDefinitionArn").lower()) and not
+                ("mirror" in existing_task_definition.get("taskDefinitionArn").lower())):
+                # The existing task is not a "mirror" but the given task is; skip this given one;
+                # and do not even regard this as a duplicate.
+                return
+            elif (("mirror" in existing_task_definition.get("taskDefinitionArn").lower()) and not
+                  ("mirror" in this_task_definition.get("taskDefinitionArn").lower())):
+                # This given task is not a "mirror" but the existing task is; remove the existing one.
+                # and do not even regard this as a duplicate.
+                tasks_for_running.remove(existing_task)
+                tasks_for_running.append(task)
+                return
             if existing_task_registered_at and this_task_registered_at:
                 if existing_task_registered_at > this_task_registered_at:
-                    # The existing task is newer than this task; skip this one.
+                    # The existing task is newer than this given task; skip this given one.
                     existing_task["registered_at"] = datetime_string(existing_task_registered_at)
                     if not existing_task.get("duplicates"):
                         existing_task["duplicates"] = []
@@ -118,7 +130,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
                      })
                     return
                 else:
-                    # This task is newer than the existing task; remove the existing one.
+                    # The given task is newer than the existing task; remove the existing one.
                     task["registered_at"] = datetime_string(this_task_registered_at)
                     task["duplicates"] = existing_task.get("duplicates") or []
                     task["duplicates"].append({
