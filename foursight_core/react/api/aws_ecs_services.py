@@ -25,7 +25,7 @@ record_reindex_kickoff_via_tags = True
 def get_aws_ecs_clusters_for_update(envs: Envs) -> List[Dict]:
     response = []
     for cluster_arn in _get_cluster_arns():
-        cluster_env = envs.get_associated_env(cluster_arn)
+        cluster_env = envs.get_associated_env(cluster_arn, for_cluster=True)
         if cluster_env:
             response.append({
                 "cluster_arn": cluster_arn,

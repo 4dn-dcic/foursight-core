@@ -23,6 +23,18 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
     def get_cluster_for_env(clusters: List[Dict], env: Optional[Dict]) -> Optional[str]:
         if not env:
             return None
+
+        # For (AWS ECS) clusters (and services), as opposed to task
+        # definitions, staging is always blue and data is always green.
+        is_env_staging = Envs._env_is_staging(env)
+        is_env_data = Envs._env_is_data(env)
+        if is_env_staging or is_env_data:
+            for cluster in clusters:
+                if is_env_staging and Envs._value_is_blue(cluster):
+                    return cluster
+                elif is_env_data and Envs._value_is_green(cluster):
+                    return cluster
+
         for cluster in clusters:
             if envs._env_contained_within(env, cluster):
                 return cluster
