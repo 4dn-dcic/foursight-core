@@ -12,6 +12,8 @@ Change Log
 * Fix to the (API for the) reindex page to NOT match the "initial" deploy task.
 * Fix to the (API for the) redeploy and reindex pages for to straighten out blue/green
   and staging/data for clusters/services vs task definitions.
+* Added indication to redeploy/reindex pages if in blue/green mirror stage. 
+* Added portal branch/commit to redeploy page.
 
 
 5.2.0

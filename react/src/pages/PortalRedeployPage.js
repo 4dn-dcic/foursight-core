@@ -17,6 +17,7 @@ import useFetch from '../hooks/Fetch';
 import useFetchFunction from '../hooks/FetchFunction';
 import useHeader from '../hooks/Header';
 import Yaml from '../utils/Yaml';
+import { BlueGreenMirrorStateImage } from './PortalUtils';
 
 const awsRegion = "us-east-1";
 const awsBaseUrl = `https://${awsRegion}.console.aws.amazon.com`;
@@ -169,6 +170,9 @@ const Content = (props) => {
     const sortedClusters = props.clusters?.sort((a, b) => {
         a = a.env?.name?.toLowerCase();
         b = b.env?.name?.toLowerCase();
+        // Local hack just to put data and staging first and second.
+        if (a == "data") { a = "aaa1_data"; } else if (a == "staging") { a = "aaa2_staging"; }
+        if (b == "data") { b = "aaa1_data"; } else if (b == "staging") { b = "aaa2_staging"; }
         return (a < b) ? -1 : ((a > b) ? 1 : 0);
     });
 
@@ -252,6 +256,7 @@ const PortalRedeployBox = (props) => {
                 </small>
                 { (props.cluster?.env?.is_production || props.cluster?.env?.is_staging || props.cluster?.env?.color) &&
                     <small style={{float: "right", color: props.cluster?.env?.color == "blue" ? "blue" : (props.cluster?.env?.color == "green" ? "green" : "")}} onClick={toggleShowDetail}>
+                        {props.cluster?.env?.is_blue_green_mirror && <BlueGreenMirrorStateImage id={props.cluster.cluster_arn} />}
                         {props.cluster?.env?.is_production && <b>PRODUCTION</b>}
                         {props.cluster?.env?.is_staging && <b>STAGING</b>}
                         {props.cluster?.env?.color && <>
@@ -571,6 +576,20 @@ const AccountDetails = (props) => {
                 <small>{Time.Ago(props.status.data?.started_at, true, true)}</small>
             </td>
        </tr>
+        { props.health?.data?.git?.branch && props.health?.data?.git?.commit && <>
+            <TSeparatorH top="4pt" bottom="4pt" size="1" color="gray" />
+            <tr>
+                <td style={{verticalAlign: "top"}}>
+                    <b>Portal
+                    <br />Branch</b>:
+                </td>
+                <td style={{whiteSpace: "nowrap"}}>
+                    <b>{props.health?.data?.git?.branch}</b> <br />
+                    <small id={`tooltip-portal-commit-${props.health?.data?.git?.commit}`}>Commit: {props.health?.data?.git?.commit.substring(0, 16)} ...</small>
+                    <Tooltip id={`tooltip-portal-commit-${props.health?.data?.git?.commit}`} position="top" text={`GitHub commit: ${props.health?.data?.git?.commit}`} />
+                </td>
+            </tr>
+        </> }
     </tbody></table>
 }
 

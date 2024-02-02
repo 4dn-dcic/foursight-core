@@ -442,6 +442,9 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
         <Separator />
         <Row title="Foursight Deployed" value={`${DateTime.Format(account.get("foursight.deployed"))} ${Char.RightArrow} ${Time.Ago(account.get("foursight.deployed"), true, false)}`} show={account.get("foursight.deployed") ? true : false} />
         <Row title="Portal Deployed" value={`${DateTime.Format(account.get("portal.started"))} ${Char.RightArrow} ${Time.Ago(account.get("portal.started"), true, false)}`} />
+        { account.get("portal.health.git.branch") && account.get("portal.health.git.commit") &&
+            <Row title="Portal Branch" value={`${account.get("portal.health.git.branch")} | Commit: ${account.get("portal.health.git.commit")}`} />
+        }
     </tbody></table>
 }
 

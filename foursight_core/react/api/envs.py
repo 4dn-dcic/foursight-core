@@ -31,13 +31,23 @@ class Envs:
         for known_env in self._known_envs:
             if self._env_contains(known_env, "blue"):
                 known_env["color"] = "blue"
+                known_env["is_blue"] = True
             elif self._env_contains(known_env, "green"):
                 known_env["color"] = "green"
+                known_env["is_green"] = True
             if known_env.get("color"):
                 if self._env_contains(known_env, "stage") or self._env_contains(known_env, "staging"):
                     known_env["is_staging"] = True
+                    if known_env.get("is_green"):
+                        known_env["is_blue_green_mirror"] = True
+                    else:
+                        known_env["is_blue_green_normal"] = True
                 else:
                     known_env["is_production"] = True
+                    if known_env.get("is_blue"):
+                        known_env["is_blue_green_mirror"] = True
+                    else:
+                        known_env["is_blue_green_normal"] = True
 
     def get_known_envs(self) -> list:
         return self._known_envs
@@ -200,7 +210,7 @@ class Envs:
         return None
 
     @staticmethod
-    def _value_is_blue(value: str) -> Optional[str]:
+    def _value_is_blue(value: str) -> bool:
         if isinstance(value, str) and (value := value.lower()):
             value_blue_count = value.count("blue")
             value_green_count = value.count("green")
@@ -208,7 +218,7 @@ class Envs:
         return False
 
     @staticmethod
-    def _value_is_green(value: str) -> Optional[str]:
+    def _value_is_green(value: str) -> bool:
         if isinstance(value, str) and (value := value.lower()):
             value_blue_count = value.count("blue")
             value_green_count = value.count("green")
@@ -234,3 +244,13 @@ class Envs:
                 (env.get("foursight_name").lower() == value)):
                 return True
         return False
+
+    @staticmethod
+    def is_blue_green_mirror_state(value_a: str, value_b: str) -> Optional[bool]:
+        is_blue_value_a = Envs._value_is_blue(value_a)
+        is_blue_value_b = Envs._value_is_blue(value_b)
+        is_green_value_a = Envs._value_is_green(value_a)
+        is_green_value_b = Envs._value_is_green(value_b)
+        if (is_blue_value_a or is_green_value_a) and (is_blue_value_b or is_green_value_b):
+            return (is_blue_value_a and is_green_value_b) or (is_green_value_a and is_blue_value_b)
+        return None

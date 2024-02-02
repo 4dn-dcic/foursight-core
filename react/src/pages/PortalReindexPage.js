@@ -13,6 +13,7 @@ import useFetch from '../hooks/Fetch';
 import useFetchFunction from '../hooks/FetchFunction';
 import useHeader from '../hooks/Header';
 import Yaml from '../utils/Yaml';
+import { BlueGreenMirrorStateImage } from './PortalUtils';
 
 const awsRegion = "us-east-1";
 const awsBaseUrl = `https://${awsRegion}.console.aws.amazon.com`;
@@ -175,6 +176,9 @@ const Content = (props) => {
     const sortedTasks = props.tasks?.sort((a, b) => {
         a = a.env?.name?.toLowerCase();
         b = b.env?.name?.toLowerCase();
+        // Local hack just to put data and staging first and second.
+        if (a == "data") { a = "aaa1_data"; } else if (a == "staging") { a = "aaa2_staging"; }
+        if (b == "data") { b = "aaa1_data"; } else if (b == "staging") { b = "aaa2_staging"; }
         return (a < b) ? -1 : ((a > b) ? 1 : 0);
     });
 
@@ -236,6 +240,7 @@ const PortalReindexBox = (props) => {
                 </small>
                 { (props.task?.env?.is_production || props.task?.env?.is_staging || props.task?.env?.color) &&
                     <small style={{float: "right", color: props.task?.env?.color == "blue" ? "blue" : (props.task?.env?.color == "green" ? "green" : "")}}>
+                        {props.task?.env?.is_blue_green_mirror && <BlueGreenMirrorStateImage id={props.task.task_definition_arn} />}
                         {props.task?.env?.is_production && <b>PRODUCTION</b>}
                         {props.task?.env?.is_staging && <b>STAGING</b>}
                         {props.task?.env?.color && <>

@@ -3,7 +3,7 @@ import json
 from typing import Dict, List, Optional
 from dcicutils.ecs_utils import ECSUtils
 from dcicutils.misc_utils import get_error_message
-from .aws_ecs_types import get_task_definition_type
+from .aws_ecs_types import get_cluster_associated_with_env, get_task_definition_type
 from .aws_network import aws_get_security_groups, aws_get_subnets, aws_get_vpcs
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
@@ -21,23 +21,8 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
     tasks_for_running = []
 
     def get_cluster_for_env(clusters: List[Dict], env: Optional[Dict]) -> Optional[str]:
-        if not env:
-            return None
-
-        # For (AWS ECS) clusters (and services), as opposed to task
-        # definitions, staging is always blue and data is always green.
-        is_env_staging = Envs._env_is_staging(env)
-        is_env_data = Envs._env_is_data(env)
-        if is_env_staging or is_env_data:
-            for cluster in clusters:
-                if is_env_staging and Envs._value_is_blue(cluster):
-                    return cluster
-                elif is_env_data and Envs._value_is_green(cluster):
-                    return cluster
-
-        for cluster in clusters:
-            if envs._env_contained_within(env, cluster):
-                return cluster
+        nonlocal envs
+        return get_cluster_associated_with_env(env, envs=envs, clusters=clusters)
 
     def get_vpc() -> Optional[Dict]:
         vpcs = aws_get_vpcs()

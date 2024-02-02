@@ -403,7 +403,7 @@ const SelectedGroupCheckBox = ({check, env, groupList, historyList, info }) => {
                             </Link>
                             <Tooltip id={`tooltip-check-details ${check.name}`} text="Click to view check details and history (in new tab)." />
                             { check.registered_github_url && <>
-                                <a id={`tooltip-view-source ${check.name}`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+                                <a id={`tooltip-view-source ${check.name}`} style={{marginLeft:"6pt",marginRight:"4pt"}} rel="noreferrer" target="_blank" href={check.registered_github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="20"/></a>
                                 <Tooltip id={`tooltip-view-source ${check.name}`} text="Click to view source code for this check (in new tab)." />
                             </>}
                             </span>
@@ -1906,7 +1906,7 @@ const RunActionBox = ({ check, env, groupList, fetchResult, runActionAllowedStat
                     <span style={{color:runActionConfirm ? "red" : "inherit",fontWeight:runActionConfirm ?  "bold" : "inherit"}}>
                         <b id={`tooltip-view-action-${check.name}`} >{check.__result.get("action_title")}</b>
                         { check.registered_action.github_url && <>
-                            <a id={`tooltip-view-action-source-${check.name}`} style={{marginLeft:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_action.github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="16"/></a>
+                            <a id={`tooltip-view-action-source-${check.name}`} style={{marginLeft:"6pt"}} rel="noreferrer" target="_blank" href={check.registered_action.github_url}><img alt="github" src={Image.GitHubLoginLogo()} height="19"/></a>
                             <Tooltip id={`tooltip-view-action-source-${check.name}`} text="Click to view source code for this action (in new tab)." />
                         </>}
                     </span>

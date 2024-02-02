@@ -236,10 +236,10 @@ const LoginPage = (props) => {
                 </small> }
                 <HorizontalLine top="6pt" bottom="6pt" />
                 Click <u style={{cursor:"pointer"}} onClick={login}><b>here</b></u> to <span style={{cursor:"pointer"}} onClick={() => login()}><b>login</b></span>.
-                { (isCognitoEnabled()) ?
+                { /* DISABLE COGNITO ALTOGETHER 2024-02-02 ... (isCognitoEnabled()) ?
                     <span onClick={disableCognito} style={{float:"right",position:"relative",top:"-2pt",fontSize:"8pt",cursor:"pointer"}}>Disable Cognito&nbsp;</span>
                 :   <span onClick={enableCognito} style={{float:"right",position:"relative",top:"-2pt",fontSize:"8pt",cursor:"pointer"}}>Enable Cognito&nbsp;</span>
-                }
+                */ }
                 {(false && header?.app?.credentials?.aws_account_number) && <>
                     <br />
                     <small>

@@ -34,14 +34,24 @@ export const LoginCognitoBox = ({ hide }) => {
                     responseType: "code"
                 },
             };
-            AmplifyAuth.configure(configuration);
+            // TODO/2024-02-02: Commented this out when all of a sudden ran into
+            // problems with the aws-amplify package which first manifested as an
+            // error like this (only) when running React locally:
+            // > Module not found: Error: You attempted to import /Users/dmichaels/repos/cgap/foursight-core/react/node_modules/react-refresh/runtime.js
+            // > falls outside of the project src/ directory. Relative imports outside of src/ are not supported.
+            // > can either move it inside src/, or add a symlink to it from project's node_modules/.
+            // > ERROR in ./src/App.js 1:40-137
+            // Fixed this by changing "aws-amplify" in package.json from "^5.0.10" to "^6.0.13",
+            // but then not finding "Auth" in "@aws-amplify/auth" above.
+            // Since this Cognito module not currently even in use we will just comment out for now.
+            // AmplifyAuth.configure(configuration);
         }
     });
 
     function signinWithGoogle() {
         Cookie.Set("env", Env.PreferredName(environ, header));
         Cookie.Set("signinvia", "Google");
-        AmplifyAuth.federatedSignIn({ provider: "Google", prompt: 'select_account' }, { prompt: 'select_account' });
+        // AmplifyAuth.federatedSignIn({ provider: "Google", prompt: 'select_account' }, { prompt: 'select_account' });
     }
 
     function signinWithGitHub() {
@@ -96,7 +106,7 @@ const GoogleLoginButton = ({ signin }) => {
 
 const GitHubLoginButton = ({ signin }) => {
     return <LoginButtonWrapper signin={signin}>
-        <img alt="github" src={Image.GitHubLoginLogo()} style={{position:"relative",marginTop:"-2px",marginLeft:"-2px"}} height="20" />
+        <img alt="github" src={Image.GitHubLoginLogo()} style={{position:"relative",marginTop:"-2px",marginLeft:"-2px"}} height="21" />
         <b className="title-font" style={{fontSize:"12pt",marginLeft:"7pt"}}>Sign in with GitHub</b>
     </LoginButtonWrapper>
 }

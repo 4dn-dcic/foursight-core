@@ -10,7 +10,7 @@ from .aws_ecs_tasks import (
     _get_cluster_arns, _get_task_running_id,
     _shortened_arn, _shortened_task_definition_arn
 )
-from .aws_ecs_types import get_service_type
+from .aws_ecs_types import get_env_associated_with_cluster, get_service_type
 from ...app import app
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
@@ -25,7 +25,8 @@ record_reindex_kickoff_via_tags = True
 def get_aws_ecs_clusters_for_update(envs: Envs) -> List[Dict]:
     response = []
     for cluster_arn in _get_cluster_arns():
-        cluster_env = envs.get_associated_env(cluster_arn, for_cluster=True)
+        cluster_env = get_env_associated_with_cluster(cluster_arn, envs=envs)
+#       cluster_env = envs.get_associated_env(cluster_arn, for_cluster=True)
         if cluster_env:
             response.append({
                 "cluster_arn": cluster_arn,
@@ -467,6 +468,10 @@ def _get_aws_ecs_services_for_update_raw(cluster_arn: str,
                 "tasks_desired_count": tasks_desired_count,
                 "updating": tasks_pending_count > 0 or tasks_desired_count != tasks_running_count
             }
+            if (mirror := Envs.is_blue_green_mirror_state(service_arn, task_definition_arn)) is True:
+                response["is_blue_green_mirror"] = True
+            elif mirror is False:
+                response["is_blue_green_normal"] = True
             if not service_type:
                 response["type_unknown"] = True
             response["image"] = {"arn": container_definition["image"]}
