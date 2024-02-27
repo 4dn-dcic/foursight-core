@@ -6,6 +6,16 @@ foursight-core
 Change Log
 ----------
 
+5.3.0
+=====
+* Added update of a gitinfo.json file in GitHub Actions (.github/workflows/main-publish.yml).
+* Fix to the (API for the) reindex page to NOT match the "initial" deploy task.
+* Fix to the (API for the) redeploy and reindex pages for to straighten out blue/green
+  and staging/data for clusters/services vs task definitions.
+* Added indication to redeploy/reindex pages if in blue/green mirror stage. 
+* Added portal branch/commit to redeploy page.
+
+
 5.2.0
 =====
 * Minor UI fixes to the Ingestion page.

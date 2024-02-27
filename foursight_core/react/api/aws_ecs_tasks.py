@@ -3,7 +3,7 @@ import json
 from typing import Dict, List, Optional
 from dcicutils.ecs_utils import ECSUtils
 from dcicutils.misc_utils import get_error_message
-from .aws_ecs_types import get_task_definition_type
+from .aws_ecs_types import get_cluster_associated_with_env, get_task_definition_type
 from .aws_network import aws_get_security_groups, aws_get_subnets, aws_get_vpcs
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
@@ -21,11 +21,8 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
     tasks_for_running = []
 
     def get_cluster_for_env(clusters: List[Dict], env: Optional[Dict]) -> Optional[str]:
-        if not env:
-            return None
-        for cluster in clusters:
-            if envs._env_contained_within(env, cluster):
-                return cluster
+        nonlocal envs
+        return get_cluster_associated_with_env(env, envs=envs, clusters=clusters)
 
     def get_vpc() -> Optional[Dict]:
         vpcs = aws_get_vpcs()
@@ -106,9 +103,21 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
                 ecs.describe_task_definition(taskDefinition=task["task_definition_arn"])["taskDefinition"])
             existing_task_registered_at = existing_task_definition.get("registeredAt")
             this_task_registered_at = this_task_definition.get("registeredAt")
+            if (("mirror" in this_task_definition.get("taskDefinitionArn").lower()) and not
+                ("mirror" in existing_task_definition.get("taskDefinitionArn").lower())):
+                # The existing task is not a "mirror" but the given task is; skip this given one;
+                # and do not even regard this as a duplicate.
+                return
+            elif (("mirror" in existing_task_definition.get("taskDefinitionArn").lower()) and not
+                  ("mirror" in this_task_definition.get("taskDefinitionArn").lower())):
+                # This given task is not a "mirror" but the existing task is; remove the existing one.
+                # and do not even regard this as a duplicate.
+                tasks_for_running.remove(existing_task)
+                tasks_for_running.append(task)
+                return
             if existing_task_registered_at and this_task_registered_at:
                 if existing_task_registered_at > this_task_registered_at:
-                    # The existing task is newer than this task; skip this one.
+                    # The existing task is newer than this given task; skip this given one.
                     existing_task["registered_at"] = datetime_string(existing_task_registered_at)
                     if not existing_task.get("duplicates"):
                         existing_task["duplicates"] = []
@@ -118,7 +127,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
                      })
                     return
                 else:
-                    # This task is newer than the existing task; remove the existing one.
+                    # The given task is newer than the existing task; remove the existing one.
                     task["registered_at"] = datetime_string(this_task_registered_at)
                     task["duplicates"] = existing_task.get("duplicates") or []
                     task["duplicates"].append({

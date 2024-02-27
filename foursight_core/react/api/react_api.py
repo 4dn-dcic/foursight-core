@@ -438,6 +438,32 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 data["portal_access_key_erro"] = True
         return self.create_success_response(data)
 
+    @function_cache
+    def _get_gitinfo(self, package: str = None) -> Optional[dict]:
+        if not package:
+            if gitinfo := self._get_gitinfo("chalicelib_smaht"):
+                return gitinfo
+            elif gitinfo := self._get_gitinfo("chalicelib_fourfront"):
+                return gitinfo
+            elif gitinfo := self._get_gitinfo("chalicelib_cgap"):
+                return gitinfo
+            else:
+                return None
+        try:
+            gitinfo = {}
+            if os.path.exists(f"{package}/gitinfo.json"):
+                with open(f"{package}/gitinfo.json", "r") as f:
+                    if package_gitinfo := json.load(f):
+                        gitinfo[package] = package_gitinfo
+            if os.path.exists(f"foursight_core/gitinfo.json"):
+                with open(f"foursight_core/gitinfo.json", "r") as f:
+                    if package_gitinfo := json.load(f):
+                        gitinfo["foursight_core"] = package_gitinfo
+            return gitinfo
+        except Exception:
+            pass
+        return None
+
     @function_cache(key=lambda self, request, env: env)  # new as of 2023-04-27
     def _reactapi_header_cache(self, request: dict, env: str) -> dict:
         """
@@ -471,7 +497,8 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 },
                 "launched": app.core.init_load_time,
                 "deployed": app.core.get_lambda_last_modified(),
-                "accounts_file": self._get_accounts_file_name()
+                "accounts_file": self._get_accounts_file_name(),
+                "git": self._get_gitinfo()
             },
             "versions": self._get_versions_object(),
             "portal": {

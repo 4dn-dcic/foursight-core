@@ -337,7 +337,7 @@ const Header = (props) => {
                                 </>:<>
                                     { Auth.LoggedInViaGitHub(header) && <>
                                         <span id="tooltip-header-login-github">
-                                        <img alt="github" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
+                                        <img alt="github" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="21" />
                                         </span>
                                         <Tooltip id="tooltip-header-login-github" position="bottom" text="Logged in via GitHub authentication." />
                                     </>}

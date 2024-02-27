@@ -31,13 +31,23 @@ class Envs:
         for known_env in self._known_envs:
             if self._env_contains(known_env, "blue"):
                 known_env["color"] = "blue"
+                known_env["is_blue"] = True
             elif self._env_contains(known_env, "green"):
                 known_env["color"] = "green"
+                known_env["is_green"] = True
             if known_env.get("color"):
                 if self._env_contains(known_env, "stage") or self._env_contains(known_env, "staging"):
                     known_env["is_staging"] = True
+                    if known_env.get("is_green"):
+                        known_env["is_blue_green_mirror"] = True
+                    else:
+                        known_env["is_blue_green_normal"] = True
                 else:
                     known_env["is_production"] = True
+                    if known_env.get("is_blue"):
+                        known_env["is_blue_green_mirror"] = True
+                    else:
+                        known_env["is_blue_green_normal"] = True
 
     def get_known_envs(self) -> list:
         return self._known_envs
@@ -148,12 +158,10 @@ class Envs:
         if "color" in env and env["color"] in ["blue", "green"] and env["color"] in value:
             # Handle situations like this where both blue and green appear, but green appears twice:
             # c4-ecs-blue-green-smaht-production-stack-SmahtgreenDeployment-mIHBLXIQ1pok
-            blue_count = value.count("blue")
-            green_count = value.count("green")
             if env["color"] == "blue":
-                if blue_count > green_count:
+                if Envs._value_is_blue(value):
                     return True
-            elif green_count > blue_count:
+            elif Envs._value_is_green(value):
                 return True
         result = (env["full_name"].lower() in value or
                   env["short_name"].lower() in value or
@@ -173,13 +181,76 @@ class Envs:
                 return (known_env["color"], known_env)
         return (None, None)
 
-    def get_associated_env(self, name: str) -> Optional[dict]:
+    def get_associated_env(self, name: str, for_cluster: bool = False) -> Optional[dict]:
+
         known_envs_with_colors = [env for env in self._known_envs if env.get("color")]
-        known_envs_sans_colors = [env for env in self._known_envs if not env.get("color")]
+
+        if for_cluster:
+            is_name_blue = Envs._value_is_blue(name)
+            is_name_green = Envs._value_is_green(name)
+            if is_name_blue or is_name_green:
+                # For (AWS ECS) clusters (and services), as opposed to task
+                # definitions, staging is always blue and data is always green.
+                for known_env in known_envs_with_colors:
+                    if is_name_blue and Envs._env_is_staging(known_env):
+                        return known_env
+                    elif is_name_green and Envs._env_is_data(known_env):
+                        return known_env
+
         for known_env in known_envs_with_colors:
             if self._env_contained_within(known_env, name):
                 return known_env
+
+        known_envs_sans_colors = [env for env in self._known_envs if not env.get("color")]
+
         for known_env in known_envs_sans_colors:
             if self._env_contained_within(known_env, name):
                 return known_env
+
+        return None
+
+    @staticmethod
+    def _value_is_blue(value: str) -> bool:
+        if isinstance(value, str) and (value := value.lower()):
+            value_blue_count = value.count("blue")
+            value_green_count = value.count("green")
+            return value_blue_count > 0 and value_blue_count > value_green_count
+        return False
+
+    @staticmethod
+    def _value_is_green(value: str) -> bool:
+        if isinstance(value, str) and (value := value.lower()):
+            value_blue_count = value.count("blue")
+            value_green_count = value.count("green")
+            return value_green_count > 0 and value_green_count > value_blue_count
+        return False
+
+    @staticmethod
+    def _env_is_staging(env: dict) -> bool:
+        return Envs._env_is_value(env, "staging")
+
+    @staticmethod
+    def _env_is_data(env: dict) -> bool:
+        return Envs._env_is_value(env, "data")
+
+    @staticmethod
+    def _env_is_value(env: dict, value: str) -> bool:
+        if isinstance(env, dict) and isinstance(value, str):
+            value = value.lower()
+            if ((env.get("name").lower() == value) or
+                (env.get("short_name").lower() == value) or
+                (env.get("full_name").lower() == value) or
+                (env.get("public_name").lower() == value) or
+                (env.get("foursight_name").lower() == value)):
+                return True
+        return False
+
+    @staticmethod
+    def is_blue_green_mirror_state(value_a: str, value_b: str) -> Optional[bool]:
+        is_blue_value_a = Envs._value_is_blue(value_a)
+        is_blue_value_b = Envs._value_is_blue(value_b)
+        is_green_value_a = Envs._value_is_green(value_a)
+        is_green_value_b = Envs._value_is_green(value_b)
+        if (is_blue_value_a or is_green_value_a) and (is_blue_value_b or is_green_value_b):
+            return (is_blue_value_a and is_green_value_b) or (is_green_value_a and is_blue_value_b)
         return None

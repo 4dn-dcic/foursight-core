@@ -59,7 +59,7 @@ export const LoggedInUser = ({ link = undefined}) => {
         </>:<>
             { Auth.LoggedInViaGitHub() && <>
                 <span id="tooltip-login-github">
-                    <img alt="github" title="Via GitHub" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="19" />
+                    <img alt="github" title="Via GitHub" style={{marginLeft:"5px",marginRight:"-4px",marginBottom:"2px"}} src={Image.GitHubLoginLogo()} height="21" />
                 </span>
                 <Tooltip id="tooltip-login-github" position="bottom" text="Via GitHub authentication." />
             </>}
@@ -124,7 +124,7 @@ export const ExternalLink = (props) => {
 export const GitHubLink = (props) => {
     if (!props.href) return null;
     return <span style={{position:"relative",bottom:"0pt",...props.style}}>
-        <a id={props.href} rel="noreferrer" target="_blank" href={props.href}><img alt="github" src={Image.GitHubLoginLogo()} height="18"/></a>
+        <a id={props.href} rel="noreferrer" target="_blank" href={props.href}><img alt="github" src={Image.GitHubLoginLogo()} height="20"/></a>
         <Tooltip id={props.href} text={`Click to view source code for this ${props.type} (in new tab).`} />
     </span>
 }

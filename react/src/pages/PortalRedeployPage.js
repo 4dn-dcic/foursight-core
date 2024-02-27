@@ -17,6 +17,7 @@ import useFetch from '../hooks/Fetch';
 import useFetchFunction from '../hooks/FetchFunction';
 import useHeader from '../hooks/Header';
 import Yaml from '../utils/Yaml';
+import { BlueGreenMirrorStateImage } from './PortalUtils';
 
 const awsRegion = "us-east-1";
 const awsBaseUrl = `https://${awsRegion}.console.aws.amazon.com`;
@@ -169,6 +170,9 @@ const Content = (props) => {
     const sortedClusters = props.clusters?.sort((a, b) => {
         a = a.env?.name?.toLowerCase();
         b = b.env?.name?.toLowerCase();
+        // Local hack just to put data and staging first and second.
+        if (a == "data") { a = "aaa1_data"; } else if (a == "staging") { a = "aaa2_staging"; }
+        if (b == "data") { b = "aaa1_data"; } else if (b == "staging") { b = "aaa2_staging"; }
         return (a < b) ? -1 : ((a > b) ? 1 : 0);
     });
 
@@ -231,6 +235,8 @@ const PortalRedeployBox = (props) => {
         }
     }
 
+    const health = useFetchPortalHealth(services.data?.env?.full_name);
+
     return <div style={{marginTop:"4pt"}} className="hover-lighten">
         <table style={{width: "100%"}}><tbody><tr>
         <td style={{verticalAlign: "top", paddingRight:"10pt", width: "1%"}} onClick={selectCluster}>
@@ -250,15 +256,22 @@ const PortalRedeployBox = (props) => {
                 <small style={{float: "right", marginRight: "2pt"}}>
                     &nbsp;&nbsp;<ExternalLink href={props.cluster.env?.portal_url} />
                 </small>
-                { (props.cluster?.env?.is_production || props.cluster?.env?.is_staging || props.cluster?.env?.color) &&
+                <table style={{float:"right",display:"inline-block"}}><tr><td>
+                { (props.cluster?.env?.is_production || props.cluster?.env?.is_staging || props.cluster?.env?.color) && <>
                     <small style={{float: "right", color: props.cluster?.env?.color == "blue" ? "blue" : (props.cluster?.env?.color == "green" ? "green" : "")}} onClick={toggleShowDetail}>
+                        {props.cluster?.env?.is_blue_green_mirror && <BlueGreenMirrorStateImage id={props.cluster.cluster_arn} />}
                         {props.cluster?.env?.is_production && <b>PRODUCTION</b>}
                         {props.cluster?.env?.is_staging && <b>STAGING</b>}
                         {props.cluster?.env?.color && <>
                             &nbsp;({props.cluster?.env?.color?.toUpperCase()})
                         </>}
+                        <br />
                     </small>
-                }
+                    <br />
+                </> }
+                </td></tr><tr><td>
+                { health?.data?.git?.branch && health?.data?.git?.branch !== "main" && health?.data?.git?.branch !== "main" && <span style={{float:"right", position: "relative", top:"2px", color:"#777777", fontSize: "x-small"}}>Current Branch: <b>{health?.data?.git?.branch}</b></span> }
+                </td></tr></table>
                 <br />
                 <small id={`tooltip-${props.cluster.cluster_arn}`}>
                     {props.cluster?.cluster_arn}&nbsp;<ExternalLink href={awsClusterLink(props.cluster?.cluster_arn)} />
@@ -273,7 +286,7 @@ const PortalRedeployBox = (props) => {
                         deployedBranch={deployedBranch} />
                 }
                 { isShowDetail() &&
-                    <DetailBox services={services} cluster={props.cluster} env={props.cluster?.env} status={status} setDeployedBranch={setDeployedBranch} previousBuilds={props.previousBuilds} />
+                    <DetailBox services={services} cluster={props.cluster} env={props.cluster?.env} status={status} setDeployedBranch={setDeployedBranch} previousBuilds={props.previousBuilds} health={health} />
                 }
                 <Tooltip id={`tooltip-${props.cluster.cluster_arn}`} position="right" shape="squared" size="small" text={"ARN of the AWS cluster definition to be updated."} />
             </div>
@@ -480,7 +493,6 @@ const DetailBox = (props) => {
     const image = useFetchImageInfo(services.data?.image?.arn);
     const build = useFetchBuildInfo(services.data?.image?.arn, previousBuilds);
     const header = useHeader();
-    const health = useFetchPortalHealth(services.data?.env?.full_name);
 
     useEffect(() => {
         if (!build.loading && !status.loading) {
@@ -492,18 +504,18 @@ const DetailBox = (props) => {
         <table style={{fontSize: "inherit"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}}>
-                    <ServicesDetails cluster={cluster} services={services} status={status} health={health} />
+                    <ServicesDetails cluster={cluster} services={services} status={status} health={props.health} />
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
-                    <AccountDetails cluster={cluster} health={health} status={status} />
+                    <AccountDetails cluster={cluster} health={props.health} status={status} />
                 </td>
             </tr>
             <TSpaceH />
             { !services.loading &&
                 <tr>
                     <td colSpan="5">
-                        <ImageAndBuildDetails imageArn={services.data?.image?.arn} image={image} build={build} setMoreBuilds={setMoreBuilds} />
+                        <ImageAndBuildDetails imageArn={services.data?.image?.arn} image={image} build={build} setMoreBuilds={setMoreBuilds} health={props.health} />
                     </td>
                 </tr>
             }
@@ -571,6 +583,20 @@ const AccountDetails = (props) => {
                 <small>{Time.Ago(props.status.data?.started_at, true, true)}</small>
             </td>
        </tr>
+        { props.health?.data?.git?.branch && props.health?.data?.git?.commit && <>
+            <TSeparatorH top="4pt" bottom="4pt" size="1" color="gray" />
+            <tr>
+                <td style={{verticalAlign: "top"}}>
+                    <b>Portal
+                    <br />Branch</b>:
+                </td>
+                <td style={{whiteSpace: "nowrap"}}>
+                    <b>{props.health?.data?.git?.branch}</b> <br />
+                    <small id={`tooltip-portal-commit-${props.health?.data?.git?.commit}`}>Commit: {props.health?.data?.git?.commit.substring(0, 16)} ...</small>
+                    <Tooltip id={`tooltip-portal-commit-${props.health?.data?.git?.commit}`} position="top" text={`Currently deployed GitHub commit: ${props.health?.data?.git?.commit}`} />
+                </td>
+            </tr>
+        </> }
     </tbody></table>
 }
 
@@ -700,7 +726,7 @@ const ImageAndBuildDetails = (props) => {
         <table style={{fontSize: "inherit", width: "100%"}}><tbody>
             <tr>
                 <td style={{verticalAlign: "top"}}>
-                    <BuildDetails build={build} image={image.data} setMoreBuilds={props.setMoreBuilds} />
+                    <BuildDetails build={build} image={image.data} setMoreBuilds={props.setMoreBuilds} health={props.health} />
                 </td>
                 <TSeparatorV />
                 <td style={{verticalAlign: "top"}}>
@@ -825,13 +851,12 @@ const BuildDetails = (props) => {
         { build.loading ? <>
             <StandardSpinner label="Loading build info" />
         </>:<>
-            <BuildInfo build={build} digest={props.digest} image={props.image} fetchDigest={true} which="latest" expanded={showPrevious} />
+            <BuildInfo build={build} digest={props.digest} image={props.image} fetchDigest={true} which="latest" expanded={showPrevious} health={props.health} />
             { showPrevious && build.data?.others?.length > 0 && <>
                 { build.data?.others?.map((other, index) => <>
                     <SeparatorH top="2pt" bottom="8pt" color="gray" />
                     <table style={{fontSize: "inherit", width: "100%"}}><tbody>
                         <tr><td style={{verticalAlign: "top"}} colSpan="2">
-                            Build Details&nbsp;{Char.Diamond}&nbsp;
                             { index == 0 ? <>Previous</> : <>{ index == 1 ? <>Next Previous</> : <>{DateTime.Format(other.finished_at)}</> }</> }
                             { index == build.data.others.length - 1 &&
                                 <span style={{float: "right"}} className="pointer" onClick={toggleMoreBuilds} id={`tooltip-more-${build.data?.latest?.commit}`} >
@@ -842,7 +867,7 @@ const BuildDetails = (props) => {
                         </td></tr>
                         <TSeparatorH double={true} />
                     </tbody></table>
-                    <BuildInfo build={build} which={other} index={index} expanded={showPrevious} />
+                    <BuildInfo build={build} which={other} index={index} expanded={showPrevious} health={props.health} />
                 </> )}
             </> }
         </> }
@@ -914,6 +939,9 @@ const BuildInfo = (props) => {
                 <td style={tdcontent}>
                     <b>{build?.branch}</b>
                     &nbsp;<ExternalLink href={`${build?.github}/tree/${build?.branch}`} />
+                    { (build?.commit == props.health?.data?.git?.commit) && <>
+                        <b>&nbsp;&nbsp;{Char.RightArrow}&nbsp;<i>Currently Deployed</i></b>
+                    </> }
                 </td>
             </tr>
             <tr>

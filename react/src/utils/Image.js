@@ -59,7 +59,8 @@ function GetFoursightSmahtLogoImage() {
 }
 
 function GetGitHubLoginLogoImage() {
-    return "https://github.githubassets.com/images/modules/logos_page/Octocat.png"
+    return "https://octodex.github.com/images/orderedlistocat.png";
+    // return "https://github.githubassets.com/images/modules/logos_page/Octocat.png"
 }
 
 function GetGoogleLoginLogoImage() {
