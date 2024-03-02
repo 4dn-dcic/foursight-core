@@ -20,7 +20,8 @@ def local_check_execution(app_utils):
 
     args = process_args()
 
-    sanity_check_elasticsearch_accessibility(app_utils.host)
+    if not args.list:
+        sanity_check_elasticsearch_accessibility(app_utils.host)
 
     if not os.environ.get("IDENTITY"):
         exit_with_no_action("Your IDENTITY environment variable must be set to an AWS Secrets Manager name; or use --identity.")
@@ -206,12 +207,15 @@ def guess_env() -> Optional[str]:
 
 
 def sanity_check_aws_accessibility() -> None:
-    try:
-        caller_identity = boto3.client("sts").get_caller_identity()
-    except Exception:
+    if not (error := (not os.environ.get("AWS_SECRET_ACCESS_KEY") or not os.environ.get("AWS_ACCESS_KEY_ID"))):
+        try:
+            caller_identity = boto3.client("sts").get_caller_identity()
+        except Exception:
+            error = True
+    if error:
         print("Cannot accesss AWS.")
-        exit_with_no_action("You must have your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables setup.")
-    pass
+        exit_with_no_action(
+            "You must have your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables setup properly.")
 
 
 def sanity_check_elasticsearch_accessibility(host: str, timeout: int = 3) -> None:
@@ -223,7 +227,7 @@ def sanity_check_elasticsearch_accessibility(host: str, timeout: int = 3) -> Non
                 "---",
                 f"The above {'AWS ' if 'aws' in host.lower() else ''}ElasticSearch"
                 f" host appears to be inaccessible.",
-                "You may need to be running a local SHH tunnel to access this.",
+                "You may need to be running a local SSH tunnel to access this.",
                 "And/or if you already are make sure your ES_HOST_LOCAL environment variable is set to it.",
                 "---",
                 "https://hms-dbmi.atlassian.net/wiki/spaces/FOURDNDCIC/pages/3004891144/Running+Foursight+Locally",
