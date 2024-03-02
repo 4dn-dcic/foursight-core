@@ -4,24 +4,31 @@
 # See: https://hms-dbmi.atlassian.net/wiki/spaces/FOURDNDCIC/pages/3004891144/Running+Foursight+Locally
 
 import argparse
+import boto3
 import json
 import os
 import sys
-from typing import Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 import yaml
 from foursight_core.captured_output import captured_output, uncaptured_output
-# This captured_output thing is to suppress the mass of (stdout and stderr) output from
-# running Foursight; we'd prefer not to have this come out of this command-line utility.
 with captured_output():
-    import app
+    import requests
     from dcicutils.command_utils import yes_or_no
 
 
 def local_check_execution(app_utils):
 
-    args = parse_args()
+    args = process_args()
 
-    if args.list:
+    sanity_check_elasticsearch_accessibility(app_utils.host)
+
+    if not os.environ.get("IDENTITY"):
+        exit_with_no_action("Your IDENTITY environment variable must be set to an AWS Secrets Manager name; or use --identity.")
+
+    with captured_output():
+        import app  # noqa
+
+    if args.list or args.check_or_action.lower() == "list":
         list_checks(app_utils, args.list,
                     with_action=args.action,
                     verbose=args.verbose)
@@ -29,27 +36,10 @@ def local_check_execution(app_utils):
         run_check_and_or_action(app_utils, args)
 
 
-def parse_args():
-    args_parser = argparse.ArgumentParser('local_check_execution')
-    args_parser.add_argument("check_or_action", nargs="?", type=str,
-                             help="Name of check or action to run.")
-    args_parser.add_argument("--env", type=str,
-                             help="AWS environment name.")
-    args_parser.add_argument("--stage", type=str, choices=["dev", "prod"], default="dev",
-                             help="Chalice deployment stage (dev or prod)")
-    args_parser.add_argument("--primary", action="store_true",
-                             help="True if result should be stored (TODO).")
-    args_parser.add_argument("--action", action="store_true",
-                             help="Any associated action should also be run.")
-    args_parser.add_argument("--list", nargs="?", const="all",
-                             help="List checks, containing given value if any.")
-    args_parser.add_argument("--yaml", action="store_true",
-                             help="Output result in YAML rather than JSON.")
-    args_parser.add_argument("--verbose", action="store_true",
-                             help="Verbose output.")
-    args_parser.add_argument("--debug", action="store_true",
-                             help="Debugging output.")
-    args = args_parser.parse_args()
+
+def process_args():
+
+    args = parse_args()
 
     if args.list:
         if args.check_or_action:
@@ -73,6 +63,33 @@ def parse_args():
     return args
 
 
+def parse_args():
+    args_parser = argparse.ArgumentParser('local_check_execution')
+    args_parser.add_argument("check_or_action", nargs="?", type=str,
+                             help="Name of check or action to run.")
+    args_parser.add_argument("--env", type=str,
+                             help="AWS environment name.")
+    args_parser.add_argument("--stage", type=str, choices=["dev", "prod"], default="dev",
+                             help="Chalice deployment stage (dev or prod)")
+    args_parser.add_argument("--primary", action="store_true",
+                             help="True if result should be stored (TODO).")
+    args_parser.add_argument("--action", action="store_true",
+                             help="Any associated action should also be run; will prompt first.")
+    args_parser.add_argument("--identity", type=str,  # This is handled above.
+                             help="Value to use for the IDENTITY environment variable for this run.")
+    args_parser.add_argument("--list", nargs="?", const="all",
+                             help="List checks, containing given value if any.")
+    args_parser.add_argument("--es",
+                             help="Set to your ElasticSearch host.")
+    args_parser.add_argument("--yaml", action="store_true",
+                             help="Output result in YAML rather than JSON.")
+    args_parser.add_argument("--verbose", action="store_true",
+                             help="Verbose output.")
+    args_parser.add_argument("--debug", action="store_true",
+                             help="Debugging output.")
+    return args_parser.parse_args()
+
+
 def list_checks(app_utils, text: str, with_action: bool = False, verbose: bool = False) -> None:
     with captured_output() as captured:
         checks = app_utils.check_handler.get_checks_info(text if text != "all" else None)
@@ -94,16 +111,14 @@ def list_checks(app_utils, text: str, with_action: bool = False, verbose: bool =
 
 def run_check_and_or_action(app_utils, args) -> None:
 
-    with captured_output() as captured:
-
-        PRINT = captured.uncaptured_print
+    with captured_output():
 
         # Setup.
         app.set_stage(args.stage)
         app.set_timeout(0)
+
         connection = app_utils.init_connection(args.env)
         handler = app_utils.check_handler
-
 
         check_info, action_info = find_check_or_action(app_utils, args.check_or_action)
         if check_info:
@@ -111,7 +126,7 @@ def run_check_and_or_action(app_utils, args) -> None:
             check_args = collect_args(check_info, initial_args=check_args, verbose=args.verbose)
             confirm_interactively(f"Run check {check_info.qualified_name}?", exit_if_no=True)
             check_result = handler.run_check_or_action(connection, check_info.qualified_name, check_args)
-            output_result(check_result, args.yaml)
+            print_result(check_result, args.yaml)
 
         # Run any associated action if desired (i.e. if --action option given).
         if (args.action and check_info.associated_action) or action_info:
@@ -124,7 +139,7 @@ def run_check_and_or_action(app_utils, args) -> None:
             action_args = collect_args(action_info, initial_args=action_args, verbose=args.verbose)
             confirm_interactively(f"Run action {action_info.qualified_name}?", exit_if_no=True)
             action_result = handler.run_check_or_action(connection, action_info.qualified_name, action_args)
-            output_result(action_result, args.yaml)
+            print_result(action_result, args.yaml)
 
 
 def collect_args(check_or_action_info, initial_args: Optional[dict] = None, verbose: bool = False) -> dict:
@@ -190,6 +205,74 @@ def guess_env() -> Optional[str]:
                 return aws_credentials_name
 
 
+def sanity_check_aws_accessibility() -> None:
+    try:
+        caller_identity = boto3.client("sts").get_caller_identity()
+    except Exception:
+        print("Cannot accesss AWS.")
+        exit_with_no_action("You must have your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables setup.")
+    pass
+
+
+def sanity_check_elasticsearch_accessibility(host: str, timeout: int = 3) -> None:
+    if host:
+        if not check_quickly_if_url_accessable(host, timeout=1):
+            print_boxed([
+                "---",
+                f"WARNING: {host}",
+                "---",
+                f"The above {'AWS ' if 'aws' in host.lower() else ''}ElasticSearch"
+                f" host appears to be inaccessible.",
+                "You may need to be running a local SHH tunnel to access this.",
+                "And/or if you already are make sure your ES_HOST_LOCAL environment variable is set to it.",
+                "---",
+                "https://hms-dbmi.atlassian.net/wiki/spaces/FOURDNDCIC/pages/3004891144/Running+Foursight+Locally",
+                "---"])
+            if not yes_or_no("Continue anyways?"):
+                exit_with_no_action()
+        else:
+            print(f"Using ElasticSearch host: {host} -> OK")
+
+
+def check_quickly_if_url_accessable(url: str, timeout: int = 3) -> bool:
+    if not url.lower().startswith("https://") and not url.lower().startswith("http://"):
+        try:
+            requests.get(f"https://{url}", timeout=timeout)
+            return True
+        except Exception:
+            try:
+                requests.get(f"http://{url}", timeout=timeout)
+                return True
+            except Exception:
+                return False
+    else:
+        try:
+            requests.get(url, timeout=timeout)
+            return True
+        except Exception:
+            return False
+
+def print_result(result: dict, format_yaml: bool = False) -> None:
+    with uncaptured_output():
+        if format_yaml:
+            yaml.dump(result, sys.stdout)
+        else:
+            print(json.dumps(result, indent=4))
+
+
+def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Callable]] = None) -> None:
+    length = max(len(line) for line in lines)
+    for line in lines:
+        if line == "---":
+            print(f"+{'-' * (length - len(line) + 5)}+")
+        elif right_justified_macro and (len(right_justified_macro) == 2) and line.endswith(right_justified_macro[0]):
+            line = line.replace(right_justified_macro[0], len(right_justified_macro[0]) * " ")
+            version = right_justified_macro[1]()
+            print(f"| {line}{' ' * (length - len(line) - len(version) - 1)} {version} |")
+        else:
+            print(f"| {line}{' ' * (length - len(line))} |")
+
+
 def confirm_interactively(message: str, exit_if_no: bool = False) -> bool:
     with uncaptured_output():
         if yes_or_no(message):
@@ -199,17 +282,31 @@ def confirm_interactively(message: str, exit_if_no: bool = False) -> bool:
         return False
 
 
-def output_result(result: dict, format_yaml: bool = False) -> None:
-    with uncaptured_output():
-        if format_yaml:
-            yaml.dump(result, sys.stdout)
-        else:
-            print(json.dumps(result, indent=4))
-
-
 def exit_with_no_action(message: Optional[str] = None):
     with uncaptured_output():
         if message:
             print(message)
         print("Exiting with no action.")
     exit(0)
+
+
+# This must execute before exiting (the import of) this module which
+# is imported from chalicelib_{smaht,cgap,fourfront}.local_check_execution,
+# where we import foursight_core.app_utils which depends on this stuff being setup.
+
+if "--help" in sys.argv:
+    parse_args().print_help()
+    exit(0)
+if ("--identity" in sys.argv) and (_index := sys.argv.index("--identity")) and ((_index := _index + 1) < len(sys.argv)):
+    os.environ["IDENTITY"] = sys.argv[_index]
+if ("--es" in sys.argv) and (_index := sys.argv.index("--es")) and ((_index := _index + 1) < len(sys.argv)):
+    os.environ["ES_HOST_LOCAL"] = sys.argv[_index]
+
+os.environ["CHALICE_LOCAL"] = "true"
+
+# This captured_output thing is to suppress the mass of (stdout and stderr) output from
+# running Foursight; we'd prefer not to have this come out of this command-line utility.
+with captured_output():
+    sanity_check_aws_accessibility()
+    if not os.environ.get("IDENTITY"):
+        exit_with_no_action("Your IDENTITY environment variable must be set to an AWS Secrets Manager name; or use --identity.")
