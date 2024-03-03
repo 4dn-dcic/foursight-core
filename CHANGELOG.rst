@@ -9,6 +9,7 @@ Change Log
 5.4.0
 =====
 * Changes to the local-check-execute script.
+* Fix to checks.test_checks.add_random_test_nums.
 
 
 5.3.0
