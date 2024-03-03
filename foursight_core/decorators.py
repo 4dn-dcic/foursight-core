@@ -113,6 +113,36 @@ class Decorators(object):
         """
         ignored(default_args)
 
+        # 2024-03-03/dmichaels: Added action_auto_run and action_manual_run check decorator options
+        # boolean to force action to run automaticallly after the check, or to force it not to run
+        # after the check, respectively. These are mutually exclusive and if they are both set then
+        # they will simply be ignored. These will override these (allow_check and prevent_check)
+        # values which might have been expliclity set within the check code itself.
+        naction_args = 0
+        if default_kwargs.get("action_auto_run") is True:
+            action_auto_run = True
+            del default_kwargs["action_auto_run"]
+            naction_args += 1
+        else:
+            action_auto_run = False
+        if default_kwargs.get("action_manual_run") is True:
+            action_manual_run = True
+            del default_kwargs["action_manual_run"]
+            naction_args += 1
+        else:
+            action_manual_run = False
+        if default_kwargs.get("action_disable_run") is True:
+            action_disable_run = True
+            del default_kwargs["action_disable_run"]
+            naction_args += 1
+        else:
+            action_disable_run = False
+        if naction_args > 1:
+            # These are mutually exclusive; if more then one specified then ignore completely.
+            action_auto_run = False
+            action_manual_run = False
+            action_disable_run = False
+
         outer_args = default_args
         outer_kwargs = default_kwargs
         def check_deco(func):
@@ -127,6 +157,15 @@ class Decorators(object):
                     try:
                         check = func(*args, **kwargs)
                         check.validate()
+                        if action_auto_run is True:
+                            check.allow_action = True
+                            check.prevent_action = False
+                        elif action_manual_run is True:
+                            check.allow_action = True
+                            check.prevent_action = True
+                        elif action_disable_run is True:
+                            check.allow_action = False
+                            check.prevent_action = True
                     except Exception:
                         # connection should be the first (and only) positional arg
                         check = self.CheckResult(args[0], func.__name__)
