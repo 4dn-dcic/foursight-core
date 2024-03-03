@@ -494,7 +494,6 @@ class Checks:
                     if registered_action_function_name:
                         registered_action = checks_registry.get(registered_action_function_name)
                         if registered_action and registered_action.get("kind") == "action":
-                            # import pdb ; pdb.set_trace()
                             check_item["registered_action"] = {
                                 "name": registered_action.get("name"),
                                 "file": registered_action.get("file"),
