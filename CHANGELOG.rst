@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+5.4.0
+=====
+* Changes to the local-check-execute script.
+
+
 5.3.0
 =====
 * Added update of a gitinfo.json file in GitHub Actions (.github/workflows/main-publish.yml).

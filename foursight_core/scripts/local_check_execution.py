@@ -17,6 +17,7 @@ with captured_output():
 
 app = None
 
+
 def local_check_execution(app_utils):
 
     args = process_args()
@@ -25,7 +26,8 @@ def local_check_execution(app_utils):
         sanity_check_elasticsearch_accessibility(app_utils.host)
 
     if not os.environ.get("IDENTITY"):
-        exit_with_no_action("Your IDENTITY environment variable must be set to an AWS Secrets Manager name; or use --identity.")
+        exit_with_no_action(
+            "Your IDENTITY environment variable must be set to an AWS Secrets Manager name; or use --identity.")
 
     with captured_output():
         global app
@@ -37,7 +39,6 @@ def local_check_execution(app_utils):
                     verbose=args.verbose)
     else:
         run_check_and_or_action(app_utils, args)
-
 
 
 def process_args():
@@ -81,7 +82,7 @@ def parse_args():
     args_parser.add_argument("--stage", type=str, choices=["dev", "prod"], default="dev",
                              help="Chalice deployment stage (dev or prod)")
     args_parser.add_argument("--primary", action="store_true",
-                             help="True if result should be stored (TODO).")
+                             help="True if primary result should be stored (TODO).")
     args_parser.add_argument("--action", action="store_true",
                              help="Any associated action should also be run; will prompt first.")
     args_parser.add_argument("--identity", type=str,  # This is handled above.
@@ -104,22 +105,24 @@ def parse_args():
 
 
 def list_checks(app_utils, text: str, with_action: bool = False, verbose: bool = False) -> None:
+    if verbose:
+        print("Foursight checks/actions listed below:")
     with captured_output() as captured:
         checks = app_utils.check_handler.get_checks_info(text if text != "all" else None)
         for check in checks:
             if with_action and not check.associated_action:
                 continue
-            captured.uncaptured_print(check.qualified_name)
+            captured.uncaptured_print(f"- {check.qualified_name}")
             if verbose:
                 if check.kwargs:
                     for arg_name in check.kwargs:
                         arg_value_default = check.kwargs.get(arg_name)
                         if arg_value_default:
-                            captured.uncaptured_print(f"- argument: {arg_name} [default: {arg_value_default}]")
+                            captured.uncaptured_print(f"  - argument: {arg_name} [default: {arg_value_default}]")
                         else:
-                            captured.uncaptured_print(f"- argument: {arg_name}")
+                            captured.uncaptured_print(f"  - argument: {arg_name}")
                 if check.associated_action:
-                    captured.uncaptured_print(f"- action: {check.associated_action}")
+                    captured.uncaptured_print(f"  - action: {check.associated_action}")
 
 
 def run_check_and_or_action(app_utils, args) -> None:
@@ -230,16 +233,18 @@ def sanity_check_aws_accessibility(verbose: bool = False) -> None:
                     aws_account_alias = aws_account_aliases[0]
         except Exception:
             error = True
-    if error:
-        print("Cannot accesss AWS.")
-        exit_with_no_action(
-            "You must have your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables setup properly.")
-    elif verbose:
-        print(f"Using AWS access key ID (prefix): {os.environ.get('AWS_ACCESS_KEY_ID')[0:2]}****** -> OK")
+    if verbose:
+        if not error:
+            print(f"Using AWS access key ID (prefix): {os.environ.get('AWS_ACCESS_KEY_ID')[0:2]}****** -> OK")
         if aws_account_alias:
             print(f"Using AWS account name (alias): {aws_account_alias}")
         if aws_account_number:
             print(f"Using AWS account (number): {aws_account_number}")
+    if error:
+        print(f"Cannot access AWS. Using AWS access key ID (prefix): "
+              f"{os.environ.get('AWS_ACCESS_KEY_ID')[0:2]}****** -> ERROR")
+        exit_with_no_action(
+            "You must have your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables setup properly.")
 
 
 def sanity_check_elasticsearch_accessibility(host: str, timeout: int = 3) -> None:
@@ -280,6 +285,7 @@ def check_quickly_if_url_accessable(url: str, timeout: int = 3) -> bool:
         except Exception:
             return False
 
+
 def print_result(result: dict, format_yaml: bool = False) -> None:
     with uncaptured_output():
         if format_yaml:
@@ -318,7 +324,7 @@ def exit_with_no_action(message: Optional[str] = None):
     exit(0)
 
 
-# This must execute before exiting (the import of) this module which
+# The below must execute before exiting (the import of) this module which
 # is imported from chalicelib_{smaht,cgap,fourfront}.local_check_execution,
 # where we import foursight_core.app_utils which depends on this stuff being setup.
 
@@ -337,4 +343,5 @@ os.environ["CHALICE_LOCAL"] = "true"
 sanity_check_aws_accessibility(verbose="--verbose" in sys.argv)
 with captured_output():
     if not os.environ.get("IDENTITY"):
-        exit_with_no_action("Your IDENTITY environment variable must be set to an AWS Secrets Manager name; or use --identity.")
+        exit_with_no_action(
+            "Your IDENTITY environment variable must be set to an AWS Secrets Manager name; or use --identity.")

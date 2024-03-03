@@ -76,10 +76,10 @@ def add_random_test_nums(connection, **kwargs):
     # output includes primary and latest results, to compare
     check_latest = check.get_latest_result()
     nums_latest = check_latest.get('full_output', [])
-    total_latest = sum(nums_latest) + kwargs.get('offset', 0)
+    total_latest = sum(nums_latest.get('output')) + int(kwargs.get('offset', 0))
     check_primary = check.get_primary_result()
-    nums_primary = check_primary.get('full_output', [])
-    total_primary = sum(nums_primary) + kwargs.get('offset', 0)
+    nums_primary = check_primary.get('full_output', []) if check_primary else None
+    total_primary = (sum(nums_primary.get('output')) + int(kwargs.get('offset', 0))) if nums_primary else None
     action.output = {'latest': total_latest, 'primary': total_primary}
     action.status = 'DONE'
     action.description = 'A test action'
