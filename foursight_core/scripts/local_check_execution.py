@@ -53,15 +53,21 @@ def process_args():
         print("A check or action name is required unless the --list option is given.")
         exit(1)
 
-    if not args.env:
-        env = guess_env()
-        if env:
-            print(f"An AWS environment name is required via the --env option; guessing it is: {env}")
-            confirm_interactively(f"Do you want to use this AWS environment name: {env}?", exit_if_no=True)
-            args.env = env
+    if not args.list:
+        if not args.env:
+            env = guess_env()
+            if env:
+                os.environ["ENV_NAME"] = env
+                print(f"An AWS environment name is required via the --env option; guessing it is: {env}")
+                confirm_interactively(f"Do you want to use this AWS environment name: {env}?", exit_if_no=True)
+                args.env = env
+            else:
+                print("An AWS environment name is required; use the --env option.")
+                exit_with_no_action()
         else:
-            print("An AWS environment name is required; use the --env option.")
-            exit_with_no_action()
+            # os.environ["ENV_NAME"] = args.env
+            if args.verbose:
+                print(f"Using AWS environment name: {args.env}")
 
     return args
 
@@ -91,7 +97,7 @@ def parse_args():
     args_parser.add_argument("--debug", action="store_true",
                              help="Debugging output.")
     args = args_parser.parse_args()
-    if args.check_or_action.lower() == "list":
+    if args.check_or_action == "list":
         args.check_or_action = None
         args.list = "all"
     return args
@@ -212,16 +218,28 @@ def guess_env() -> Optional[str]:
                 return aws_credentials_name
 
 
-def sanity_check_aws_accessibility() -> None:
+def sanity_check_aws_accessibility(verbose: bool = False) -> None:
+    aws_account_number = None
+    aws_account_alias = None
     if not (error := (not os.environ.get("AWS_SECRET_ACCESS_KEY") or not os.environ.get("AWS_ACCESS_KEY_ID"))):
         try:
-            caller_identity = boto3.client("sts").get_caller_identity()
+            if caller_identity := boto3.client("sts").get_caller_identity():
+                aws_account_number = caller_identity.get("Account")
+            if aws_account_aliases := boto3.client("iam").list_account_aliases():
+                if aws_account_aliases := aws_account_aliases.get("AccountAliases"):
+                    aws_account_alias = aws_account_aliases[0]
         except Exception:
             error = True
     if error:
         print("Cannot accesss AWS.")
         exit_with_no_action(
             "You must have your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables setup properly.")
+    elif verbose:
+        print(f"Using AWS access key ID (prefix): {os.environ.get('AWS_ACCESS_KEY_ID')[0:2]}****** -> OK")
+        if aws_account_alias:
+            print(f"Using AWS account name (alias): {aws_account_alias}")
+        if aws_account_number:
+            print(f"Using AWS account (number): {aws_account_number}")
 
 
 def sanity_check_elasticsearch_accessibility(host: str, timeout: int = 3) -> None:
@@ -316,7 +334,7 @@ os.environ["CHALICE_LOCAL"] = "true"
 
 # This captured_output thing is to suppress the mass of (stdout and stderr) output from
 # running Foursight; we'd prefer not to have this come out of this command-line utility.
+sanity_check_aws_accessibility(verbose="--verbose" in sys.argv)
 with captured_output():
-    sanity_check_aws_accessibility()
     if not os.environ.get("IDENTITY"):
         exit_with_no_action("Your IDENTITY environment variable must be set to an AWS Secrets Manager name; or use --identity.")
