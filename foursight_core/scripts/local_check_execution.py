@@ -15,6 +15,7 @@ with captured_output():
     import requests
     from dcicutils.command_utils import yes_or_no
 
+app = None
 
 def local_check_execution(app_utils):
 
@@ -27,9 +28,10 @@ def local_check_execution(app_utils):
         exit_with_no_action("Your IDENTITY environment variable must be set to an AWS Secrets Manager name; or use --identity.")
 
     with captured_output():
-        import app  # noqa
+        global app
+        import app as app
 
-    if args.list or args.check_or_action.lower() == "list":
+    if args.list:
         list_checks(app_utils, args.list,
                     with_action=args.action,
                     verbose=args.verbose)
@@ -88,7 +90,11 @@ def parse_args():
                              help="Verbose output.")
     args_parser.add_argument("--debug", action="store_true",
                              help="Debugging output.")
-    return args_parser.parse_args()
+    args = args_parser.parse_args()
+    if args.check_or_action.lower() == "list":
+        args.check_or_action = None
+        args.list = "all"
+    return args
 
 
 def list_checks(app_utils, text: str, with_action: bool = False, verbose: bool = False) -> None:
