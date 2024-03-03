@@ -8,12 +8,17 @@ Change Log
 
 5.4.0
 =====
-* Added support for check decorator boolean options: action_auto_run, action_manual_run, action_disable_run.
-  These will, respectively, force the associated action to run automatically after the check, or force it
-  not to run after the check (but allowed to run manually), or force it not to be allowed to run after the
-  check at all. These are mutually exclusive and if more than one are set (True) then they will all simply
-  be ignored. These work by setting the allow_action and the prevent_action properties of the check result,
-  and they will OVERRIDE these values if they were explicitly set within the check code itself.
+* 2024-03-03/dmichaels
+* Added action_auto, action_manual, action_disable check decorator boolean or
+  callable-returning-boolean options to force any associated action, after the check run, to
+  run automatically, or to force it to not run automatically but to allow it to be run manually,
+  or to not allow it to be run at allow, respectively. These are mutually exclusive; if more than
+  one is set, then the first one to resolve to True, in reverse order (i.e. in order from disable,
+  to manual, to auto) will be respected. NOTE: These work by setting the allow_check and prevent_check
+  properties of the check result, and these new options will OVERRIDE these values which might have
+  been expliclity set within the check code itself.
+* Set original_allow_action in app_utils.process_view_result to alleviate confusion from setting
+  allow_action back to False in some cases to prevent re-running (TODO: revist this at some point).
 * Changes to the local-check-execute script.
 * Fix to checks.test_checks.add_random_test_nums.
 

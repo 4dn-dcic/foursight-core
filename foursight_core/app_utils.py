@@ -1340,6 +1340,9 @@ class AppUtilsCore(ReactApi, Routes):
                             res['summary'] = 'ACTION PENDING: %s' % res['summary']
                     # don't allow the action to be run again from this check
                     del res['action']
+                    if ('allow_action' in res) and (res['allow_action'] is not False):
+                        # To alleviate confusion created by this resetting of allow_action to False below.
+                        res['original_allow_action'] = res['allow_action']
                     res['allow_action'] = False
                 elif res.get('allow_action') is True:
                     # if there is an action + allow action is set but the action has

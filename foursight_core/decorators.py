@@ -117,38 +117,26 @@ class Decorators(object):
 
         def check_deco(func):
 
-            # 2024-03-03/dmichaels: Added action_auto_run and action_manual_run check decorator options
-            # boolean to force action to run automaticallly after the check, or to force it not to run
-            # after the check, respectively. These are mutually exclusive and if they are both set then
-            # they will simply be ignored. These will override these (allow_check and prevent_check)
-            # values which might have been expliclity set within the check code itself.
-            naction_args = 0
-            if default_kwargs.get("action_auto_run") is True:
-                action_auto_run = True
-                naction_args += 1
-            else:
-                action_auto_run = False
-            if default_kwargs.get("action_manual_run") is True:
-                action_manual_run = True
-                naction_args += 1
-            else:
-                action_manual_run = False
-            if default_kwargs.get("action_disable_run") is True:
-                action_disable_run = True
-                naction_args += 1
-            else:
-                action_disable_run = False
-            if naction_args > 1:
-                # These are mutually exclusive; if more then one specified then ignore completely.
-                action_auto_run = False
-                action_manual_run = False
-                action_disable_run = False
+            # 2024-03-03/dmichaels: Added action_auto, action_manual, action_disable check decorator boolean
+            # or callable-returning-boolean options to force any associated action, after the check run, to
+            # run automatically, or to force it to not run automatically but to allow it to be run manually,
+            # or to not allow it to be run at allow, respectively. These are mutually exclusive; if more than
+            # one is set, then the first one to resolve to True, in reverse order (i.e. in order from disable,
+            # to manual, to auto) will be respected. NOTE: These work by setting the allow_check and prevent_check
+            # properties of the check result, and these new options will OVERRIDE these values which might have
+            # been expliclity set within the check code itself.
+            action_disable = None
+            if default_kwargs.get("action_disable") is True or callable(default_kwargs.get("action_disable")):
+                action_disable = default_kwargs.get("action_disable")
+            elif default_kwargs.get("action_manual") is True or callable(default_kwargs.get("action_manual")):
+                action_manual = default_kwargs.get("action_manual")
+            elif default_kwargs.get("action_auto") is True or callable(default_kwargs.get("action_auto")):
+                action_auto = default_kwargs.get("action_auto")
+            default_kwargs.pop("action_auto", None)
+            default_kwargs.pop("action_manual", None)
+            default_kwargs.pop("action_disable", None)
 
             self.create_registry_check_record(func, default_args, default_kwargs)
-
-            default_kwargs.pop("action_auto_run", None)
-            default_kwargs.pop("action_manual_run", None)
-            default_kwargs.pop("action_disable_run", None)
 
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -159,16 +147,19 @@ class Decorators(object):
                 if child_pid != 0:  # we are the parent who will execute the check
                     try:
                         check = func(*args, **kwargs)
-                        check.validate()
-                        if action_auto_run is True:
-                            check.allow_action = True
-                            check.prevent_action = False
-                        elif action_manual_run is True:
-                            check.allow_action = True
-                            check.prevent_action = True
-                        elif action_disable_run is True:
+                        if ((action_disable is True) or
+                            (callable(action_disable) and action_disable(check) is True)):
                             check.allow_action = False
                             check.prevent_action = True
+                        elif ((action_manual is True) or
+                              (callable(action_manual) and action_manual(check) is True)):
+                            check.allow_action = True
+                            check.prevent_action = True
+                        elif ((action_auto is True) or
+                              (callable(action_auto) and action_auto(check) is True)):
+                            check.allow_action = True
+                            check.prevent_action = False
+                        check.validate()
                     except Exception:
                         # connection should be the first (and only) positional arg
                         check = self.CheckResult(args[0], func.__name__)
