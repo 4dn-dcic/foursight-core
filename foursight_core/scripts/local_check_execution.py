@@ -3,8 +3,12 @@
 # app_utils from those local repos can be passed in properly.
 # See: https://hms-dbmi.atlassian.net/wiki/spaces/FOURDNDCIC/pages/3004891144/Running+Foursight+Locally
 
+# import cron_descriptor
+# (Pdb) cron_descriptor.get_description(' '.join(["0/10", "*", "*", "*", "?", "*"]))
+
 import argparse
 import boto3
+import io
 import json
 import os
 import sys
@@ -87,6 +91,8 @@ def parse_args():
                              help="Any associated action should also be run; will prompt first.")
     args_parser.add_argument("--identity", type=str,  # This is handled above.
                              help="Value to use for the IDENTITY environment variable for this run.")
+    args_parser.add_argument("--check-setup", type=str,  # This is handled above.
+                             help="The check_setup.json to look at for guidance/verification.")  # TODO
     args_parser.add_argument("--list", nargs="?", const="all",
                              help="List checks, containing given value if any.")
     args_parser.add_argument("--es",
@@ -101,6 +107,14 @@ def parse_args():
     if args.check_or_action == "list":
         args.check_or_action = None
         args.list = "all"
+    if args.check_setup:
+        try:
+            with io.open(args.check_setup, "r") as f:
+                args.check_setup_data = json.load(f)
+        except Exception:
+            exit_with_no_action(f"Cannot open specified check_setup.json file: {args.check_setup}")
+        if args.verbose:
+            print(f"Using check_setup.json file: {args.check_setup}")
     return args
 
 
@@ -127,7 +141,7 @@ def list_checks(app_utils, text: str, with_action: bool = False, verbose: bool =
 
 def run_check_and_or_action(app_utils, args) -> None:
 
-    with captured_output():
+    with captured_output() as captured:
 
         # Setup.
         app.set_stage(args.stage)
@@ -137,12 +151,50 @@ def run_check_and_or_action(app_utils, args) -> None:
         handler = app_utils.check_handler
 
         check_info, action_info = find_check_or_action(app_utils, args.check_or_action)
+
         if check_info:
+
+            import pdb ; pdb.set_trace()
+            if args.check_setup_data:
+                has_queue_action, has_no_queue_action = (
+                    check_setup_has_queue_action(args.check_setup_data, check_info.name))
+            else:
+                has_queue_action = has_no_queue_action = None
+
             check_args = {"primary": True} if args.primary else None
             check_args = collect_args(check_info, initial_args=check_args, verbose=args.verbose)
             confirm_interactively(f"Run check {check_info.qualified_name}?", exit_if_no=True)
+            if args.verbose:
+                captured.uncaptured_print(f"Running check: {check_info.qualified_name} ...")
             check_result = handler.run_check_or_action(connection, check_info.qualified_name, check_args)
+            if args.verbose:
+                captured.uncaptured_print(f"Check run complete (result below): {check_info.qualified_name}")
             print_result(check_result, args.yaml)
+            allow_action = check_result.get("allow_action") is True
+            prevent_action = check_result.get("prevent_action") is True
+            if args.verbose and check_info.associated_action:
+                message = ""
+                if has_queue_action is True:
+                    message = "This check action will NOT be run automatically by Foursight because the queue_action property is not set in the check_setup.json ({args.check_setup})."
+                elif has_queue_action is False:
+                    message = "This check action may be run automatically by Foursight because the queue_action property IS set in the check_setup.json ({args.check_setup})."
+                if allow_action:
+                    if prevent_action:
+                        print_boxed([
+                            "---",
+                            f"This check result indicates the associated action as allowed to run but will NOT run AUTOMATICALLY",
+                            "---"], print=captured.uncaptured_print)
+                    else:
+                        captured.uncaptured_print(f"This check result indicated TODO")
+                elif prevent_action:
+                    captured.uncaptured_print(f"This check result indicated TODO")
+                else:
+                    print_boxed([
+                        "---",
+                        f"This check result indicates the associated action should not run.",
+                        "---",
+                        ],
+                        print=captured.uncaptured_print)
 
         # Run any associated action if desired (i.e. if --action option given).
         if (args.action and check_info.associated_action) or action_info:
@@ -206,6 +258,29 @@ def find_check_or_action(app_utils, check_or_action) -> Tuple[Optional[object], 
         if not check_info and not action_info:
             exit_with_no_action(f"No check or action found: {check_or_action}")
     return check_info, action_info
+
+
+def get_check_setup_info(check_setup: dict, check_name: str) -> Optional[dict]:
+    if isinstance(check_setup, dict) and isinstance(check_name, str):
+        return check_setup.get(check_name)
+
+
+def check_setup_has_queue_action(check_setup: dict, check_name: str) -> Tuple[bool, bool]:
+    has_queue_action = False
+    has_no_queue_action = False
+    if check_setup_info := get_check_setup_info(check_setup, check_name):
+        if isinstance(check_setup_info, dict):
+            if isinstance(schedule := check_setup_info.get("schedule"), dict) and schedule:
+                for schedule_name in schedule:
+                    for schedule_env_name in schedule[schedule_name]:
+                        if schedule_kwargs := schedule[schedule_name][schedule_env_name].get("kwargs"):
+                            if schedule_kwargs.get("queue_action"):
+                                has_queue_action = True
+                            else:
+                                has_no_queue_action = True
+                        else:
+                            has_no_queue_action = True
+    return has_queue_action, has_no_queue_action
 
 
 def guess_env() -> Optional[str]:
@@ -294,7 +369,9 @@ def print_result(result: dict, format_yaml: bool = False) -> None:
             print(json.dumps(result, indent=4))
 
 
-def print_boxed(lines: List[str], right_justified_macro: Optional[Tuple[str, Callable]] = None) -> None:
+def print_boxed(lines: List[str],
+                right_justified_macro: Optional[Tuple[str, Callable]] = None,
+                print: Callable = print) -> None:
     length = max(len(line) for line in lines)
     for line in lines:
         if line == "---":
