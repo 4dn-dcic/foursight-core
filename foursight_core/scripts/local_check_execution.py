@@ -235,14 +235,14 @@ def sanity_check_aws_accessibility(verbose: bool = False) -> None:
             error = True
     if verbose:
         if not error:
-            print(f"Using AWS access key ID (prefix): {os.environ.get('AWS_ACCESS_KEY_ID')[0:2]}****** -> OK")
+            print(f"Using AWS access key ID: {os.environ.get('AWS_ACCESS_KEY_ID')} -> OK")
         if aws_account_alias:
             print(f"Using AWS account name (alias): {aws_account_alias}")
         if aws_account_number:
             print(f"Using AWS account (number): {aws_account_number}")
     if error:
-        print(f"Cannot access AWS. Using AWS access key ID (prefix): "
-              f"{os.environ.get('AWS_ACCESS_KEY_ID')[0:2]}****** -> ERROR")
+        print(f"Cannot access AWS. Using AWS access key ID: "
+              f"{os.environ.get('AWS_ACCESS_KEY_ID')} -> ERROR")
         exit_with_no_action(
             "You must have your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables setup properly.")
 

@@ -126,6 +126,8 @@ class Decorators(object):
             # properties of the check result, and these new options will OVERRIDE these values which might have
             # been expliclity set within the check code itself.
             action_disable = None
+            action_manual = None
+            action_auto = None
             if default_kwargs.get("action_disable") is True or callable(default_kwargs.get("action_disable")):
                 action_disable = default_kwargs.get("action_disable")
             elif default_kwargs.get("action_manual") is True or callable(default_kwargs.get("action_manual")):
