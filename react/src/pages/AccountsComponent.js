@@ -247,8 +247,39 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
         }
     }
 
+    function getFoursightTitle(account) {
+        const foursight_package = account.get("foursight.package");
+        if (foursight_package === "foursight") {
+            return "Foursight-Fourfront";
+        }
+        else if (foursight_package === "foursight-cgap") {
+            return "Foursight-CGAP";
+        }
+        else if (foursight_package === "foursight-smaht") {
+            return "Foursight-SMaHT";
+        }
+        else {
+            return "Foursight";
+        }
+    }
+    function getPortalTitle(account) {
+        const foursight_package = account.get("foursight.package");
+        if (foursight_package === "foursight") {
+            return "Fourfront";
+        }
+        else if (foursight_package === "foursight-cgap") {
+            return "CGAP-Portal";
+        }
+        else if (foursight_package === "foursight-smaht") {
+            return "SMaHT-Portal";
+        }
+        else {
+            return "Portal";
+        }
+    }
+
     return <table style={{width:"100%"}}><tbody style={{whiteSpace:"nowrap"}}>
-        <Row title={account.get("foursight.package") === "foursight" ? "Foursight-Fourfront" : "Foursight-CGAP"} value={account.get("foursight.url")} externalLink={account.get("foursight.url")} small={false}>
+        <Row title={getFoursightTitle(account)} value={account.get("foursight.url")} externalLink={account.get("foursight.url")} small={false}>
             <small style={{marginLeft:"3pt",marginRight:"3pt"}}>|</small>
             <small>
                 <a href={`${account.get("foursight.url")}/reactapi/header`} style={{color:"inherit"}} rel="noreferrer" target="_blank">API</a>
@@ -258,7 +289,7 @@ const AccountInfoLeft = ({ header, account, foursightUrl }) => {
             </small>
             <SslCertificateLink url={account.get("foursight.url")} />
         </Row>
-        <Row title={account.get("foursight.package") === "foursight" ? "Fourfront" : "CGAP-Portal"} value={account.get("portal.url")} externalLink={account.get("portal.url")} small={false}>
+        <Row title={getPortalTitle(account)} value={account.get("portal.url")} externalLink={account.get("portal.url")} small={false}>
             &nbsp;|&nbsp;
             <small>
                 { !showHealth ? <span id={`tooltip-health`}>

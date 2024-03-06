@@ -17,10 +17,12 @@ Change Log
   to manual, to auto) will be respected. NOTE: These work by setting the allow_check and prevent_check
   properties of the check result, and these new options will OVERRIDE these values which might have
   been expliclity set within the check code itself.
+  NO CHANGES MADE TO EXISTING FUNCTIONALITY -> IF this new feature is NOT used.
 * Set original_allow_action in app_utils.process_view_result to alleviate confusion from setting
-  allow_action back to False in some cases to prevent re-running (TODO: revist this at some point).
+  allow_action back to False in some cases to prevent re-running (TODO: revisit this at some point).
 * Changes to the local-check-execute script.
 * Fix to checks.test_checks.add_random_test_nums.
+* UI fixed WRT preferred env name.
 
 
 5.3.0

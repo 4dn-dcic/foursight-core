@@ -286,7 +286,7 @@ const Header = (props) => {
                         { ((Env.Current() !== "cognito") && (Env.KnownEnvs(header).length > 0)) ? <>
                         <span className="dropdown">
                             <Tooltip id="tooltip-header-env" position="left" size={"small"} text={`Environments`} shape="squared" nopad={true} />
-                            <b id="tooltip-header-env" className="dropdown-button" style={{color:(!Env.IsKnown(Env.Current(), header) || (Auth.IsLoggedIn(header) && !Env.IsAllowed(Env.Current(), header))) ? "red" : "#143c53"}}>{Env.Current() || "unknown-env"}</b>
+                            <b id="tooltip-header-env" className="dropdown-button" style={{color:(!Env.IsKnown(Env.Current(), header) || (Auth.IsLoggedIn(header) && !Env.IsAllowed(Env.Current(), header))) ? "red" : "#143c53"}}>{Env.PreferredName(Env.Current(), header) || "unknown-env"}</b>
                             <div className="dropdown-content" id="dropdown-content-id" style={{background:subTitleBackgroundColor}}>
                                 { Env.KnownEnvs(header).map(env => 
                                     Env.Equals(env, Env.Current()) ?
