@@ -154,7 +154,6 @@ def run_check_and_or_action(app_utils, args) -> None:
 
         if check_info:
 
-            import pdb ; pdb.set_trace()
             if args.check_setup_data:
                 has_queue_action, has_no_queue_action = (
                     check_setup_has_queue_action(args.check_setup_data, check_info.name))
