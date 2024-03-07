@@ -209,7 +209,7 @@ function GetFoursightEnvName(env, header) {
 }
 
 function GetPreferredEnvName(env, header) {
-    return IsFoursightFourfront(header) ? GetPublicEnvName(env, header) : GetFullEnvName(env, header);
+    return (IsFoursightFourfront(header) || IsFoursightSmaht(header)) ? GetPublicEnvName(env, header) : GetFullEnvName(env, header);
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ function IsFoursightFlavor(header, flavor) {
     if (Cookie.TestMode.HasFoursightFlavor(flavor)) {
         return true;
     }
-    const site = !header?.loading ? header?.app?.package : Cookie.Site();
+    const site = (header && !header?.loading) ? header?.app?.package : Cookie.Site();
     return site == `foursight-${flavor}` || site == flavor;
 }
 
@@ -273,10 +273,9 @@ function GetLegacyFoursightLink(header) {
     // to, for example, /api/view/cgap-supertest. I.e. for Foursight-CGAP
     // use the full name and the public name for Foursight-Fourfront.
     //
-    const env = (IsFoursightFourfront(header) ?
-                 GetPublicEnvName(GetCurrentEnv(header), header) :
-                 GetFullEnvName(GetCurrentEnv(header), header))
-                || GetDefaultEnv(header);
+    const env = ((IsFoursightFourfront(header) || IsFoursightSmaht(header)) ?
+                  GetPublicEnvName(GetCurrentEnv(header), header) :
+                  GetFullEnvName(GetCurrentEnv(header), header)) || GetDefaultEnv(header);
     if (Context.IsLocalCrossOrigin()) {
         return Context.Server.Origin() + "/api/view/" + env;
     }

@@ -6,6 +6,25 @@ foursight-core
 Change Log
 ----------
 
+5.4.0
+=====
+* 2024-03-03/dmichaels
+* Added action_auto, action_manual, action_disable check decorator boolean or
+  callable-returning-boolean options to force any associated action, after the check run, to
+  run automatically, or to force it to not run automatically but to allow it to be run manually,
+  or to not allow it to be run at allow, respectively. These are mutually exclusive; if more than
+  one is set, then the first one to resolve to True, in reverse order (i.e. in order from disable,
+  to manual, to auto) will be respected. NOTE: These work by setting the allow_check and prevent_check
+  properties of the check result, and these new options will OVERRIDE these values which might have
+  been expliclity set within the check code itself.
+  NO CHANGES MADE TO EXISTING FUNCTIONALITY -> IF this new feature is NOT used.
+* Set original_allow_action in app_utils.process_view_result to alleviate confusion from setting
+  allow_action back to False in some cases to prevent re-running (TODO: revisit this at some point).
+* Changes to the local-check-execute script.
+* Fix to checks.test_checks.add_random_test_nums.
+* UI fixed WRT preferred env name.
+
+
 5.3.0
 =====
 * Added update of a gitinfo.json file in GitHub Actions (.github/workflows/main-publish.yml).

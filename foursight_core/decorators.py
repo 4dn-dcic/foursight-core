@@ -112,11 +112,34 @@ class Decorators(object):
         return an ERROR CheckResult.
         """
         ignored(default_args)
-
         outer_args = default_args
         outer_kwargs = default_kwargs
+
         def check_deco(func):
+
+            # 2024-03-03/dmichaels: Added action_auto, action_manual, action_disable check decorator boolean
+            # or callable-returning-boolean options to force any associated action, after the check run, to
+            # run automatically, or to force it to not run automatically but to allow it to be run manually,
+            # or to not allow it to be run at allow, respectively. These are mutually exclusive; if more than
+            # one is set, then the first one to resolve to True, in reverse order (i.e. in order from disable,
+            # to manual, to auto) will be respected. NOTE: These work by setting the allow_check and prevent_check
+            # properties of the check result, and these new options will OVERRIDE these values which might have
+            # been expliclity set within the check code itself.
+            action_disable = None
+            action_manual = None
+            action_auto = None
+            if default_kwargs.get("action_disable") is True or callable(default_kwargs.get("action_disable")):
+                action_disable = default_kwargs.get("action_disable")
+            elif default_kwargs.get("action_manual") is True or callable(default_kwargs.get("action_manual")):
+                action_manual = default_kwargs.get("action_manual")
+            elif default_kwargs.get("action_auto") is True or callable(default_kwargs.get("action_auto")):
+                action_auto = default_kwargs.get("action_auto")
+            default_kwargs.pop("action_auto", None)
+            default_kwargs.pop("action_manual", None)
+            default_kwargs.pop("action_disable", None)
+
             self.create_registry_check_record(func, default_args, default_kwargs)
+
             @wraps(func)
             def wrapper(*args, **kwargs):
                 start_time = time.time()
@@ -126,6 +149,18 @@ class Decorators(object):
                 if child_pid != 0:  # we are the parent who will execute the check
                     try:
                         check = func(*args, **kwargs)
+                        if ((action_disable is True) or
+                            (callable(action_disable) and action_disable(check) is True)):
+                            check.allow_action = False
+                            check.prevent_action = True
+                        elif ((action_manual is True) or
+                              (callable(action_manual) and action_manual(check) is True)):
+                            check.allow_action = True
+                            check.prevent_action = True
+                        elif ((action_auto is True) or
+                              (callable(action_auto) and action_auto(check) is True)):
+                            check.allow_action = True
+                            check.prevent_action = False
                         check.validate()
                     except Exception:
                         # connection should be the first (and only) positional arg
