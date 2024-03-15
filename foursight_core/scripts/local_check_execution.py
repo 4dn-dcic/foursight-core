@@ -115,6 +115,8 @@ def parse_args():
             exit_with_no_action(f"Cannot open specified check_setup.json file: {args.check_setup}")
         if args.verbose:
             print(f"Using check_setup.json file: {args.check_setup}")
+    else:
+        args.check_setup_data = None
     return args
 
 

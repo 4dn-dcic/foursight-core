@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+5.4.1
+=====
+* Fix in local-check-execution script causing script crash.
+
+
 5.4.0
 =====
 * 2024-03-03/dmichaels
