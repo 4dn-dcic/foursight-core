@@ -115,6 +115,8 @@ def parse_args():
             exit_with_no_action(f"Cannot open specified check_setup.json file: {args.check_setup}")
         if args.verbose:
             print(f"Using check_setup.json file: {args.check_setup}")
+    else:
+        args.check_setup_data = None
     return args
 
 
@@ -154,7 +156,7 @@ def run_check_and_or_action(app_utils, args) -> None:
 
         if check_info:
 
-            if hasattr(args, "check_setup_data") and args.check_setup_data:
+            if args.check_setup_data:
                 has_queue_action, has_no_queue_action = (
                     check_setup_has_queue_action(args.check_setup_data, check_info.name))
             else:
