@@ -6,6 +6,12 @@ foursight-core
 Change Log
 ----------
 
+5.4.2
+=====
+* Update dcicutils version in pyproject.toml to specify an initial caret which was somehow missing.
+* Other miscellaneous version updates in pyproject.toml; and ran poetry update.
+
+
 5.4.1
 =====
 * Fix in local-check-execution script causing script crash.
