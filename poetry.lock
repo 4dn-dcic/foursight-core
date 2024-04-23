@@ -956,13 +956,13 @@ tox = ["tox"]
 
 [[package]]
 name = "dcicutils"
-version = "8.8.3"
+version = "8.8.4"
 description = "Utility package for interacting with the 4DN Data Portal and other 4DN resources"
 optional = false
 python-versions = "<3.12,>=3.8"
 files = [
-    {file = "dcicutils-8.8.3-py3-none-any.whl", hash = "sha256:47692fdd468640dd6136c8a25ab6a38235e3009eb98fd873acd09fbac46c1890"},
-    {file = "dcicutils-8.8.3.tar.gz", hash = "sha256:531d78dd42dc2092273b718a0b35621d73ba5675428aba340d8b8ecb4afe5dc7"},
+    {file = "dcicutils-8.8.4-py3-none-any.whl", hash = "sha256:c1c60e93f1a2bc9fadd3da040964f068f535659f3e8158a1175844a68dc459bc"},
+    {file = "dcicutils-8.8.4.tar.gz", hash = "sha256:8a86768a3aeaa1f43d5ed40053aa5e5d2ef58561a1db201d342f4ea9d19df9e9"},
 ]
 
 [package.dependencies]
@@ -2784,4 +2784,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "bc8155749a64a57d6ea79a0e8461f63a2e794c2983657ddb6305d47746e7c31b"
+content-hash = "2a7d39fcae29faf8c20b6b5cd128f9d3c78f0e791622b9c92bdc49a633f5ca68"
