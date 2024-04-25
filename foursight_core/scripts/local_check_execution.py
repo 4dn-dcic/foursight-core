@@ -25,9 +25,14 @@ app = None
 def local_check_execution(app_utils):
 
     args = process_args()
+    app_utils_environments = None
 
     if not args.list:
-        sanity_check_elasticsearch_accessibility(app_utils.host)
+        if args.env and isinstance(app_utils_environments := app_utils.init_environments(args.env), dict):
+            es_url = app_utils_environments.get(args.env, {}).get("es") or es_url
+        else:
+            es_url = None
+        sanity_check_elasticsearch_accessibility(app_utils.host, es_url)
 
     if not os.environ.get("IDENTITY"):
         exit_with_no_action(
@@ -42,7 +47,7 @@ def local_check_execution(app_utils):
                     with_action=args.action,
                     verbose=args.verbose)
     else:
-        run_check_and_or_action(app_utils, args)
+        run_check_and_or_action(app_utils, app_utils_environments, args)
 
 
 def process_args():
@@ -141,7 +146,7 @@ def list_checks(app_utils, text: str, with_action: bool = False, verbose: bool =
                     captured.uncaptured_print(f"  - action: {check.associated_action}")
 
 
-def run_check_and_or_action(app_utils, args) -> None:
+def run_check_and_or_action(app_utils, app_utils_environments, args) -> None:
 
     with captured_output() as captured:
 
@@ -149,7 +154,7 @@ def run_check_and_or_action(app_utils, args) -> None:
         app.set_stage(args.stage)
         app.set_timeout(0)
 
-        connection = app_utils.init_connection(args.env)
+        connection = app_utils.init_connection(args.env, _environments=app_utils_environments)
         handler = app_utils.check_handler
 
         check_info, action_info = find_check_or_action(app_utils, args.check_or_action)
@@ -323,24 +328,59 @@ def sanity_check_aws_accessibility(verbose: bool = False) -> None:
             "You must have your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables setup properly.")
 
 
-def sanity_check_elasticsearch_accessibility(host: str, timeout: int = 3) -> None:
+def sanity_check_elasticsearch_accessibility(host: str, es_url: Optional[str] = None, timeout: int = 3) -> None:
     if host:
+        es_host_local = (host == os.environ.get("ES_HOST_LOCAL"))
+        es_tunnel = (host.lower().startswith("http://localhost:") or host.lower().startswith("http://127.0.0.1:"))
+        # TODO: Figure out why at this point host could be wrong (if no SSH tunnel via ES_HOST_LOCAL);
+        # but the passed in es_url (from app_utils.init_environments) is right. This came up (2024-04-25)
+        # in foursight-fourfront when if running with --env data the host is:
+        # https://vpc-os-fourfront-mastertest-yj7mmysd67f5qav3cuzxb2jzwu.us-east-1.es.amazonaws.com:443
+        # but should be (and es_url is):
+        # https://vpc-os-fourfront-prod-green-jelxdmbspbii4uafopglgdvvsa.us-east-1.es.amazonaws.com:443
+        # It gets straightened out later but this accounts for the odd code below on what to display.
         if not check_quickly_if_url_accessable(host, timeout=1):
             print_boxed([
                 "---",
-                f"WARNING: {host}",
+                f"WARNING: {host if es_tunnel or not es_url else es_url}"
+                f"{' (from ES_HOST_LOCAL environment variable)' if es_host_local else ''}",
                 "---",
                 f"The above {'AWS ' if 'aws' in host.lower() else ''}ElasticSearch"
                 f" host appears to be inaccessible.",
-                "You may need to be running a local SSH tunnel to access this.",
-                "And/or if you already are make sure your ES_HOST_LOCAL environment variable is set to it.",
+                "You may need to be running a local SSH tunnel to access this." if not es_tunnel else None,
+                "You appear to already be referring to an SSH tunnel. Make sure it is running." if es_tunnel else None,
+                "And make sure your ES_HOST_LOCAL environment variable is set to it." if not es_host_local else None,
+                "And it should be referring to this ElasticSearch instance:" if es_host_local else None,
+                f"{es_url or host}" if es_host_local else None,
                 "---",
                 "https://hms-dbmi.atlassian.net/wiki/spaces/FOURDNDCIC/pages/3004891144/Running+Foursight+Locally",
                 "---"])
             if not yes_or_no("Continue anyways?"):
                 exit_with_no_action()
         else:
-            print(f"Using ElasticSearch host: {host} -> OK")
+            print(f"Using ElasticSearch host: {host} -> OK"
+                  f"{' (from ES_HOST_LOCAL environment variable)' if es_host_local else ''}")
+            if es_tunnel and es_url:
+                # Now sanity check that the actual ES referred to by the SSH tunnel is the right one.
+                try:
+                    if es_cluster_name := requests.get(host).json().get("cluster_name"):
+                        if len(es_cluster_name_parts := es_cluster_name.split(":")) == 2:
+                            if es_cluster_name_parts[1] not in es_url:
+                                print_boxed([
+                                    "---",
+                                    f"WARNING: {host}",
+                                    "---",
+                                    "Your SSH tunnel (above) may not be referring to the correct ElasticSearch.",
+                                    "It should be referring to this ElasticSearch instance:",
+                                    f"{es_url}",
+                                    f"The cluster name of the one you are referring to is: {es_cluster_name}",
+                                    "---"
+                                ])
+                                if not yes_or_no("Continue anyways?"):
+                                    exit_with_no_action()
+                except Exception:
+                    pass
+        pass
 
 
 def check_quickly_if_url_accessable(url: str, timeout: int = 3) -> bool:
@@ -373,8 +413,10 @@ def print_result(result: dict, format_yaml: bool = False) -> None:
 def print_boxed(lines: List[str],
                 right_justified_macro: Optional[Tuple[str, Callable]] = None,
                 print: Callable = print) -> None:
-    length = max(len(line) for line in lines)
+    length = max(len(line) for line in lines if line is not None)
     for line in lines:
+        if line is None:
+            continue
         if line == "---":
             print(f"+{'-' * (length - len(line) + 5)}+")
         elif right_justified_macro and (len(right_justified_macro) == 2) and line.endswith(right_justified_macro[0]):
