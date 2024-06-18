@@ -47,6 +47,7 @@ from .environment import Environment
 from .fs_connection import FSConnection
 from .s3_connection import S3Connection
 from .react.api.auth import Auth
+from .react.api.jwt_utils import jwt_decode
 from .react.api.react_api import ReactApi
 from .react.api.datetime_utils import (
     convert_time_t_to_utc_datetime_string,
@@ -478,8 +479,11 @@ class AppUtilsCore(ReactApi, Routes):
         conn = self.init_connection(env)
         redis_handler = conn.get_redis_base()
         if redis_handler:
+            # Get email from JWT.
+            jwt_decoded = jwt_decode(id_token, self._auth0_config.get_client(), self._auth0_config.get_secret())
+            email = jwt_decoded.get("email")
             redis_session_token = RedisSessionToken(
-                namespace=Auth.get_redis_namespace(env), jwt=id_token
+                namespace=Auth.get_redis_namespace(env), jwt=id_token, email=email
             )
             redis_session_token.store_session_token(redis_handler=redis_handler)
             # overwrite id_token in this case to be the session token
