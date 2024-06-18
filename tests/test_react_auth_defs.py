@@ -83,7 +83,8 @@ def create_test_authtoken(expires_or_expired_at: int = EXPIRES_AT, use_invalid_a
     jwt = create_test_jwt(use_invalid_auth0_secret)
     os.environ["ENV_NAME"] = DEFAULT_ENV
     auth = Auth(AUTH0_CLIENT_ID, AUTH0_SECRET_INVALID if use_invalid_auth0_secret else AUTH0_SECRET, ENVS)
-    authtoken = auth.create_authtoken(jwt, expires_or_expired_at, DOMAIN)
+    authtoken, email = auth.create_authtoken(jwt, expires_or_expired_at, DOMAIN)
+    assert email == EMAIL
     return authtoken
 
 
