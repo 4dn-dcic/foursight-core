@@ -6,6 +6,13 @@ foursight-core
 Change Log
 ----------
 
+5.5.0
+=====
+* Fix RedisSessionToken creation in react_api_base.ReactApiBase.react_authentication_callback to pass email 
+  which was missing (for some reaseon - previous oversight - was working only because ENCODED_REDIS_SERVER
+  was not being defined in AWS Secrets Manager, e.g. for FoursightDevelopmentApplicationConfiguration)
+
+
 5.4.3
 =====
 * 2024-04-25/dmichaels

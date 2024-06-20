@@ -3,7 +3,7 @@ import boto3
 import logging
 import time
 import redis
-from typing import Optional
+from typing import Optional, Tuple
 from dcicutils.env_utils import full_env_name
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import ignored, PRINT
@@ -125,7 +125,7 @@ class Auth:
             logger.error(f"Authorization exception: {e}")
             return self._create_unauthenticated_response(request, "exception: " + str(e))
 
-    def create_authtoken(self, jwt: str, jwt_expires_at: int, domain: str, request: Optional[dict] = None) -> str:
+    def create_authtoken(self, jwt: str, jwt_expires_at: int, domain: str, request: Optional[dict] = None) -> Tuple[str, str]:
         """
         Creates and returns a new signed JWT, to be used as the login authtoken (cookie), from
         the given AUTHENTICATED and signed and encoded JWT, which will contain the following:
@@ -141,7 +141,7 @@ class Auth:
         - The audience (aka "aud" aka Auth0 client ID).
         The allowed environments and first/last name are obtained via the users ElasticSearch store;
         the first/last names are just for informational/display purposes in the client.
-        Returns the JWT-signed-encoded authtoken value as a string.
+        Returns the JWT-signed-encoded authtoken value as a string and the email in a tuple.
         """
         jwt_decoded = jwt_decode(jwt, self._auth0_client, self._auth0_secret)
         email = jwt_decoded.get("email")
@@ -222,7 +222,7 @@ class Auth:
         # it was also in the given JWT (i.e. jwt_decoded["aud"]), and these should match (no
         # need to check); it came from the original Auth0 invocation on the client-side (in the
         # Auth0Lock box); we communicate it to the client-side via the non-protected /header endpoint.
-        return jwt_encode(authtoken_decoded, audience=self._auth0_client, secret=self._auth0_secret)
+        return jwt_encode(authtoken_decoded, audience=self._auth0_client, secret=self._auth0_secret), email
 
     def decode_authtoken(self, authtoken: str) -> dict:
         """

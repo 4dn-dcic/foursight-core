@@ -167,7 +167,7 @@ class ReactApiBase:
         jwt_expires_at = convert_datetime_to_time_t(datetime.datetime.utcnow() +
                                                     datetime.timedelta(seconds=jwt_expires_in))
         domain, context = app.core.get_domain_and_context(request)
-        authtoken = self._auth.create_authtoken(jwt, jwt_expires_at, domain, request=request)
+        authtoken, email = self._auth.create_authtoken(jwt, jwt_expires_at, domain, request=request)
         authtoken_cookie = create_set_cookie_string(request, name=AUTH_TOKEN_COOKIE,
                                                     value=authtoken,
                                                     domain=domain,
@@ -177,7 +177,7 @@ class ReactApiBase:
         redis_handler = self._auth.get_redis_handler()
         if redis_handler:
             redis_session_token = RedisSessionToken(
-                namespace=Auth.get_redis_namespace(env), jwt=jwt
+                namespace=Auth.get_redis_namespace(env), jwt=jwt, email=email
             )
             redis_session_token.store_session_token(redis_handler=redis_handler)
             c4_st_cookie = create_set_cookie_string(request, name=SESSION_TOKEN_COOKIE,
