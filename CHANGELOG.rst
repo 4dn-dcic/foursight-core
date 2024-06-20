@@ -13,6 +13,12 @@ Change Log
   was not being defined in AWS Secrets Manager, e.g. for FoursightDevelopmentApplicationConfiguration)
 
 
+5.4.3
+=====
+* 2024-04-25/dmichaels
+* Minor updates to scripts.local_check_execution to sanity check ElasticSearch connection.
+
+
 5.4.2
 =====
 * Update dcicutils version in pyproject.toml to specify an initial caret which was somehow missing.
