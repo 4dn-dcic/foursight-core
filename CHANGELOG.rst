@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+5.6.0
+=====
+* Support for Python 3.12.
+
+
 5.5.0
 =====
 * Fix RedisSessionToken creation in react_api_base.ReactApiBase.react_authentication_callback to pass email 
