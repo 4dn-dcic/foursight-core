@@ -9,6 +9,7 @@ Change Log
 5.6.0
 =====
 * Support for Python 3.12.
+* Added ('snovault.platform@gmail.com ', 'access_key_admin') to checks/access_key_expiration_detection.py.
 
 
 5.5.0

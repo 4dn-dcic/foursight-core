@@ -61,6 +61,7 @@ def refresh_access_keys(connection, **kwargs):
     action = ActionResult(connection, 'refresh_access_keys')
     admin_keys = [('4dndcic@gmail.com', 'access_key_admin'),  # fourfront admin
                   ('cgap.platform@gmail.com', 'access_key_admin'),  # cgap admin
+                  ('snovault.platform@gmail.com ', 'access_key_admin'),
                   ('tibanna.app@gmail.com', 'access_key_tibanna'),
                   ('foursight.app@gmail.com', 'access_key_foursight')]
     s3 = s3_utils.s3Utils(env=connection.ff_env)
