@@ -26,20 +26,25 @@ def access_key_status(connection, **kwargs):
     most_recent_key = access_keys[0]  # should always be present if deploy has run
     # date format: 2022-07-05T01:01:43.498347+00:00 (isoformat)
     most_recent_key_creation_date = datetime.fromisoformat(most_recent_key['date_created'])
-    expiration_date = most_recent_key_creation_date + timedelta(days=90)
+    # Get the expiration_date from the data.
+    expiration_date = datetime.fromisoformat(most_recent_key['expiration_date'])
     one_week_to_expiration = expiration_date - timedelta(days=7)
     three_weeks_to_expiration = expiration_date - timedelta(days=21)
-    now = datetime.now(most_recent_key_creation_date.tzinfo)
+    now = datetime.now().replace(tzinfo=None)
     if now > one_week_to_expiration:
         check.status = 'FAIL'
-        check.summary = (f'Application access keys will expire in less than 7 days! Please run'
-                         f' the deployment action ASAP')
+        check.summary = (f'Application access keys will expire in less than 7 days!'
+                         f' Allowing refresh action.'
+                         f' Expiration date: {expiration_date}')
         check.brief_output = check.full_output = check.summary
+        # Returning with prevent_action set to False;
+        # allows the check to run automatically.
         return check
     elif now > three_weeks_to_expiration:
         check.status = 'WARN'
-        check.summary = (f'Application access keys will expire in less than 21 days! Please run'
-                         f' the deployment action soon')
+        check.summary = (f'Application access keys will expire in less than 21 days!'
+                         f' Please run the deployment action soon.'
+                         f' Expiration date: {expiration_date}')
         check.brief_output = check.full_output = check.summary
         # This prevents the from running automatically after the check;
         # though the user is still allowed to run it manually in any case.
@@ -61,7 +66,6 @@ def refresh_access_keys(connection, **kwargs):
     action = ActionResult(connection, 'refresh_access_keys')
     admin_keys = [('4dndcic@gmail.com', 'access_key_admin'),  # fourfront admin
                   ('cgap.platform@gmail.com', 'access_key_admin'),  # cgap admin
-                  ('snovault.platform@gmail.com ', 'access_key_admin'),
                   ('tibanna.app@gmail.com', 'access_key_tibanna'),
                   ('foursight.app@gmail.com', 'access_key_foursight')]
     s3 = s3_utils.s3Utils(env=connection.ff_env)
