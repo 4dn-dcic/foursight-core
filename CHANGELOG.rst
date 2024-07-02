@@ -6,6 +6,12 @@ foursight-core
 Change Log
 ----------
 
+5.6.0
+=====
+* Support for Python 3.12.
+* Added ('snovault.platform@gmail.com ', 'access_key_admin') to checks/access_key_expiration_detection.py.
+
+
 5.5.0
 =====
 * Fix RedisSessionToken creation in react_api_base.ReactApiBase.react_authentication_callback to pass email 

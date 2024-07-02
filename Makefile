@@ -1,7 +1,8 @@
 .PHONY: test
 
 configure:  # does any pre-requisite installs
-	pip install poetry==1.4.2
+	pip install poetry
+	pip install setuptools wheel
 
 lint:
 	@echo "Running flake8..."
