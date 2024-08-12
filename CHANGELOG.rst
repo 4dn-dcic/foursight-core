@@ -6,6 +6,12 @@ foursight-core
 Change Log
 ----------
 
+5.6.1
+=====
+* Fix to foursight_core/scripts/local_check_execution.py for newer SSO-based AWS credentials,
+  where AWS_ACCESS_KEY_ID/etc environment variables are not set.
+
+
 5.6.0
 =====
 * Support for Python 3.12.
