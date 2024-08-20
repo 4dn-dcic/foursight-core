@@ -305,27 +305,31 @@ def guess_env() -> Optional[str]:
 def sanity_check_aws_accessibility(verbose: bool = False) -> None:
     aws_account_number = None
     aws_account_alias = None
-    if not (error := (not os.environ.get("AWS_SECRET_ACCESS_KEY") or not os.environ.get("AWS_ACCESS_KEY_ID"))):
-        try:
-            if caller_identity := boto3.client("sts").get_caller_identity():
-                aws_account_number = caller_identity.get("Account")
-            if aws_account_aliases := boto3.client("iam").list_account_aliases():
-                if aws_account_aliases := aws_account_aliases.get("AccountAliases"):
-                    aws_account_alias = aws_account_aliases[0]
-        except Exception:
-            error = True
+    error = False
+    try:
+        if caller_identity := boto3.client("sts").get_caller_identity():
+            aws_account_number = caller_identity.get("Account")
+        if aws_account_aliases := boto3.client("iam").list_account_aliases():
+            if aws_account_aliases := aws_account_aliases.get("AccountAliases"):
+                aws_account_alias = aws_account_aliases[0]
+    except Exception:
+        error = True
     if verbose:
+        access_key_id = None
+        try:
+            boto_session = boto3.Session()
+            credentials = boto_session.get_credentials()
+            access_key_id = credentials.access_key
+        except Exception:
+            pass
         if not error:
-            print(f"Using AWS access key ID: {os.environ.get('AWS_ACCESS_KEY_ID')} -> OK")
+            print(f"Using AWS access key ID: {access_key_id} -> OK")
         if aws_account_alias:
             print(f"Using AWS account name (alias): {aws_account_alias}")
         if aws_account_number:
             print(f"Using AWS account (number): {aws_account_number}")
     if error:
-        print(f"Cannot access AWS. Using AWS access key ID: "
-              f"{os.environ.get('AWS_ACCESS_KEY_ID')} -> ERROR")
-        exit_with_no_action(
-            "You must have your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables setup properly.")
+        exit_with_no_action(f"Cannot access AWS. Your AWS credentials do not appear to be setup property")
 
 
 def sanity_check_elasticsearch_accessibility(host: str, es_url: Optional[str] = None, timeout: int = 3) -> None:
