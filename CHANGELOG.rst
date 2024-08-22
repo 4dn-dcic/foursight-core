@@ -6,6 +6,11 @@ foursight-core
 Change Log
 ----------
 
+5.6.2
+=====
+* Minor changes to the foursight_core/scripts/local_check_execution.py script.
+
+
 5.6.1
 =====
 * Fix to foursight_core/scripts/local_check_execution.py for newer SSO-based AWS credentials,
