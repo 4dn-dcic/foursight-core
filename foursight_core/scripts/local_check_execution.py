@@ -290,6 +290,8 @@ def check_setup_has_queue_action(check_setup: dict, check_name: str) -> Tuple[bo
 
 
 def guess_env() -> Optional[str]:
+    if aws_credentials_name := os.environ.get("AWS_PROFILE"):
+        return aws_credentials_name
     aws_test_dir_name = ".aws_test"
     aws_test_dir_prefix = f"{aws_test_dir_name}."
     aws_test_dir = os.path.expanduser(f"~/{aws_test_dir_name}")
