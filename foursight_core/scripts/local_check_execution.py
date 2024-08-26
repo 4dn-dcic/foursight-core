@@ -159,6 +159,9 @@ def run_check_and_or_action(app_utils, app_utils_environments, args) -> None:
 
         connection = app_utils.init_connection(args.env, _environments=app_utils_environments)
         handler = app_utils.check_handler
+        if (connection_s3 := connection.connections.get("s3")) and (results_bucket := connection_s3.bucket):
+            captured.uncaptured_print(f"Check/action results S3 bucket: {results_bucket}")
+
 
         check_info, action_info = find_check_or_action(app_utils, args.check_or_action)
 
