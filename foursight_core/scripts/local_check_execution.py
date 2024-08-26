@@ -54,6 +54,9 @@ def process_args():
 
     args = parse_args()
 
+    if args.stage:
+        os.environ["chalice_stage"] = args.stage
+
     if args.list:
         if args.check_or_action:
             print("A check or action name is not allowed if the --list option is given.")
