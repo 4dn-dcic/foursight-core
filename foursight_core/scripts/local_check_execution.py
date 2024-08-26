@@ -367,9 +367,9 @@ def sanity_check_elasticsearch_accessibility(host: str, es_url: Optional[str] = 
             if not yes_or_no("Continue anyways?"):
                 exit_with_no_action()
         else:
-            print(f"Using ElasticSearch host: {host} -> OK"
-                  f"{' (from ES_HOST_LOCAL environment variable)' if es_host_local else ''}")
             if es_tunnel and es_url:
+                print(f"Using ElasticSearch host via SSH tunnel: {host}"
+                      f"{' (from ES_HOST_LOCAL environment variable)' if es_host_local else ''}")
                 # Now sanity check that the actual ES referred to by the SSH tunnel is the right one.
                 try:
                     if es_cluster_name := requests.get(host).json().get("cluster_name"):
@@ -387,9 +387,13 @@ def sanity_check_elasticsearch_accessibility(host: str, es_url: Optional[str] = 
                                 ])
                                 if not yes_or_no("Continue anyways?"):
                                     exit_with_no_action()
+                        print(f"SSH tunnel refers to ElasticSearch cluster: {es_cluster_name}")
+                        print(f"Actual ElasticSearch server likely: {es_url}")
                 except Exception:
-                    pass
-        pass
+                    print("ERROR: Cannot access ElasticSearch: {host}")
+            else:
+                print(f"Using ElasticSearch host: {host}"
+                      f"{' (from ES_HOST_LOCAL environment variable)' if es_host_local else ''}")
 
 
 def check_quickly_if_url_accessable(url: str, timeout: int = 3) -> bool:
