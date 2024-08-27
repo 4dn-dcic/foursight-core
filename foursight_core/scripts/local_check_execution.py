@@ -1,3 +1,4 @@
+print("This may take a minute ...")
 # A local-check-runner command-line utility to run checks from local development machine.
 # The real entry points are poetry scripts in foursight-cgap and foursight, so the
 # app_utils from those local repos can be passed in properly.
@@ -29,7 +30,7 @@ def local_check_execution(app_utils):
 
     if not args.list:
         if args.env and isinstance(app_utils_environments := app_utils.init_environments(args.env), dict):
-            es_url = app_utils_environments.get(args.env, {}).get("es") or es_url
+            es_url = app_utils_environments.get(args.env, {}).get("es")
         else:
             es_url = None
         sanity_check_elasticsearch_accessibility(app_utils.host, es_url)
