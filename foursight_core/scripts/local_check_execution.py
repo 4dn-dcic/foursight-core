@@ -1,3 +1,4 @@
+print("This may take a minute ...")
 # A local-check-runner command-line utility to run checks from local development machine.
 # The real entry points are poetry scripts in foursight-cgap and foursight, so the
 # app_utils from those local repos can be passed in properly.
@@ -29,7 +30,7 @@ def local_check_execution(app_utils):
 
     if not args.list:
         if args.env and isinstance(app_utils_environments := app_utils.init_environments(args.env), dict):
-            es_url = app_utils_environments.get(args.env, {}).get("es") or es_url
+            es_url = app_utils_environments.get(args.env, {}).get("es")
         else:
             es_url = None
         sanity_check_elasticsearch_accessibility(app_utils.host, es_url)
@@ -53,6 +54,9 @@ def local_check_execution(app_utils):
 def process_args():
 
     args = parse_args()
+
+    if args.stage:
+        os.environ["chalice_stage"] = args.stage
 
     if args.list:
         if args.check_or_action:
@@ -156,6 +160,9 @@ def run_check_and_or_action(app_utils, app_utils_environments, args) -> None:
 
         connection = app_utils.init_connection(args.env, _environments=app_utils_environments)
         handler = app_utils.check_handler
+        if (connection_s3 := connection.connections.get("s3")) and (results_bucket := connection_s3.bucket):
+            captured.uncaptured_print(f"Check/action results S3 bucket: {results_bucket}")
+
 
         check_info, action_info = find_check_or_action(app_utils, args.check_or_action)
 
@@ -290,6 +297,8 @@ def check_setup_has_queue_action(check_setup: dict, check_name: str) -> Tuple[bo
 
 
 def guess_env() -> Optional[str]:
+    if aws_credentials_name := os.environ.get("AWS_PROFILE"):
+        return aws_credentials_name
     aws_test_dir_name = ".aws_test"
     aws_test_dir_prefix = f"{aws_test_dir_name}."
     aws_test_dir = os.path.expanduser(f"~/{aws_test_dir_name}")
@@ -362,9 +371,9 @@ def sanity_check_elasticsearch_accessibility(host: str, es_url: Optional[str] = 
             if not yes_or_no("Continue anyways?"):
                 exit_with_no_action()
         else:
-            print(f"Using ElasticSearch host: {host} -> OK"
-                  f"{' (from ES_HOST_LOCAL environment variable)' if es_host_local else ''}")
             if es_tunnel and es_url:
+                print(f"Using ElasticSearch host via SSH tunnel: {host}"
+                      f"{' (from ES_HOST_LOCAL environment variable)' if es_host_local else ''}")
                 # Now sanity check that the actual ES referred to by the SSH tunnel is the right one.
                 try:
                     if es_cluster_name := requests.get(host).json().get("cluster_name"):
@@ -382,9 +391,13 @@ def sanity_check_elasticsearch_accessibility(host: str, es_url: Optional[str] = 
                                 ])
                                 if not yes_or_no("Continue anyways?"):
                                     exit_with_no_action()
+                        print(f"SSH tunnel refers to ElasticSearch cluster: {es_cluster_name}")
+                        print(f"Actual ElasticSearch server likely: {es_url}")
                 except Exception:
-                    pass
-        pass
+                    print("ERROR: Cannot access ElasticSearch: {host}")
+            else:
+                print(f"Using ElasticSearch host: {host}"
+                      f"{' (from ES_HOST_LOCAL environment variable)' if es_host_local else ''}")
 
 
 def check_quickly_if_url_accessable(url: str, timeout: int = 3) -> bool:
