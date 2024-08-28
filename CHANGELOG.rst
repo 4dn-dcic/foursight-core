@@ -11,6 +11,7 @@ Change Log
 * Minor changes to the foursight_core/scripts/local_check_execution.py script.
   - Fix for --stage prod where we need to set os.environ["chalice_stage"]
     so that the bucket is crected correctly (e.g. foursight-prod-mastertest).
+  - Print check results bucket for user FYI.
   - Make it guess the AWS credentials name from AWS_PROFILE if no --env given.
 
 
