@@ -6,6 +6,12 @@ foursight-core
 Change Log
 ----------
 
+5.6.3
+=====
+* 2024-10-11/dmichaels
+* Updated dcicutils version (8.16.1) for vulnerabilities.
+
+
 5.6.2
 =====
 * Minor changes to the foursight_core/scripts/local_check_execution.py script.
