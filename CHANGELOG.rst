@@ -6,10 +6,11 @@ foursight-core
 Change Log
 ----------
 
-5.6.3
+5.7.0
 =====
 * 2024-10-11/dmichaels
 * Updated dcicutils version (8.16.1) for vulnerabilities.
+  Updated cryptography version (43.0.1) for vulnerabilities.
 
 
 5.6.2
