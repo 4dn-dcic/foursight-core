@@ -1,6 +1,8 @@
 # AWS Cognito authentication support functions.
 
-from cryptography.hazmat.backends.openssl.rsa import _RSAPublicKey as RSAPublicKey
+# from cryptography.hazmat.backends.openssl.rsa import _RSAPublicKey as RSAPublicKey
+# The above import no longer works with cryptography version 43.0.1; only used for type hint.
+RSAPublicKey = object 
 import jwt as jwtlib
 from jwt import PyJWKClient
 import requests
