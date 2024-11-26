@@ -343,6 +343,15 @@ def get_aws_ecr_build_info(image_repo_or_arn: str, image_tag: Optional[str] = No
         preferred_project = [project for project in projects if image_tag.lower() in project.lower()]
         if preferred_project:
             return prefer_project(preferred_project[0])
+
+        defavored_projects = []
+        for project in projects:
+            if ("pipeline" in project.lower()) or ("tibanna" in project.lower()):
+                defavored_projects.append(project)
+        for defavored_project in defavored_projects:
+            projects.remove(defavored_project)
+            projects.append(defavored_project)
+
         return projects
 
     def get_relevant_builds(project: str) -> Generator[Optional[Dict], None, None]:
