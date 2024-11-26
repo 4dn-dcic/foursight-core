@@ -344,6 +344,14 @@ def get_aws_ecr_build_info(image_repo_or_arn: str, image_tag: Optional[str] = No
         if preferred_project:
             return prefer_project(preferred_project[0])
 
+        # Bit of a hack here to handle specific case of cgap-msa (and similar e.g. cgap-dbmi) where
+        # the ECR image name (e.g. "main") does not match the CodeBuild project name, e.g. like
+        # for smaht we have image name "smaht-devtest" and CodeBuild project name "smaht-devtest"
+        # for for cgap-msa we have image name "main and CodeBuild project nanme "cgap-msa", so for
+        # just to make sure we look at the "right" CodeBuild project name first we defavor any
+        # others like "cgap-msa-pipeline-builder" or ""cgap-msa-tibanna-awsf-builder". The real
+        # problem is so far have not found a good way to align info from these two data sets,
+        # i.e. the CodeBuild project names and the ECR images names. But this works for now.
         defavored_projects = []
         for project in projects:
             if ("pipeline" in project.lower()) or ("tibanna" in project.lower()):
