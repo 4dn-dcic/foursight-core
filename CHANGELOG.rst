@@ -6,6 +6,14 @@ foursight-core
 Change Log
 ----------
 
+5.8.0
+=====
+* 2024-11-26/dmichaels
+* Fix in aws_ecs_services for deploying to cgap-msa (et.al. similar e.g. cgap-dbmi);
+  it wasn't picking up correct CodeBuild project and exceptioning out.
+* Updated dcicutils to 8.16.4 (just to keep up to date).
+
+
 5.7.0
 =====
 * 2024-10-11/dmichaels
