@@ -38,7 +38,9 @@ redis = "^4.5.1"
 toml = ">=0.10.2,<1"
 tzlocal = "^5.0.1"
 
-[tool.poetry.dev-dependencies]
+# The "poetry.dev-dependencies" section is deprecated and will be removed in a future version. Use "poetry.group.dev.dependencies" instead.
+# [tool.poetry.dev-dependencies]
+[poetry.group.dev.dependencies]
 boto3-stubs = "^1.34.136"
 botocore-stubs = "^1.34.136"
 chalice = "^1.31.0"
