@@ -1,7 +1,7 @@
 .PHONY: test
 
 configure:  # does any pre-requisite installs
-	pip install poetry
+	pip install poetry==1.8.5
 	pip install setuptools wheel
 
 lint:
