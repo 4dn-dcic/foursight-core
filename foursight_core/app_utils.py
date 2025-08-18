@@ -184,6 +184,7 @@ class AppUtilsCore(ReactApi, Routes):
         and the given environment.
         Returns an FSConnection object or raises an error.
         """
+        logger.warning(f'TESTING: In init_connection with args {environ} {_environments}')
         environments = self.init_environments(environ) if _environments is None else _environments
         if not environments:
             environ = self.get_default_env()
@@ -353,10 +354,14 @@ class AppUtilsCore(ReactApi, Routes):
         Take in a dictionary format of the request (app.current_request) so we
         can test this.
         """
+        logger.error("CHECKING AUTHORIZATION! - for testing purposes only")
+        # import pdb; pdb.set_trace()  # noqa: T201
         # first check the Authorization header
         dev_auth = request_dict.get('headers', {}).get('authorization')
+        logger.error(f"foursight_core.check_authorization: dev_auth headers = {dev_auth.get('headers')}")
         # grant admin if dev_auth equals secret value
         if dev_auth and dev_auth == os.environ.get('DEV_SECRET'):
+            logger.error("foursight_core.check_authorization: Returning True for dev_auth match")
             return True
         # If we're on localhost, automatically grant authorization
         # this looks bad but isn't because request authentication will
@@ -371,8 +376,10 @@ class AppUtilsCore(ReactApi, Routes):
         # just delete this entire block including this comment next time around.
         jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
         if jwt_decoded:
+            logger.error(f'foursight_cour.check_authorization: decoded jwt email: {jwt_decoded.get("email")}')
             try:
                 if env is None:
+                    logger.error("foursight_core.check_authorization: No env provided! Returning False.")
                     return False  # we have no env to check auth
                 envs = self.init_environments(env)
                 for env_info in envs.values():
@@ -382,9 +389,11 @@ class AppUtilsCore(ReactApi, Routes):
                                                      add_on='frame=object&datastore=database')
                     logger.warning("foursight_core.check_authorization: env_info ...")
                     logger.warning(env_info)
-                    logger.warning("foursight_core.check_authorization: user_res ...")
-                    logger.warning(user_res)
+                    logger.error("foursight_core.check_authorization: user_res ...")
+                    logger.error(user_res)
                     groups = user_res.get('groups')
+                    logger.error(f"foursight_core.check_authorization: groups: {groups}")
+                    # import pdb; pdb.set_trace()  # noqa: T201
                     if not groups:
                         logger.warning("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
                         self.set_user_record(email=jwt_decoded.get('email'), record=None, error="nogroups", exception=None)
@@ -413,7 +422,7 @@ class AppUtilsCore(ReactApi, Routes):
                 # self.user_record_error = "exception"
                 # self.user_record_error_email = jwt_decoded.get('email')
                 logger.error(e)
-        logger.error("foursight_core.check_authorization: Returning False ")
+        logger.error("foursight_core.check_authorization: Returning False no jwt_decoded")
         return False
 
     def auth0_callback(self, request, env):
