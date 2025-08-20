@@ -358,7 +358,6 @@ class AppUtilsCore(ReactApi, Routes):
         # import pdb; pdb.set_trace()  # noqa: T201
         # first check the Authorization header
         dev_auth = request_dict.get('headers', {}).get('authorization')
-        logger.error(f"foursight_core.check_authorization: dev_auth headers = {dev_auth.get('headers')}")
         # grant admin if dev_auth equals secret value
         if dev_auth and dev_auth == os.environ.get('DEV_SECRET'):
             logger.error("foursight_core.check_authorization: Returning True for dev_auth match")
@@ -376,7 +375,6 @@ class AppUtilsCore(ReactApi, Routes):
         # just delete this entire block including this comment next time around.
         jwt_decoded = self.get_decoded_jwt_token(env, request_dict)
         if jwt_decoded:
-            logger.error(f'foursight_cour.check_authorization: decoded jwt email: {jwt_decoded.get("email")}')
             try:
                 if env is None:
                     logger.error("foursight_core.check_authorization: No env provided! Returning False.")
@@ -387,8 +385,8 @@ class AppUtilsCore(ReactApi, Routes):
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
                                                      key=connection.ff_keys,
                                                      add_on='frame=object&datastore=database')
-                    logger.warning("foursight_core.check_authorization: env_info ...")
-                    logger.warning(env_info)
+                    logger.error("foursight_core.check_authorization: env_info ...")
+                    logger.error(env_info)
                     logger.error("foursight_core.check_authorization: user_res ...")
                     logger.error(user_res)
                     groups = user_res.get('groups')
