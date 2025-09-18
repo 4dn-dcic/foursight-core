@@ -24,7 +24,7 @@ app = None
 
 
 def local_check_execution(app_utils):
-
+    import pdb; pdb.set_trace()
     args = process_args()
     app_utils_environments = None
 
