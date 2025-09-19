@@ -16,6 +16,7 @@ import sys
 from typing import Callable, List, Optional, Tuple
 import yaml
 from foursight_core.captured_output import captured_output, uncaptured_output
+from dcicutils import es_utils
 with captured_output():
     import requests
     from dcicutils.command_utils import yes_or_no
@@ -35,7 +36,7 @@ def local_check_execution(app_utils):
             es_url = None
         sanity_check_elasticsearch_accessibility(app_utils.host, es_url)
         # maybe here is where to set up es_client for proxy access if needed
-
+        args.es_client = es_utils.create_es_client(os.environ["ES_HOST_LOCAL"], use_aws_auth=True)
 
     if not os.environ.get("IDENTITY"):
         exit_with_no_action(
