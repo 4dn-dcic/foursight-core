@@ -25,7 +25,6 @@ app = None
 
 
 def local_check_execution(app_utils):
-    import pdb; pdb.set_trace()
     args = process_args()
     app_utils_environments = None
 
@@ -51,6 +50,7 @@ def local_check_execution(app_utils):
                     with_action=args.action,
                     verbose=args.verbose)
     else:
+        import pdb; pdb.set_trace()
         run_check_and_or_action(app_utils, app_utils_environments, args)
 
 
@@ -345,7 +345,6 @@ def sanity_check_aws_accessibility(verbose: bool = False) -> None:
 
 
 def sanity_check_elasticsearch_accessibility(host: str, es_url: Optional[str] = None, timeout: int = 3) -> None:
-    import pdb; pdb.set_trace()
     if host:
         es_host_local = (host == os.environ.get("ES_HOST_LOCAL"))
         es_tunnel = (host.lower().startswith("http://localhost:") or host.lower().startswith("http://127.0.0.1:"))
