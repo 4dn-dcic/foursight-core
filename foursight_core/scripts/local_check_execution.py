@@ -179,6 +179,8 @@ def run_check_and_or_action(app_utils, app_utils_environments, args) -> None:
 
             check_args = {"primary": True} if args.primary else None
             check_args = collect_args(check_info, initial_args=check_args, verbose=args.verbose)
+            # add es_client to check_args
+            check_args['es_client'] = args.es_client
             confirm_interactively(f"Run check {check_info.qualified_name}?", exit_if_no=True)
             if args.verbose:
                 captured.uncaptured_print(f"Running check: {check_info.qualified_name} ...")
