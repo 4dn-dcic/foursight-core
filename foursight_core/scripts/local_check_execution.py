@@ -50,7 +50,7 @@ def local_check_execution(app_utils):
                     with_action=args.action,
                     verbose=args.verbose)
     else:
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         run_check_and_or_action(app_utils, app_utils_environments, args)
 
 
@@ -187,6 +187,7 @@ def run_check_and_or_action(app_utils, app_utils_environments, args) -> None:
             check_result = handler.run_check_or_action(connection, check_info.qualified_name, check_args)
             if args.verbose:
                 captured.uncaptured_print(f"Check run complete (result below): {check_info.qualified_name}")
+            import pdb; pdb.set_trace()
             print_result(check_result, args.yaml)
             allow_action = check_result.get("allow_action") is True
             prevent_action = check_result.get("prevent_action") is True
