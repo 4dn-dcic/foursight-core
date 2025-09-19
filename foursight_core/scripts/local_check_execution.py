@@ -24,7 +24,7 @@ app = None
 
 
 def local_check_execution(app_utils):
-
+    import pdb; pdb.set_trace()
     args = process_args()
     app_utils_environments = None
 
@@ -34,6 +34,8 @@ def local_check_execution(app_utils):
         else:
             es_url = None
         sanity_check_elasticsearch_accessibility(app_utils.host, es_url)
+        # maybe here is where to set up es_client for proxy access if needed
+
 
     if not os.environ.get("IDENTITY"):
         exit_with_no_action(
@@ -342,6 +344,7 @@ def sanity_check_aws_accessibility(verbose: bool = False) -> None:
 
 
 def sanity_check_elasticsearch_accessibility(host: str, es_url: Optional[str] = None, timeout: int = 3) -> None:
+    import pdb; pdb.set_trace()
     if host:
         es_host_local = (host == os.environ.get("ES_HOST_LOCAL"))
         es_tunnel = (host.lower().startswith("http://localhost:") or host.lower().startswith("http://127.0.0.1:"))
