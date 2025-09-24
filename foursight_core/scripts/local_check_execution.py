@@ -430,7 +430,7 @@ def print_result(result: dict, format_yaml: bool = False) -> None:
         if format_yaml:
             yaml.dump(result, sys.stdout)
         else:
-            print(json.dumps(result, indent=4))
+            print(json.dumps(result, indent=4, default=str))
 
 
 def print_boxed(lines: List[str],
