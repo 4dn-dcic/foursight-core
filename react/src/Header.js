@@ -27,9 +27,9 @@ const Warnings = ({ header }) => {
     </>
 }
 
-const PortalSslCertificateWarning = () => {
+const PortalSslCertificateWarning = ({ header }) => {
     const [ args ] = useSearchParams();
-    const sslCertificateInfo = useFetch(`/certificates`);
+    const sslCertificateInfo = useFetch(Auth.IsLoggedIn(header) ? `/certificates` : null);
     if (!sslCertificateInfo.loading) {
         const sslCertificateInfoPortal = sslCertificateInfo.find(certificate => certificate.name === "Portal");
         if (sslCertificateInfoPortal && sslCertificateInfoPortal.expires_soon) {
@@ -45,7 +45,7 @@ const PortalSslCertificateWarning = () => {
 }
 
 const PortalAccessKeyWarning = ({ header }) => {
-    const portalAccessKeyInfo = useFetch(`/portal_access_key`);
+    const portalAccessKeyInfo = useFetch(Auth.IsLoggedIn(header) ? `/portal_access_key` : null);
     if (!portalAccessKeyInfo.loading) {
         if (portalAccessKeyInfo.data?.expires_soon) {
             return <WarningBar>
@@ -67,7 +67,7 @@ const PortalAccessKeyWarning = ({ header }) => {
 }
 
 const ElasticSearchAccessWarning = ({ header }) => {
-    const info = useFetch(`//elasticsearch`);
+    const info = useFetch(Auth.IsLoggedIn(header) ? `//elasticsearch` : null);
     if (!info.loading && !info.data?.health) {
         return <WarningBar>
             <b>Warning: Cannot connect to ElasticSearch server
