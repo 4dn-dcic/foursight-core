@@ -27,9 +27,9 @@ const Warnings = ({ header }) => {
     </>
 }
 
-const PortalSslCertificateWarning = () => {
+const PortalSslCertificateWarning = ({ header }) => {
     const [ args ] = useSearchParams();
-    const sslCertificateInfo = useFetch(`/certificates`);
+    const sslCertificateInfo = useFetch(Auth.IsLoggedIn(header) ? `/certificates` : null);
     if (!sslCertificateInfo.loading) {
         const sslCertificateInfoPortal = sslCertificateInfo.find(certificate => certificate.name === "Portal");
         if (sslCertificateInfoPortal && sslCertificateInfoPortal.expires_soon) {
@@ -45,7 +45,7 @@ const PortalSslCertificateWarning = () => {
 }
 
 const PortalAccessKeyWarning = ({ header }) => {
-    const portalAccessKeyInfo = useFetch(`/portal_access_key`);
+    const portalAccessKeyInfo = useFetch(Auth.IsLoggedIn(header) ? `/portal_access_key` : null);
     if (!portalAccessKeyInfo.loading) {
         if (portalAccessKeyInfo.data?.expires_soon) {
             return <WarningBar>
@@ -67,7 +67,7 @@ const PortalAccessKeyWarning = ({ header }) => {
 }
 
 const ElasticSearchAccessWarning = ({ header }) => {
-    const info = useFetch(`//elasticsearch`);
+    const info = useFetch(Auth.IsLoggedIn(header) ? `//elasticsearch` : null);
     if (!info.loading && !info.data?.health) {
         return <WarningBar>
             <b>Warning: Cannot connect to ElasticSearch server
@@ -145,14 +145,17 @@ const NavLinks = ({ header }) => {
             style={{textDecoration:"none",color:"darkgreen"}}
             href={Client.PortalLink(header)}>
             PORTAL <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
-        </a>&nbsp;|&nbsp;
-        <a target="_blank" rel="noreferrer" id="tooltip-header-aws"
-            style={{textDecoration:"none",color:"darkgreen"}}
-            href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>
-            AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
         </a>
+        { header.app?.credentials && <>
+            &nbsp;|&nbsp;
+            <a target="_blank" rel="noreferrer" id="tooltip-header-aws"
+                style={{textDecoration:"none",color:"darkgreen"}}
+                href={"https://" + header.app.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>
+                AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
+            </a>
+            <Tooltip id="tooltip-header-aws" position="bottom" text={`Open AWS console for (${header.app.credentials.aws_account_name ? header.app.credentials.aws_account_name + "/" : ""}${header.app.credentials.aws_account_number}) account (in new tab).`} />
+        </> }
         <Tooltip id="tooltip-header-portal" position="bottom" text={`Open portal (in new tab).`} />
-        <Tooltip id="tooltip-header-aws" position="bottom" text={`Open AWS console for (${header.app?.credentials.aws_account_name ? header.app?.credentials.aws_account_name + "/" : ""}${header.app?.credentials.aws_account_number}) account (in new tab).`} />
     </>
 }
 

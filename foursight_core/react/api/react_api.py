@@ -373,22 +373,25 @@ class ReactApi(ReactApiBase, ReactRoutes):
             # the /header endpoint, coerce it to the default env.
             env = default_env
         auth = self._auth.authorize(request, env)
+        if not auth["authenticated"]:
+            # Unauthenticated: return only the minimal non-sensitive data needed to render the login page.
+            # Sensitive fields (resources, s3, portal, app.credentials, etc.) are intentionally omitted.
+            auth["known_envs"] = [self._envs.find_known_env(default_env)]
+            auth["known_envs_actual_count"] = self._envs.get_known_envs_count()
+            auth["default_env"] = default_env
+            return self.create_success_response({
+                "auth": auth,
+                "app": {
+                    "title": app.core.html_main_title,
+                    "package": app.core.APP_PACKAGE_NAME,
+                    "stage": app.core.stage.get_stage(),
+                    "local": is_running_locally(request),
+                }
+            })
         data = self._reactapi_header_cache(request, env)
         data = copy.deepcopy(data)
         data["auth"] = auth
-        # 2022-10-18
-        # No longer sharing known-envs widely; send only if authenticated;
-        # if not authenticated then act as-if the default-env is the only known-env;
-        # in this case also include (as an FYI for the UI) the real number of known-envs.
-        if auth["authenticated"]:
-            data["auth"]["known_envs"] = self._envs.get_known_envs_with_gac_names()
-            logged_in = True
-        else:
-            logged_in = False
-            known_envs_default = self._envs.find_known_env(default_env)
-            known_envs_actual_count = self._envs.get_known_envs_count()
-            data["auth"]["known_envs"] = [known_envs_default]
-            data["auth"]["known_envs_actual_count"] = known_envs_actual_count
+        data["auth"]["known_envs"] = self._envs.get_known_envs_with_gac_names()
         data["auth"]["default_env"] = default_env
         # Note that these "test_mode_xyz" cookies are for testing only
         # and if used must be manually set, e.g. via Chrome Developer Tools.
@@ -431,7 +434,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
                 read_cookie_int(request, "test_mode_access_key_expiration_warning_days")
             data["portal_access_key"] = get_portal_access_key_info(
                 env,
-                logged_in=logged_in,
+                logged_in=True,
                 test_mode_access_key_simulate_error=test_mode_access_key_simulate_error,
                 test_mode_access_key_expiration_warning_days=test_mode_access_key_expiration_warning_days)
             if data["portal_access_key"].get("invalid"):
@@ -587,14 +590,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_portal_access_key(self, request: dict, args: Optional[dict] = None) -> Response:
         env = self._envs.get_default_env()
-        auth = self._auth.authorize(request, env)
-        logged_in = auth.get("authenticated")
         test_mode_access_key_simulate_error = read_cookie_bool(request, "test_mode_access_key_simulate_error")
         test_mode_access_key_expiration_warning_days = read_cookie_int(
                 request, "test_mode_access_key_expiration_warning_days")
         response = get_portal_access_key_info(
             env,
-            logged_in=logged_in,
+            logged_in=True,
             test_mode_access_key_simulate_error=test_mode_access_key_simulate_error,
             test_mode_access_key_expiration_warning_days=test_mode_access_key_expiration_warning_days)
         return self.create_success_response(response)
