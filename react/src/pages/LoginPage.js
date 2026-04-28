@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import useHeader from '../hooks/Header';
 import { AccountInfoCurrent } from './AccountsComponent';
-import Auth0Lock from 'auth0-lock';
+import { Auth0Lock } from 'auth0-lock';
 import Auth from '../utils/Auth';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
