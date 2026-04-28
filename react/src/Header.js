@@ -145,14 +145,17 @@ const NavLinks = ({ header }) => {
             style={{textDecoration:"none",color:"darkgreen"}}
             href={Client.PortalLink(header)}>
             PORTAL <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
-        </a>&nbsp;|&nbsp;
-        <a target="_blank" rel="noreferrer" id="tooltip-header-aws"
-            style={{textDecoration:"none",color:"darkgreen"}}
-            href={"https://" + header.app?.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>
-            AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
         </a>
+        { header.app?.credentials && <>
+            &nbsp;|&nbsp;
+            <a target="_blank" rel="noreferrer" id="tooltip-header-aws"
+                style={{textDecoration:"none",color:"darkgreen"}}
+                href={"https://" + header.app.credentials.aws_account_number + ".signin.aws.amazon.com/console/"}>
+                AWS <span className="fa fa-external-link" style={{position:"relative",bottom:"-1px",fontSize:"14px"}}></span>
+            </a>
+            <Tooltip id="tooltip-header-aws" position="bottom" text={`Open AWS console for (${header.app.credentials.aws_account_name ? header.app.credentials.aws_account_name + "/" : ""}${header.app.credentials.aws_account_number}) account (in new tab).`} />
+        </> }
         <Tooltip id="tooltip-header-portal" position="bottom" text={`Open portal (in new tab).`} />
-        <Tooltip id="tooltip-header-aws" position="bottom" text={`Open AWS console for (${header.app?.credentials.aws_account_name ? header.app?.credentials.aws_account_name + "/" : ""}${header.app?.credentials.aws_account_number}) account (in new tab).`} />
     </>
 }
 
