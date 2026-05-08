@@ -68,7 +68,7 @@ const PortalAccessKeyWarning = ({ header }) => {
 
 const ElasticSearchAccessWarning = ({ header }) => {
     const info = useFetch(Auth.IsLoggedIn(header) ? `//elasticsearch` : null);
-    if (!info.loading && !info.data?.health) {
+    if (!info.loading && info.data && !info.data.health) {
         return <WarningBar>
             <b>Warning: Cannot connect to ElasticSearch server
                 {info.data?.url && <>{Char.RightArrow} {info.data.url} </>}</b>

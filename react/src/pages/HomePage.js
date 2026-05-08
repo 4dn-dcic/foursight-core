@@ -32,12 +32,11 @@ const HomePage = (props) => {
                 <div style={{float:"right",fontSize:"x-small",textAlign:"right",marginTop:"-3pt",marginRight:"2pt"}}>
                     <span id="tooltip-home-versions">Foursight Version: <b>{header?.versions?.foursight}</b></span> <br />
                     <Tooltip id="tooltip-home-versions" position="top" size="small" text={versionsToolTip} />
-                    { header?.app?.credentials?.aws_account_name ? <>
-                        <span id="tooltip-home-aws-account">AWS Account: <b>{header?.app?.credentials?.aws_account_name}</b></span> <br />
-                        <Tooltip id="tooltip-home-aws-account" position="top" size="small" text={"AWS Account Number: " + header?.app?.credentials?.aws_account_number} />
-                    </>:<>
-                        <span>AWS Account: <b>{header?.app?.credentials?.aws_account_number}</b></span> <br />
-                    </>}
+                    { header?.app?.credentials && <>
+                        <span id="tooltip-home-aws-account">AWS Account: <b>{header.app.credentials.aws_account_name || header.app.credentials.aws_account_number}</b></span> <br />
+                        { header.app.credentials.aws_account_name &&
+                            <Tooltip id="tooltip-home-aws-account" position="top" size="small" text={"AWS Account Number: " + header.app.credentials.aws_account_number} /> }
+                    </> }
                     Foursight Stage: <b>{header?.app?.stage}</b> <br />
                 </div>
                 <HorizontalLine top="10pt" bottom="4pt" />

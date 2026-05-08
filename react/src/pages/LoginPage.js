@@ -216,13 +216,6 @@ const LoginPage = (props) => {
             </div>
         </React.Fragment>):(<React.Fragment>
         <div className="container" id="login_container">
-            <div style={{float:"right",marginRight:"94pt",color:"darkred",fontSize:"small",cursor:"pointer"}}>
-                { showingAuthToken ? <>
-                    <span onClick={() => setShowAuthToken(false)}>Auth {Char.DownArrow}</span>
-                </>:<>
-                    <span onClick={() => setShowAuthToken(true)}>Auth {Char.UpArrow}</span>
-                </>}
-            </div>
             { header?.app?.credentials && <span style={{float:"right",color:"darkred",fontSize:"small"}}>
                 AWS Account: {header.app.credentials.aws_account_number}
                 {header.app.credentials.aws_account_name && <>
