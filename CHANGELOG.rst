@@ -6,6 +6,15 @@ foursight-core
 Change Log
 ----------
 
+5.9.0
+=====
+* 2026-05-21/aveit
+* Updated Git Lambda layer to AL2023-compatible layer (arn:aws:lambda:us-east-1:865557043974:layer:git-lambda-al2023:1).
+  Addresses critical CVEs in Git binary and moves runtime to Amazon Linux 2023 (Python 3.12).
+* React: guarded /header endpoint to return only minimal non-sensitive data for unauthenticated requests.
+  Fixed Auth0 login issue. Updated React build to Node 18.
+
+
 5.8.0
 =====
 * 2024-11-26/dmichaels

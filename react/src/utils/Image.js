@@ -31,7 +31,7 @@ function GetGitHubImage() {
 }
 
 function GetHarvardImage() {
-    return "https://www.iscb.org/images/stories/ismb2020/bazaar/logo.HarvardMedical-BiomedicalInformatics.png";
+    return "https://dbmi.hms.harvard.edu/sites/default/files/hero-images/HMS_DBMI_Logo.svg";
 }
 
 function GetFoursightCgapFaviconImage() {

@@ -130,10 +130,10 @@ const PortalRedeployPage = (props) => {
         <div className="container">
             <div>
                 <b style={{fontSize: "x-large"}}>Portal Redeploy</b>
-                <span id={`tooltip-account-${header.app?.credentials.aws_account_number}`} style={{float: "right", fontSize: "small", position: "relative", top: "10pt"}}>
-                    {header.app?.credentials.aws_account_name || header.app?.credentials.aws_account_number}&nbsp;&nbsp;
+                <span id={`tooltip-account-${header.app?.credentials?.aws_account_number}`} style={{float: "right", fontSize: "small", position: "relative", top: "10pt"}}>
+                    {header.app?.credentials?.aws_account_name || header.app?.credentials?.aws_account_number}&nbsp;&nbsp;
                  </span>
-                <Tooltip id={`tooltip-account-${header.app?.credentials.aws_account_number}`} position="top" size="small" text={`AWS Account: ${header.app?.credentials.aws_account_number}`} />
+                <Tooltip id={`tooltip-account-${header.app?.credentials?.aws_account_number}`} position="top" size="small" text={`AWS Account: ${header.app?.credentials?.aws_account_number}`} />
             </div>
             { clusters.loading ?
                 <ContentLoading />

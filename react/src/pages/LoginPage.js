@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import useHeader from '../hooks/Header';
 import { AccountInfoCurrent } from './AccountsComponent';
-import Auth0Lock from 'auth0-lock';
 import Auth from '../utils/Auth';
 import Char from '../utils/Char';
 import Client from '../utils/Client';
@@ -25,6 +24,8 @@ import Tooltip from '../components/Tooltip';
 import Yaml from '../utils/Yaml';
 import Page from '../Page';
 import useFetch from '../hooks/Fetch';
+
+const Auth0Lock = window.Auth0Lock;
 
 const LoginPage = (props) => {
 
@@ -215,20 +216,13 @@ const LoginPage = (props) => {
             </div>
         </React.Fragment>):(<React.Fragment>
         <div className="container" id="login_container">
-            <div style={{float:"right",marginRight:"94pt",color:"darkred",fontSize:"small",cursor:"pointer"}}>
-                { showingAuthToken ? <>
-                    <span onClick={() => setShowAuthToken(false)}>Auth {Char.DownArrow}</span>
-                </>:<>
-                    <span onClick={() => setShowAuthToken(true)}>Auth {Char.UpArrow}</span>
-                </>}
-            </div>
-            <span style={{float:"right",color:"darkred",fontSize:"small"}}>
-                AWS Account: {header?.app?.credentials?.aws_account_number}
-                {(header?.app?.credentials?.aws_account_name) && <>
-                    &nbsp;|&nbsp;<span id="tooltip-login-aws-alias-2">{header?.app?.credentials?.aws_account_name}</span>
-                    <Tooltip id="tooltip-login-aws-alias-2" position="bottom" text={`AWS Account Alias: ${header?.app?.credentials?.aws_account_name}`} />
+            { header?.app?.credentials && <span style={{float:"right",color:"darkred",fontSize:"small"}}>
+                AWS Account: {header.app.credentials.aws_account_number}
+                {header.app.credentials.aws_account_name && <>
+                    &nbsp;|&nbsp;<span id="tooltip-login-aws-alias-2">{header.app.credentials.aws_account_name}</span>
+                    <Tooltip id="tooltip-login-aws-alias-2" position="bottom" text={`AWS Account Alias: ${header.app.credentials.aws_account_name}`} />
                 </>} &nbsp;|&nbsp;
-            </span>
+            </span> }
             <div className="box warning" style={{marginTop:"15pt",marginLeft:"90pt",marginRight:"90pt",padding:"10pt"}}>
                 <b id="tooltip-nologin" className="pointer" onClick={login} style={{fontSize:"large"}}>{Char.Warning}&nbsp;&nbsp;Not Logged In</b>
                 { (Cookie.HasAuthToken() && Auth.SessionExpired()) && <small>

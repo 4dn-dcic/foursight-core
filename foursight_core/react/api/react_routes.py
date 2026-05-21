@@ -61,28 +61,25 @@ class ReactRoutes:
         """
         return app.core.reactapi_header(app.request(), env)
 
-    @route("/{env}/certificates", authorize=False, define_noenv_route=True)
+    @route("/{env}/certificates", define_noenv_route=True)
     def reactapi_route_certificates(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Note that this in an UNPROTECTED route.
         Returns SSL certificate info about this Foursight instance and its associated Portal instance.
         """
         ignored(env)
         return app.core.reactapi_certificates(app.request(), app.request_args())
 
-    @route("/{env}/portal_access_key", authorize=False, define_noenv_route=True)
+    @route("/{env}/portal_access_key", define_noenv_route=True)
     def reactapi_route_portal_access_key(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Note that this in an UNPROTECTED route.
         Returns Portal access key info about this Foursight instance.
         """
         ignored(env)
         return app.core.reactapi_portal_access_key(app.request(), app.request_args())
 
-    @route("/{env}/elasticsearch", authorize=False, define_noenv_route=True)
+    @route("/{env}/elasticsearch", define_noenv_route=True)
     def reactapi_route_elasticsearch(env: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
-        Note that this in an UNPROTECTED route.
         Pings the Elasticsearch associated with this Foursight instance and returns related info.
         """
         ignored(env)

@@ -8,7 +8,6 @@ import Image from '../utils/Image';
 import Server from '../utils/Server';
 import Styles from '../Styles';
 import { StandardSpinner } from '../Spinners';
-import { Auth as AmplifyAuth } from '@aws-amplify/auth'
 
 const BOX_BACKGROUND = "#FEFEFE";
 

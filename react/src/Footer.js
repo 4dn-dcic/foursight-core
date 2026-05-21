@@ -14,9 +14,9 @@ const Footer = (props) => {
         <br />
         <table width="100%"><tbody>
             <tr style={{backgroundColor:"darkred",height:"1px"}}><td></td></tr>
-            <tr><td align="center" style={{paddingTop:"2px",paddingBottom:"6px"}}>
+            <tr><td align="center" style={{paddingTop:"7px",paddingBottom:"7px"}}>
                 <a href={Client.PortalLink(header)} target="_blank" rel="noreferrer">
-                    <img alt="harvard" src={Image.Harvard()} height="46"/>
+                    <img alt="harvard" src={Image.Harvard()} height="40"/>
                 </a>
             </td></tr>
             <tr style={{backgroundColor:"darkred",height:"1px"}}><td></td></tr>
