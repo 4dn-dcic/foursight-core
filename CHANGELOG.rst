@@ -17,6 +17,8 @@ Change Log
   role and bucket access are provisioned separately.
 * Tests: preserve real S3 HeadBucket error details for the simulated test bucket instead of
   collapsing every AWS error into a synthetic 404.
+* Tests: hardened the S3 connection integration test to clean up its own run-specific objects
+  reliably and avoid whole-bucket count assertions in the shared test bucket.
 
 
 5.9.0
