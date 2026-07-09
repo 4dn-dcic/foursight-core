@@ -13,6 +13,8 @@ Change Log
   Origin/Referer validation for cookie-authenticated mutating requests.
 * Security: added Secure and SameSite=Lax to production cookies, and HttpOnly to session-bearing
   c4_st cookies while preserving the existing JavaScript-readable React authtoken behavior.
+* CI: documented the existing OIDC AWS credential setup used by S3-dependent tests; AWS-side
+  role and bucket access are provisioned separately.
 
 
 5.9.0
@@ -559,4 +561,3 @@ There was no version 0.1.5
 =====
 
 **PR #1: Core2**
-
