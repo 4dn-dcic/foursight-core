@@ -97,6 +97,10 @@ class ReactApiBase:
         return ReactApiBase.create_response(http_status=403, body={"status": "Forbidden."})
 
     @staticmethod
+    def create_method_not_allowed_response() -> Response:
+        return ReactApiBase.create_response(http_status=405, body={"status": "Method not allowed."})
+
+    @staticmethod
     def create_error_response(message: Union[dict, str, Exception]) -> Response:
         if isinstance(message, Exception):
             # Treat an Exception object like the error message string associated with that Exception.
@@ -184,7 +188,8 @@ class ReactApiBase:
                                                     value=redis_session_token.get_session_token(),
                                                     domain=domain,
                                                     expires=str(datetime.datetime.utcnow() +
-                                                                redis_session_token.get_expiration()))
+                                                                redis_session_token.get_expiration()),
+                                                    http_only=True)
             authtoken_cookie = [authtoken_cookie, c4_st_cookie]
         redirect_url = self.get_redirect_url(request, env, domain, context)
         return self.create_redirect_response(location=redirect_url, headers={"Set-Cookie": authtoken_cookie})

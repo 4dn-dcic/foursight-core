@@ -3,6 +3,7 @@ import json
 import boto3
 import datetime
 import logging
+from botocore.exceptions import ClientError
 from foursight_core.abstract_connection import AbstractConnection
 from dcicutils.misc_utils import full_class_name
 from .boto_s3 import boto_s3_client, boto_s3_resource
@@ -140,8 +141,16 @@ class S3Connection(AbstractConnection):
     def test_connection(self):
         try:
             bucket_resp = self.client.head_bucket(Bucket=self.bucket)
-        except Exception:
-            return {'ResponseMetadata': {'HTTPStatusCode': 404}}
+        except ClientError as e:
+            return e.response
+        except Exception as e:
+            return {
+                'Error': {
+                    'Code': type(e).__name__,
+                    'Message': str(e),
+                },
+                'ResponseMetadata': {'HTTPStatusCode': 404},
+            }
         return bucket_resp
 
     def create_bucket(self, manual_bucket=None):

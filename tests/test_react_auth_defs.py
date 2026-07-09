@@ -110,12 +110,16 @@ def create_test_authtoken_munged():
         return authtoken
 
 
-def create_test_request(authtoken: str):
+def create_test_request(authtoken: str, method: str = "GET", headers: Optional[dict] = None):
+    request_headers = {
+        "host": DOMAIN,
+        "cookie": f"some-cookie=some-cookie-value; authtoken={authtoken}"
+    }
+    if headers:
+        request_headers.update(headers)
     return {
-        "headers": {
-            "host": DOMAIN,
-            "cookie": f"some-cookie=some-cookie-value; authtoken={authtoken}"
-        }
+        "method": method,
+        "headers": request_headers
     }
 
 

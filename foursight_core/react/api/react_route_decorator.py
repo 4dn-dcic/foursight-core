@@ -6,6 +6,7 @@
 from chalice import CORSConfig, Response
 import logging
 from typing import Optional, Tuple
+from urllib.parse import urlparse
 from dcicutils.misc_utils import get_error_message, PRINT
 from ...app import app
 from ...route_prefixes import CHALICE_LOCAL, ROUTE_PREFIX, ROUTE_EMPTY_PREFIX, ROUTE_PREFIX_EXPLICIT
@@ -35,6 +36,7 @@ else:
 
 _HTTP_UNAUTHENTICATED = 401
 _HTTP_UNAUTHORIZED = 403
+_SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -126,25 +128,34 @@ def route(*args, **kwargs):
         """
         This function is called once for each defined route/endpoint (at app startup).
         """
-        def route_function(*args, **kwargs):
+        route_methods = _normalized_methods(kwargs["methods"])
+
+        def route_function(*args, **route_kwargs):
             """
             This is the function called on each actual route/endpoint (API) call.
             """
             try:
-                env = kwargs.get("env")
+                request = app.current_request.to_dict()
+                request_method = _request_method(request)
+                if request_method not in route_methods:
+                    return app.core.create_method_not_allowed_response()
+                env = route_kwargs.get("env")
                 if env and env != "static" and app.core._envs and not app.core._envs.is_known_env(env):
                     env = app.core.get_default_env()
                 if authorize:
                     # Note that the "env" argument in the kwargs is the environment name from the endpoint
                     # path; this does NOT have to be present in the endpoint path, BUT if it IS then it
                     # MUST be exactly named "env", otherwise we won't properly do per-env authorization.
-                    unauthorized_response = _authorize(app.current_request.to_dict(), env)
+                    unauthorized_response = _authorize(request, env)
                     if unauthorized_response:
                         return unauthorized_response
+                    csrf_response = _validate_csrf(request)
+                    if csrf_response:
+                        return csrf_response
                 # Here we are authenticated and authorized and so we call the actual route function.
                 if define_noenv_route and not env:
-                    kwargs["env"] = app.core.get_default_env()
-                return wrapped_route_function(*args, **kwargs)
+                    route_kwargs["env"] = app.core.get_default_env()
+                return wrapped_route_function(*args, **route_kwargs)
             except Exception as e:
                 # Common endpoint exception handling here.
                 logger.error(f"Exception in route ({wrapped_route_function.__name__}): {get_error_message(e)}")
@@ -177,3 +188,43 @@ def _authorize(request: dict, env: Optional[str]) -> Optional[Response]:
         http_status = _HTTP_UNAUTHENTICATED if not authorize_response["authenticated"] else _HTTP_UNAUTHORIZED
         return app.core.create_response(http_status=http_status, body=authorize_response)
     return None
+
+
+def _request_method(request: dict) -> str:
+    return (request or {}).get("method", "GET").upper()
+
+
+def _normalized_methods(methods: list) -> set:
+    return {method.upper() for method in methods}
+
+
+def _validate_csrf(request: dict) -> Optional[Response]:
+    if _request_method(request) in _SAFE_METHODS:
+        return None
+    if _same_origin_header_is_valid(request):
+        return None
+    return app.core.create_forbidden_response()
+
+
+def _same_origin_header_is_valid(request: dict) -> bool:
+    headers = _lowercase_headers(request)
+    host = (headers.get("host") or "").lower()
+    if not host:
+        return False
+    origin = headers.get("origin")
+    if origin:
+        return _origin_host(origin) == host
+    referer = headers.get("referer")
+    if referer:
+        return _origin_host(referer) == host
+    return False
+
+
+def _lowercase_headers(request: dict) -> dict:
+    headers = (request or {}).get("headers") or {}
+    return {str(key).lower(): value for key, value in headers.items()}
+
+
+def _origin_host(url: str) -> Optional[str]:
+    parsed_url = urlparse(url)
+    return parsed_url.netloc.lower() if parsed_url.scheme and parsed_url.netloc else None

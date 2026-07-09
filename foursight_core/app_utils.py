@@ -500,6 +500,9 @@ class AppUtilsCore(ReactApi, Routes):
             if expires_in:  # in seconds
                 expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
                 cookie_str += (' Expires=' + expires.strftime("%a, %d %b %Y %H:%M:%S GMT") + ';')
+            cookie_str = append_session_cookie_security_attributes(
+                cookie_str, running_locally=self.is_running_locally(req_dict)
+            )
             resp_headers['Set-Cookie'] = cookie_str
         return Response(status_code=302, body=json.dumps(resp_headers), headers=resp_headers)
 
@@ -2117,6 +2120,13 @@ class AppUtils(AppUtilsCore):  # for compatibility with older imports
     import if you're making an AppUtils in some other library.
     """
     pass
+
+
+def append_session_cookie_security_attributes(cookie_str: str, running_locally: bool = False) -> str:
+    cookie_str += ' SameSite=Lax; HttpOnly;'
+    if not running_locally:
+        cookie_str += ' Secure;'
+    return cookie_str
 
 
 # These were previously in foursight/chalicelib_foursight/check_schedules.py

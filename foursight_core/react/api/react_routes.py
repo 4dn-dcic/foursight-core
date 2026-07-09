@@ -296,7 +296,7 @@ class ReactRoutes:
         """
         return app.core.reactapi_checks_history_recent(app.request(), env, args=app.request_args())
 
-    @route("/{env}/checks/{check}/run", authorize=True)
+    @route("/{env}/checks/{check}/run", methods=["POST"], authorize=True)
     def reactapi_route_checks_run(env: str, check: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Kicks off a run of the given check.
@@ -305,7 +305,7 @@ class ReactRoutes:
         """
         return app.core.reactapi_checks_run(app.request(), env, check=check, args=app.request_arg("args"))
 
-    @route("/{env}/action/{action}/run", authorize=True)
+    @route("/{env}/action/{action}/run", methods=["POST"], authorize=True)
     def reactapi_route_action_run(env: str, action: str) -> Response:  # noqa: implicit @staticmethod via @route
         """
         Kicks off a run of the given check.
@@ -539,14 +539,14 @@ class ReactRoutes:
         """
         return app.core.reactapi_function_cache(app.request())
 
-    @route("/__functioncacheclear__", authorize=True)
+    @route("/__functioncacheclear__", methods=["POST"], authorize=True)
     def reactapi_route_function_cache() -> Response:  # noqa: implicit @staticmethod via @route
         """
         For troubleshooting only. Clears function cache.
         """
         return app.core.reactapi_function_cache_clear(app.request(), app.request_args())
 
-    @route("/__reloadlambda__", authorize=True)
+    @route("/__reloadlambda__", methods=["POST"], authorize=True)
     def reactapi_route_reload_lambda() -> Response:  # noqa: implicit @staticmethod via @route
         """
         For troubleshooting only. Reload the lambda code.
