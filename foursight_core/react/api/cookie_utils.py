@@ -96,6 +96,9 @@ def create_set_cookie_string(request: dict, name: str, value: Optional[str],
             expires = None
         if expires:
             cookie += f" Expires={expires};"
+    cookie += " SameSite=Lax;"
+    if not is_running_locally(request):
+        cookie += " Secure;"
     if http_only:
         cookie += " HttpOnly;"
     return cookie

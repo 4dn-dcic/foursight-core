@@ -1355,7 +1355,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_checks_run(self, request: dict, env: str, check: str, args: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks/{check}/run
+        Called from react_routes for endpoint: POST /{env}/checks/{check}/run
         The args string, if any, is assumed to be a Base64 encoded JSON object.
         Kicks off a run for the given check (name).
         Arguments (args) for the request are any of:
@@ -1370,7 +1370,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_action_run(self, request: dict, env: str, action: str, args: str) -> Response:
         """
-        Called from react_routes for endpoint: GET /{env}/checks/action/{action}/run
+        Called from react_routes for endpoint: POST /{env}/checks/action/{action}/run
         The args string, if any, is assumed to be a Base64 encoded JSON object.
         Kicks off a run for the given action (name).
         Arguments (args) for the request are any of:
@@ -2174,7 +2174,7 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_reload_lambda(self, request: dict) -> Response:
         """
-        Called from react_routes for endpoint: GET /__reloadlambda__
+        Called from react_routes for endpoint: POST /__reloadlambda__
         Kicks off a reload of the given lambda name. For troubleshooting only.
         """
         ignored(request)
@@ -2184,16 +2184,16 @@ class ReactApi(ReactApiBase, ReactRoutes):
 
     def reactapi_function_cache(self, request: dict) -> Response:
         """
-        Called from react_routes for endpoint: GET /__reloadlambda__
-        Kicks off a reload of the given lambda name. For troubleshooting only.
+        Called from react_routes for endpoint: GET /__functioncache__
+        Returns function cache info. For troubleshooting only.
         """
         ignored(request)
         return self.create_success_response(json.dumps(function_cache_info(), default=str))
 
     def reactapi_function_cache_clear(self, request: dict, args: Optional[dict] = None) -> Response:
         """
-        Called from react_routes for endpoint: GET /__reloadlambda__
-        Kicks off a reload of the given lambda name. For troubleshooting only.
+        Called from react_routes for endpoint: POST /__functioncacheclear__
+        Clears function cache. For troubleshooting only.
         """
         names = args.get("name", args.get("names", None))
         cache_cleared = []

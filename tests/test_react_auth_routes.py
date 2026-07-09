@@ -46,6 +46,16 @@ def assert_unauthorized_response(response):
     assert response.body["authorized"] is False
 
 
+def assert_forbidden_response(response):
+    assert response.status_code == 403
+    assert response.body == {"status": "Forbidden."}
+
+
+def assert_method_not_allowed_response(response):
+    assert response.status_code == 405
+    assert response.body == {"status": "Method not allowed."}
+
+
 def test_react_authentication_decorator_good():
     with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
         with mock.patch.object(gac, "short_env_name", mock_short_env_name):
@@ -101,6 +111,64 @@ def test_react_authentication_decorator_unauthenticated_invalid_auth0_secret():
                 with mock.patch.object(auth_module, "app", get_mock_chalice_app()):
                     response = test_react_route(env=ALLOWED_ENV)
                     assert_unauthenticated_response(response)
+
+
+def test_react_authentication_decorator_state_changing_route_rejects_get():
+    with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
+        with mock.patch.object(gac, "short_env_name", mock_short_env_name):
+            request = create_test_request(create_test_authtoken_good(), method="GET")
+            with mock.patch.object(react_route_decorator, "app", get_mock_chalice_app(request)):
+
+                @react_route_decorator.route("/{env}/dummy", methods=["POST"], authorize=True)
+                def test_react_route(env: str):
+                    return create_test_route_response(env)
+
+                response = test_react_route(env=ALLOWED_ENV)
+                assert_method_not_allowed_response(response)
+
+
+def test_react_authentication_decorator_state_changing_route_rejects_missing_origin():
+    with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
+        with mock.patch.object(gac, "short_env_name", mock_short_env_name):
+            request = create_test_request(create_test_authtoken_good(), method="POST")
+            with mock.patch.object(react_route_decorator, "app", get_mock_chalice_app(request)):
+
+                @react_route_decorator.route("/{env}/dummy", methods=["POST"], authorize=True)
+                def test_react_route(env: str):
+                    return create_test_route_response(env)
+
+                response = test_react_route(env=ALLOWED_ENV)
+                assert_forbidden_response(response)
+
+
+def test_react_authentication_decorator_state_changing_route_rejects_foreign_origin():
+    with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
+        with mock.patch.object(gac, "short_env_name", mock_short_env_name):
+            request = create_test_request(create_test_authtoken_good(), method="POST",
+                                          headers={"origin": "https://evil.example"})
+            with mock.patch.object(react_route_decorator, "app", get_mock_chalice_app(request)):
+
+                @react_route_decorator.route("/{env}/dummy", methods=["POST"], authorize=True)
+                def test_react_route(env: str):
+                    return create_test_route_response(env)
+
+                response = test_react_route(env=ALLOWED_ENV)
+                assert_forbidden_response(response)
+
+
+def test_react_authentication_decorator_state_changing_route_allows_same_origin():
+    with mock.patch.object(envs, "foursight_env_name", mock_foursight_env_name):
+        with mock.patch.object(gac, "short_env_name", mock_short_env_name):
+            request = create_test_request(create_test_authtoken_good(), method="POST",
+                                          headers={"origin": "https://some-domain"})
+            with mock.patch.object(react_route_decorator, "app", get_mock_chalice_app(request)):
+
+                @react_route_decorator.route("/{env}/dummy", methods=["POST"], authorize=True)
+                def test_react_route(env: str):
+                    return create_test_route_response(env)
+
+                response = test_react_route(env=ALLOWED_ENV)
+                assert_authorized_response(response, ALLOWED_ENV)
 
 
 def test_react_authentication_decorator_unauthenticated_munged():

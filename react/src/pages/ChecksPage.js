@@ -147,6 +147,7 @@ function doRunCheck(check, env, groupList, historyList, fetch) {
     check.__queueingCheckRun = true;
     fetch({
         url: Server.Url(`/checks/${check.name}/run?args=${argsEncoded}`, env),
+        method: "POST",
         onData: (data) => {
             //
             // The only thing we need/want from this is the UUID identifying the check run.
@@ -178,6 +179,7 @@ function doRunAction(check, action, env, groupList, fetch) {
     check.__queueingActionRun = true;
     fetch({
         url: Server.Url(`/action/${action}/run?args=${argsEncoded}`, env),
+        method: "POST",
         onData: (data) => {
             //
             // The only thing we need/want from this is the UUID identifying the action run.

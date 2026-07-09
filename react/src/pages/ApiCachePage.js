@@ -16,7 +16,7 @@ const ApiCache = (props) => {
     const cache = props.cache
     const fetch = useFetchFunction();
     function clearCache(functionName) {
-        fetch(`//__functioncacheclear__?name=${functionName}`)
+        fetch(`//__functioncacheclear__?name=${functionName}`, { method: "POST" })
         props.refresh();
     }
     return <>
@@ -64,7 +64,7 @@ const ApiCachePage = (props) => {
     }
 
     function clear() {
-        fetch("//__functioncacheclear__");
+        fetch("//__functioncacheclear__", { method: "POST" });
         refresh();
     }
 

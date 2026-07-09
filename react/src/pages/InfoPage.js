@@ -167,11 +167,11 @@ const InfoPage = () => {
 
     function initiateAppReload() {
         setReloadingApp(true);
-        fetch("/__reloadlambda__", { onDone: () => setReloadingApp(false) });
+        fetch("/__reloadlambda__", { method: "POST", onDone: () => setReloadingApp(false) });
     }
 
     function clearCache() {
-        fetch(Server.Url("/__functioncacheclear__", false));
+        fetch(Server.Url("/__functioncacheclear__", false), { method: "POST" });
     }
         const account = {
             id: `${header.app?.credentials?.aws_account_name}:${header?.app?.stage}`,

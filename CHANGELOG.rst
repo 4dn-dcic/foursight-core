@@ -6,6 +6,15 @@ foursight-core
 Change Log
 ----------
 
+5.10.0
+======
+* 2026-07-09
+* Security: restricted state-changing React API routes to non-GET methods and added same-origin
+  Origin/Referer validation for cookie-authenticated mutating requests.
+* Security: added Secure and SameSite=Lax to production cookies, and HttpOnly to session-bearing
+  c4_st cookies while preserving the existing JavaScript-readable React authtoken behavior.
+
+
 5.9.0
 =====
 * 2026-05-21/aveit
@@ -550,5 +559,4 @@ There was no version 0.1.5
 =====
 
 **PR #1: Core2**
-
 

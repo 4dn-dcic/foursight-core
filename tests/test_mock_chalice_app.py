@@ -8,6 +8,8 @@ class _MockReactApi:
         self.react_authorize = auth.authorize
         self.create_success_response = ReactApi.create_success_response
         self.create_response = ReactApi.create_response
+        self.create_forbidden_response = ReactApi.create_forbidden_response
+        self.create_method_not_allowed_response = ReactApi.create_method_not_allowed_response
         self.get_site_name = lambda: "some-site-name"
         self.APP_PACKAGE_NAME = "foursight"
         self._envs = {}
