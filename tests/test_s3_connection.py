@@ -16,10 +16,14 @@ class TestS3Connection:
 
     def test_test_s3_conn_methods(self):
         # clean up after yourself
-        test_s3_conn = s3_connection.S3Connection(FOURSIGHT_PREFIX + '-test-s3')
+        test_bucket = FOURSIGHT_PREFIX + '-test-s3'
+        test_s3_conn = s3_connection.S3Connection(test_bucket)
         test_key = 'test/' + ff_utils.generate_rand_accession()
         test_value = {'abc': 123}
-        assert (test_s3_conn.status_code != 404)
+        assert test_s3_conn.bucket == 'foursight-core-simulated-test-s3'
+        assert test_s3_conn.status_code == 200, (
+            f"Cannot access S3 test bucket {test_s3_conn.bucket}: {test_s3_conn.head_info}"
+        )
         put_res = test_s3_conn.put_object(test_key, json.dumps(test_value))
         assert (put_res is not None)
         get_res = test_s3_conn.get_object(test_key)

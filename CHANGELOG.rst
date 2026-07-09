@@ -15,6 +15,8 @@ Change Log
   c4_st cookies while preserving the existing JavaScript-readable React authtoken behavior.
 * CI: documented the existing OIDC AWS credential setup used by S3-dependent tests; AWS-side
   role and bucket access are provisioned separately.
+* Tests: preserve real S3 HeadBucket error details for the simulated test bucket instead of
+  collapsing every AWS error into a synthetic 404.
 
 
 5.9.0
