@@ -17,6 +17,10 @@ build-noreact:
 	make configure
 	poetry install
 
+build-for-ga:
+	make configure
+	POETRY_VIRTUALENVS_CREATE=true poetry install
+
 update:
 	poetry update
 

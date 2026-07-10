@@ -6,6 +6,19 @@ foursight-core
 Change Log
 ----------
 
+5.10.1
+======
+* 2026-07-10
+* CI: added an automatic tag-and-publish-to-PyPI job (``publish`` in ``main-CI.yml``) that runs
+  after a successful ``build`` on push to ``master``. It determines the version from
+  ``pyproject.toml``, independently checks for an existing git tag and an existing PyPI release,
+  and only tags/publishes what's missing, so it self-heals if a prior run tagged but failed to
+  publish. Adds a ``build-for-ga`` Makefile target that installs dependencies via
+  ``POETRY_VIRTUALENVS_CREATE=true poetry install`` (never ``poetry config --local``) to avoid
+  dirtying the tracked ``poetry.toml``, and asserts a clean checkout before determining the
+  version.
+
+
 5.10.0
 ======
 * 2026-07-09
