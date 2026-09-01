@@ -138,7 +138,7 @@ function showHistory(check, env, historyList) {
     }
 }
 
-function doRunCheck(check, env, groupList, historyList, fetch) {
+export function doRunCheck(check, env, groupList, historyList, fetch) {
     const args = check.kwargs;
     const argsString = Json.Str(args);
     const argsEncoded = btoa(argsString);
@@ -148,6 +148,7 @@ function doRunCheck(check, env, groupList, historyList, fetch) {
     fetch({
         url: Server.Url(`/checks/${check.name}/run?args=${argsEncoded}`, env),
         method: "POST",
+        payload: {},
         onData: (data) => {
             //
             // The only thing we need/want from this is the UUID identifying the check run.
@@ -170,7 +171,7 @@ function doRunCheck(check, env, groupList, historyList, fetch) {
     showHistory(check, env, historyList);
 }
 
-function doRunAction(check, action, env, groupList, fetch) {
+export function doRunAction(check, action, env, groupList, fetch) {
     const args = { check_name: check.name, called_by: check.__result?.get("uuid") }
     const argsString = Json.Str(args);
     const argsEncoded = btoa(argsString);
@@ -180,6 +181,7 @@ function doRunAction(check, action, env, groupList, fetch) {
     fetch({
         url: Server.Url(`/action/${action}/run?args=${argsEncoded}`, env),
         method: "POST",
+        payload: {},
         onData: (data) => {
             //
             // The only thing we need/want from this is the UUID identifying the action run.

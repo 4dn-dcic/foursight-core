@@ -6,6 +6,14 @@ foursight-core
 Change Log
 ----------
 
+5.10.2
+======
+* 2026-09-01
+* Fixed manual check/action run POST requests (``ChecksPage.js``) to send an explicit
+  empty JSON payload instead of no body, so Chalice no longer rejects the
+  ``application/x-www-form-urlencoded``-content-typed, body-less POST with HTTP 415.
+
+
 5.10.1
 ======
 * 2026-07-10
