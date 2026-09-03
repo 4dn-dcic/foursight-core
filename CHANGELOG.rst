@@ -5,6 +5,11 @@ foursight-core
 ----------
 Change Log
 ----------
+5.10.0
+-----
+-----
+* 2026-06-17/kbriceno
+* Bump gitpython to 3.1.50 to remediate CVE-2026-42284
 
 5.10.2
 ======
