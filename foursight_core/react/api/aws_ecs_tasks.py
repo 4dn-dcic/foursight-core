@@ -4,10 +4,9 @@ from typing import Dict, List, Optional
 from dcicutils.ecs_utils import ECSUtils
 from dcicutils.misc_utils import get_error_message
 from .aws_ecs_types import get_cluster_associated_with_env, get_task_definition_type
-from .aws_network import aws_get_security_groups, aws_get_subnets, aws_get_vpcs
+from .aws_ecs_task_network import get_task_network
 from .datetime_utils import convert_datetime_to_utc_datetime_string as datetime_string
 from .envs import Envs
-from .misc_utils import find_common_prefix
 from .portal_access_key_utils import get_portal_access_key_info
 
 # Functions to get AWS cluster and task info with the original
@@ -20,69 +19,12 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
     task_definition_arns = _get_task_definition_arns()
     tasks_for_running = []
 
-    def get_cluster_for_env(clusters: List[Dict], env: Optional[Dict]) -> Optional[str]:
-        nonlocal envs
-        return get_cluster_associated_with_env(env, envs=envs, clusters=clusters)
-
-    def get_vpc() -> Optional[Dict]:
-        vpcs = aws_get_vpcs()
-        if len(vpcs) == 1:
-            vpc = vpcs[0]
-        else:
-            # Note that this check for the string "main" in the VPC is important
-            # and specific/idiosyncratic to our (Harvard) infrastructure.
-            vpcs = [item for item in vpcs if "main" in (item.get("name") or "").lower()]
-            vpc = vpcs[0] if len(vpcs) == 1 else None
-        if vpc:
-            vpc = {"id": vpc["id"], "name": vpc["name"]}
-        return vpc
-
-    def get_container_security_groups(vpc: Optional[Dict]) -> List[Dict]:
-        if not vpc:
-            return []
-        security_groups = aws_get_security_groups(vpc_id=vpc["id"]) if vpc else []
-        security_groups = [item for item in security_groups if "container" in (item.get("name") or "").lower()]
-        security_groups = [
-            {
-                "id": item["id"],
-                "name": item["name"],
-                "stack": item["stack"]
-            }
-            for item in security_groups
-        ]
-        return security_groups
-
-    def get_security_group_for_env(security_groups: List[Dict], env: Optional[Dict]) -> Optional[Dict]:
-        # TODO: From PR-56 feedback (2023-11-01): Can probably greatly simplify
-        # this just by looking for the env identifier within; will only be one.
+    def get_cluster_for_env(clusters: List[str], env: Optional[Dict]) -> Optional[str]:
         if not env:
             return None
-        env_specific_security_group = None
-        for security_group in security_groups:
-            prefix = find_common_prefix([task_definition_arn, security_group["name"], security_group["stack"]])
-            if prefix == security_group["stack"]:
-                env_specific_security_group = security_group
-                break
-            elif envs._env_contained_within(env, security_group["name"]):
-                env_specific_security_group = security_group
-                break
-        return env_specific_security_group
-
-    def get_private_subnets() -> List[Dict]:
-        subnets = aws_get_subnets()
-        subnets = [item for item in subnets if item.get("type") == "private"]
-        return [{"id": subnet["id"], "name": subnet["name"]} for subnet in subnets]
-
-    def get_subnets_for_env(subnets: List[Dict], env: Optional[Dict]) -> List[Dict]:
-        subnets_for_env = [item for item in subnets if "main" in (item.get("name") or "").lower()]
-        if not subnets_for_env:
-            for subnet in subnets:
-                if envs._env_contained_within(env, subnet["name"]):
-                    subnets_for_env.append(subnet)
-        if not subnets_for_env:
-            # If none just take all of the (private) subnets.
-            subnets_for_env = subnets
-        return subnets_for_env
+        matches = [cluster for cluster in clusters
+                   if get_cluster_associated_with_env(env, envs=envs, clusters=[cluster])]
+        return matches[0] if len(matches) == 1 else None
 
     def add_task_for_running(task: Dict) -> None:
         # Add the given task to the given task list, but make sure we don't have a duplicate,
@@ -104,7 +46,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
             existing_task_registered_at = existing_task_definition.get("registeredAt")
             this_task_registered_at = this_task_definition.get("registeredAt")
             if (("mirror" in this_task_definition.get("taskDefinitionArn").lower()) and not
-                ("mirror" in existing_task_definition.get("taskDefinitionArn").lower())):
+                    ("mirror" in existing_task_definition.get("taskDefinitionArn").lower())):
                 # The existing task is not a "mirror" but the given task is; skip this given one;
                 # and do not even regard this as a duplicate.
                 return
@@ -138,9 +80,7 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
         tasks_for_running.append(task)
 
     clusters = _get_cluster_arns()
-    vpc = get_vpc()
-    security_groups = get_container_security_groups(vpc)
-    subnets = get_private_subnets()
+    service_cache = {}
 
     for task_definition_arn in task_definition_arns:
         task_definition_type = get_task_definition_type(task_definition_arn) or task_definition_arn
@@ -152,20 +92,12 @@ def get_aws_ecs_tasks_for_running(envs: Envs, task_definition_type: Optional[str
             "type": task_definition_type,
             "env": task_env
         }
-        if vpc:
-            task_for_running["vpc"] = vpc
         # Get the AWS cluster to use for any task run for this particular environment.
         cluster_for_env = get_cluster_for_env(clusters, task_env)
         if cluster_for_env:
             task_for_running["cluster_arn"] = cluster_for_env
-        # Get the AWS security groups to use for any task run for this particular environment.
-        security_group_for_env = get_security_group_for_env(security_groups, task_env)
-        if security_group_for_env:
-            task_for_running["security_group"] = security_group_for_env
-        # Get the AWS subnets to use for any task run for this particular environment.
-        subnets_for_env = get_subnets_for_env(subnets, task_env)
-        if subnets_for_env:
-            task_for_running["subnets"] = subnets_for_env
+        task_for_running.update(get_task_network(envs, task_env, task_definition_arn,
+                                                 cluster_for_env, service_cache))
         # Add this task to the results (handles "duplicates").
         add_task_for_running(task_for_running)
     return tasks_for_running
@@ -334,7 +266,6 @@ def aws_ecs_run_task(cluster_arn: str, task_definition_arn: str, args: Dict) -> 
             cluster=cluster_arn,
             taskDefinition=task_definition_arn,
             networkConfiguration=network_configuration
-          # networkConfiguration={"awsvpcConfiguration": {"subnets": subnets, "securityGroups": [security_group]}}
         )
         response["task_running_id"] = _get_task_running_id(run_task_response.get("tasks", [{}])[0].get("taskArn"))
         response["response"] = json.loads(json.dumps(run_task_response, default=str))

@@ -55,3 +55,4 @@ For platform-specific documentation, see `Foursight documantation <https://fours
 
    modules
    helper_modules
+   ecs_task_network
