@@ -6,6 +6,13 @@ foursight-core
 Change Log
 ----------
 
+5.10.3
+======
+* 2026-10-04
+* update pyproject.toml to require python 3.10 or 3.11 and other dependency updates for security 
+* update lock files
+
+
 5.10.2
 ======
 * 2026-09-01
