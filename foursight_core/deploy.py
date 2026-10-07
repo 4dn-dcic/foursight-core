@@ -287,14 +287,17 @@ class Deploy(object):
             else:
                 PRINT(f"Found chalice prune script: {prune_chalice_package_script_file}")
                 PRINT(f"Starting chalice package prune: {chalice_package_file}")
-                prune_command = [prune_chalice_package_script_file, chalice_package_file]
+                prune_command = [prune_chalice_package_script_file]
                 if dry_run:
                     prune_command.append("--dry-run")
                 if report:
                     prune_command.append("--report")
                 if variant is not None:
                     prune_command.extend(["--variant", variant])
-                subprocess_call(prune_command, verbose=True)
+                prune_command.append(chalice_package_file)
+                prune_return_code = subprocess_call(prune_command, verbose=True)
+                if prune_return_code:
+                    raise subprocess.CalledProcessError(prune_return_code, prune_command)
                 PRINT(f"Finished chalice package prune: {chalice_package_file}")
         else:
             PRINT(f"No chalice prune script found.")
