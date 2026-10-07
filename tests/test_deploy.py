@@ -1,5 +1,7 @@
 from types import SimpleNamespace
+import subprocess
 
+import pytest
 import foursight_core.deploy as deploy_module
 from foursight_core.deploy import Deploy
 
@@ -46,21 +48,34 @@ def test_build_config_and_package_preserves_default_prune_invocation(monkeypatch
 
 
 def test_build_config_and_package_passes_dry_run(monkeypatch, tmp_path):
-    calls, _ = _package(monkeypatch, tmp_path, dry_run=True)
+    calls, output_file = _package(monkeypatch, tmp_path, dry_run=True)
 
-    assert calls[-1][-1] == "--dry-run"
+    assert calls[-1] == [
+        f"{deploy_module.os.getcwd()}/scripts/prune_chalice_package.sh",
+        "--dry-run",
+        f"{output_file}/deployment.zip",
+    ]
 
 
 def test_build_config_and_package_passes_report(monkeypatch, tmp_path):
-    calls, _ = _package(monkeypatch, tmp_path, report=True)
+    calls, output_file = _package(monkeypatch, tmp_path, report=True)
 
-    assert calls[-1][-1] == "--report"
+    assert calls[-1] == [
+        f"{deploy_module.os.getcwd()}/scripts/prune_chalice_package.sh",
+        "--report",
+        f"{output_file}/deployment.zip",
+    ]
 
 
 def test_build_config_and_package_passes_variant(monkeypatch, tmp_path):
-    calls, _ = _package(monkeypatch, tmp_path, variant="minimal")
+    calls, output_file = _package(monkeypatch, tmp_path, variant="minimal")
 
-    assert calls[-1][-2:] == ["--variant", "minimal"]
+    assert calls[-1] == [
+        f"{deploy_module.os.getcwd()}/scripts/prune_chalice_package.sh",
+        "--variant",
+        "minimal",
+        f"{output_file}/deployment.zip",
+    ]
 
 
 def test_build_config_and_package_skip_prune(monkeypatch, tmp_path):
@@ -71,7 +86,7 @@ def test_build_config_and_package_skip_prune(monkeypatch, tmp_path):
 
 
 def test_build_config_and_package_combines_prune_options(monkeypatch, tmp_path):
-    calls, _ = _package(
+    calls, output_file = _package(
         monkeypatch,
         tmp_path,
         dry_run=True,
@@ -79,9 +94,43 @@ def test_build_config_and_package_combines_prune_options(monkeypatch, tmp_path):
         variant="minimal",
     )
 
-    assert calls[-1][-4:] == [
+    assert calls[-1][1:] == [
         "--dry-run",
         "--report",
         "--variant",
         "minimal",
+        f"{output_file}/deployment.zip",
     ]
+
+
+def test_build_config_and_package_propagates_prune_failure(monkeypatch, tmp_path, capsys):
+    calls = []
+    output_file = str(tmp_path / "package")
+
+    monkeypatch.setattr(Deploy, "build_config", lambda *args, **kwargs: None)
+
+    def failing_subprocess_call(command, **kwargs):
+        calls.append(command)
+        return 23
+
+    monkeypatch.setattr(deploy_module, "subprocess_call", failing_subprocess_call)
+    monkeypatch.setattr(
+        deploy_module.os.path,
+        "exists",
+        lambda filename: filename.endswith("scripts/prune_chalice_package.sh")
+        or filename.endswith("deployment.zip"),
+    )
+
+    args = SimpleNamespace(
+        stack="not-a-fourfront-or-smaht-stack",
+        merge_template=None,
+        output_file=output_file,
+        stage="dev",
+        trial=False,
+    )
+    with pytest.raises(subprocess.CalledProcessError) as error:
+        Deploy.build_config_and_package(args)
+
+    assert error.value.returncode == 23
+    assert len(calls) == 2
+    assert "Finished chalice package prune" not in capsys.readouterr().out
