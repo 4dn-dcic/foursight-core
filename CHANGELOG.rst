@@ -6,6 +6,14 @@ foursight-core
 Change Log
 ----------
 
+5.10.4
+======
+* 2026-10-08
+* Added backward-compatible Chalice package pruning controls for dry-run inspection, reporting,
+  variant selection, and skipping pruning.
+* Corrected pruning option ordering and propagated pruning failures before packaging/upload continues.
+
+
 5.10.3
 ======
 * 2026-10-04
