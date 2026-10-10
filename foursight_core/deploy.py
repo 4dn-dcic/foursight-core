@@ -212,10 +212,14 @@ class Deploy(object):
                                  lambda_timeout=DEFAULT_LAMBDA_TIMEOUT,
                                  # These next args are preferred over passing 'args'.
                                  merge_template=None, output_file=None, stage=None, trial=None,
+                                 dry_run=False, report=False, variant=None, skip_prune=False,
                                  ):
-        """ Builds a config with a special case for the trial account. For the trial account, expects a dictionary of
-            environment variables, a list of security group ids, and a list of subnet ids. Finally, packages as a
-            Cloudformation template."""
+        """Build a config and package as a CloudFormation template.
+
+        The pruning controls are passed to ``scripts/prune_chalice_package.sh`` when
+        that script is available. The default values preserve the historical
+        archive-only invocation.
+        """
 
         # Determine if we're packaging Foursight-CGAP or Foursight-Fourfront, based on
         # the provision stack name setup in 4dn-cloud-infra/stack.py. This is used to
@@ -273,15 +277,27 @@ class Deploy(object):
         # This prune process is done by this bash script which lives in 4dn-cloud-infra:
         # scripts/prune_chalice_package.sh.
         prune_chalice_package_script_file = os.path.join(os.getcwd(), "scripts/prune_chalice_package.sh")
-        if os.path.exists(prune_chalice_package_script_file):
-            chalice_package_file = os.path.join(output_file, "deployment.zip")
+        chalice_package_file = os.path.join(output_file, "deployment.zip")
+        if skip_prune:
+            PRINT(f"Skipping chalice package prune: {chalice_package_file}")
+        elif os.path.exists(prune_chalice_package_script_file):
             if not os.path.exists(chalice_package_file):
                 PRINT(f"WARNING: Chalice package file not found: {chalice_package_file}")
                 PRINT(f"WARNING: Not running chalice prune script.")
             else:
                 PRINT(f"Found chalice prune script: {prune_chalice_package_script_file}")
                 PRINT(f"Starting chalice package prune: {chalice_package_file}")
-                subprocess_call([prune_chalice_package_script_file, chalice_package_file], verbose=True)
+                prune_command = [prune_chalice_package_script_file]
+                if dry_run:
+                    prune_command.append("--dry-run")
+                if report:
+                    prune_command.append("--report")
+                if variant is not None:
+                    prune_command.extend(["--variant", variant])
+                prune_command.append(chalice_package_file)
+                prune_return_code = subprocess_call(prune_command, verbose=True)
+                if prune_return_code:
+                    raise subprocess.CalledProcessError(prune_return_code, prune_command)
                 PRINT(f"Finished chalice package prune: {chalice_package_file}")
         else:
             PRINT(f"No chalice prune script found.")
