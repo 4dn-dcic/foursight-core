@@ -6,7 +6,7 @@ foursight-core
 Change Log
 ----------
 
-5.10.3
+5.10.5
 ======
 * Resolve React reindex/deployment launch networking from deployed ECS services,
   validating that configured subnets and security groups share a VPC. Standalone
