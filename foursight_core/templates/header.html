@@ -207,9 +207,9 @@
                 <td width="33%" style="padding-right:10pt;white-space:nowrap;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" align="right">
                     <span>{{load_time}}</span>
                     {% if is_admin %}
-                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" onclick="delete_login_cookies();location.reload();">LOGOUT</span>
+                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" onclick="foursight_logout();">LOGOUT</span>
                     {% elif not is_admin %}
-                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;font-weight:bold;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" title="Not logged in. Click to login." onclick="create_redir_cookie(); lock.show();">LOGIN</span>
+                        &nbsp;<b>|</b>&nbsp; <span style="cursor:pointer;font-weight:bold;color:{% if package == 'foursight' %}#D6F8EA{% else %}#D6EAF8{% endif %};" title="Not logged in. Click to login." onclick="foursight_login();">LOGIN</span>
                     {% endif %}
                 </td>
             </tr>
@@ -273,7 +273,7 @@
                             <b style="color:darkblue;">admin</b>
                         {% endif %}
                     {% else %}
-                        <span style="cursor:pointer;font-weight:bold;color:darkred;" title="Not logged in. Click to login." onclick="create_redir_cookie(); lock.show();">NOT LOGGED IN</span>
+                        <span style="cursor:pointer;font-weight:bold;color:darkred;" title="Not logged in. Click to login." onclick="foursight_login();">NOT LOGGED IN</span>
                     {% endif %}
                 </td>
             </tr>
@@ -300,7 +300,7 @@
     {% if not is_admin %}
         <div class="container">
             <div class="boxstyle check-warn" style="margin:20pt;padding:10pt;">
-                Not logged in. Click <u style="cursor:pointer" onclick="create_redir_cookie(); lock.show();"><b>here</b></u> to <span style="cursor:pointer" onclick="create_redir_cookie(); lock.show();">login</span>.
+                Not logged in. Click <u style="cursor:pointer" onclick="foursight_login();"><b>here</b></u> to <span style="cursor:pointer" onclick="foursight_login();">login</span>.
                 {% if user_record["error"] == "noadmin" or user_record["error"] == "nogroups" %}
                     <br /><span style="color:darkred"><b>Warning</b>: The user <b>{{user_record["email"]}}</b> does not have permission for the <b>{{env}}</b> environment.</span>
                 {% elif user_record["error"] == "exception"  %}
@@ -321,6 +321,24 @@
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script>
+    function foursight_login() {
+        {% if okta_enabled %}
+        location.assign({{ (context + 'okta/login') | tojson }} + '?returnTo=' +
+                        encodeURIComponent(location.pathname + location.search + location.hash));
+        {% else %}
+        create_redir_cookie(); lock.show();
+        {% endif %}
+    }
+    function foursight_logout() {
+        {% if okta_enabled %}
+        location.assign({{ (context + 'okta/logout') | tojson }});
+        {% else %}
+        delete_login_cookies(); location.reload();
+        {% endif %}
+    }
+</script>
+{% if not okta_enabled %}
 <script src="https://cdn.auth0.com/js/lock/10.24.1/lock.min.js"></script>
 <script type="text/javascript">
       // set cookie containing the location we were at when we tried to Login
@@ -358,6 +376,7 @@
             allowedConnections: ['github', 'google-oauth2']
         });
 </script>
+{% endif %}
 <script type="text/javascript">
         function collapse_group(e, id){
             // Do not trigger collapse if click is on or a child of a check-result

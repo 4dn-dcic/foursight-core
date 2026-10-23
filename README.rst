@@ -23,3 +23,6 @@ Beta version
 Please visit the `getting started <https://foursight_core.readthedocs.io/en/latest/getting_started.html>`_ page to get up and running with Foursight.
 
 Foursight is under active development and features will likely change.
+
+Optional Okta SPA login for both UIs: see the `configuration, callback registration,
+and offline validation guide <docs/okta-spa.md>`_.

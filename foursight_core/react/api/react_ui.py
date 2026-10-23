@@ -39,6 +39,7 @@ _REACT_STATIC_FILE_TYPES = [
 _REACT_WHITELISTED_FILE_PATH_SUFFIXES = [
     "/index.html",
     "/main.js",
+    "/okta-auth.js",
     "/main.css",
     "/manifest.json",
     "/asset-manifest.json",

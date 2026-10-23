@@ -63,17 +63,22 @@ class Auth:
         and/or not authenticated, and containing the basic info from the authtoken.
         """
         try:
+            # Initialize Redis on cold workers as well as the worker that handled
+            # login. A configured but unavailable session store must fail closed.
+            redis_handler = self.get_redis_handler()
+            if os.environ.get('REDIS_HOST') and not redis_handler:
+                return self._create_unauthenticated_response(request, "session-store-unavailable")
             # Read the c4_st token (new Redis session token if Redis is in use)
-            if self._redis:
+            if redis_handler:
                 c4_st = read_cookie(request, SESSION_TOKEN_COOKIE)
                 redis_session_token = RedisSessionToken.from_redis(
-                    redis_handler=self._redis,
+                    redis_handler=redis_handler,
                     namespace=self.get_redis_namespace(env),
                     token=c4_st
                 )
                 # if this session token is not valid, nothing else is to be trusted, so bail here
                 if (not redis_session_token or
-                        not redis_session_token.validate_session_token(redis_handler=self._redis)):
+                        not redis_session_token.validate_session_token(redis_handler=redis_handler)):
                     return self._create_unauthenticated_response(request, "missing-or-invalid-session-token")
 
             # Read the authtoken cookie (will always be present).
@@ -151,7 +156,9 @@ class Auth:
         authenticator = jwt_decoded.get(JWT_SUBJECT_PROPERTY_NAME)
         if authenticator:
             authenticator = authenticator.casefold()
-            if "google" in authenticator:
+            if authenticator.startswith("okta|"):
+                authenticator = "okta"
+            elif "google" in authenticator:
                 authenticator = "google"
             elif "github" in authenticator:
                 authenticator = "github"
@@ -199,7 +206,7 @@ class Auth:
             user_exception = True
 
         authtoken_decoded = {
-            "authentication": "auth0",
+            "authentication": "okta" if authenticator == "okta" else "auth0",
             "authenticator": authenticator,
             "authenticated_at": jwt_decoded.get("iat"),
             "authenticated_until": jwt_expires_at,

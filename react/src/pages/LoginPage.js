@@ -57,6 +57,11 @@ const LoginPage = (props) => {
     }
 
     function showAuthBox() {
+        if (auth0Config?.data?.okta?.enabled) {
+            const base = auth0Config.data.okta.baseUrl;
+            window.location.assign(`${base}/okta/login?returnTo=${encodeURIComponent(Page.LastUrl() || window.location.href)}`);
+            return;
+        }
         document.getElementById("login_container").style.display = "none";
         document.getElementById("login_auth_container").style.display = "block";
         document.getElementById("login_auth_cancel").style.display = "block";

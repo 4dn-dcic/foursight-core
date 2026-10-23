@@ -88,7 +88,8 @@ class Auth0Config:
         # also get both pieces of the Auth0 credentials from the GAC but
         # the other info is currently hardcoded in the Jinja templates.
         # client = config_raw_data.get("auth0Client") if config_raw_data else None
-        client = os.environ.get("CLIENT_ID", os.environ.get("ENCODED_AUTH0_CLIENT"))
+        client = (os.environ.get("CLIENT_ID") or os.environ.get("ENCODED_AUTH0_CLIENT")
+                  or os.environ.get("FOURSIGHT_OKTA_CLIENT_ID"))
         options = config_raw_data.get("auth0Options") if config_raw_data else None
         options_auth = options.get("auth") if options else None
         options_auth_params = options_auth.get("params") if options_auth else None
@@ -139,10 +140,12 @@ class Auth0Config:
     @staticmethod
     def get_secret() -> str:
         """
-        Returns the Auth0 secret.
-        Currently we get this environment variables setup from the GAC; see identity.py.
+        Returns the existing Auth0/session signing key from the GAC; see identity.py.
+        Okta-only deployments may use an independent server session signing key.
+        This fallback is never an Okta OAuth client secret or public configuration.
         """
-        return os.environ.get("CLIENT_SECRET", os.environ.get("ENCODED_AUTH0_SECRET"))
+        return (os.environ.get("CLIENT_SECRET") or os.environ.get("ENCODED_AUTH0_SECRET")
+                or os.environ.get("FOURSIGHT_SESSION_SECRET"))
 
     @staticmethod
     def get_callback_url(request: dict) -> str:

@@ -135,6 +135,8 @@ class AppUtilsCore(ReactApi, Routes):
             #       and https://github.com/pallets/jinja/issues/1203
             autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
+        self.jin_env.globals["okta_enabled"] = bool(
+            os.environ.get("FOURSIGHT_OKTA_ISSUER") or os.environ.get("FOURSIGHT_OKTA_CLIENT_ID"))
         self.auth0_domain = None
         self.auth0_client_id = None
         self.user_records = {}
@@ -292,7 +294,8 @@ class AppUtilsCore(ReactApi, Routes):
             return None
 
     def get_auth0_client_id(self, env_name: str) -> str:
-        auth0_client_id = os.environ.get("CLIENT_ID")
+        auth0_client_id = (os.environ.get("CLIENT_ID") or os.environ.get("ENCODED_AUTH0_CLIENT")
+                           or os.environ.get("FOURSIGHT_OKTA_CLIENT_ID"))
         if not auth0_client_id:
             # TODO: Confirm that we do not actually need to do this.
             # Just in case. We should already have this value from the GAC.
@@ -339,7 +342,7 @@ class AppUtilsCore(ReactApi, Routes):
 
     def get_auth0_secret(self, env_name: str) -> str:
         ignored(env_name)
-        return os.environ.get("CLIENT_SECRET")
+        return self._auth0_config.get_secret()
 
     def check_authorization(self, request_dict, env=None):
         """
@@ -553,8 +556,8 @@ class AppUtilsCore(ReactApi, Routes):
             else:
                 return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30,
                                   options={"verify_signature": True}, algorithms=["HS256"])
-        except Exception as e:
-            logger.warning(f"foursight_core: Exception decoding JWT token ({jwt_token}): {get_error_message(e)}")
+        except Exception:
+            logger.warning("foursight_core: Invalid session token")
             return None
 
     @classmethod

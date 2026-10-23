@@ -86,12 +86,13 @@ React lives in **two distinct trees** — do not confuse them:
 - **In-process check timeout** is 870s (`decorators.py`), deliberately under the 900s Lambda ceiling —
   keep it below.
 - **Two Chalice apps / two UIs** run side by side (legacy + React). React-specific code is confined to
-  `foursight_core/react/`; the only crossovers into legacy code are the `ReactApi` mixin in `AppUtilsCore`
-  and a React branch in `auth0_callback` (`routes.py`).
+  `foursight_core/react/`; crossovers into legacy code include the `ReactApi` mixin in `AppUtilsCore`,
+  the React branch in `auth0_callback`, and the shared Okta bridge routes in `routes.py`.
 - **`chalice local` prefix quirk**: locally there is no `/api` prefix, so `route_prefixes.py` injects it
   when `CHALICE_LOCAL` is set (upstream Chalice issue #838). CORS is enabled only for local dev.
-- Auth spans Auth0 (`/callback`) and AWS Cognito (`react/api/cognito.py`); the `@route` decorator
-  defaults to requiring authorization — pass `authorize=False` for public routes.
+- Auth spans Auth0 (`/callback`), AWS Cognito (`react/api/cognito.py`), and optional Okta
+  (`react/api/okta.py`, shared by both UIs); the `@route` decorator defaults to requiring
+  authorization — pass `authorize=False` for public routes.
 
 ## Automatic tag-and-publish-on-master release workflow
 
