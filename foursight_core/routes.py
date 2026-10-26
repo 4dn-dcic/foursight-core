@@ -123,7 +123,8 @@ class Routes:
         """
         req_dict = app.current_request.to_dict()
         domain, context = app.core.get_domain_and_context(req_dict)
-        return app.core.view_foursight(app.current_request, environ, app.core.check_authorization(req_dict, environ), domain, context)
+        return app.core.view_foursight(app.current_request, environ,
+                                       app.core.check_authorization(req_dict, environ), domain, context)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + 'view/{environ}/{check}/{uuid}', methods=['GET'])
@@ -150,8 +151,9 @@ class Routes:
         start = int(query_params.get('start', '0')) if query_params else 0
         limit = int(query_params.get('limit', '25')) if query_params else 25
         domain, context = app.core.get_domain_and_context(req_dict)
-        return app.core.view_foursight_history(app.current_request, environ, check, start, limit,
-                                      app.core.check_authorization(req_dict, environ), domain, context)
+        return app.core.view_foursight_history(
+            app.current_request, environ, check, start, limit,
+            app.core.check_authorization(req_dict, environ), domain, context)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}/{uuid}', methods=['GET'])
@@ -242,7 +244,8 @@ class Routes:
 #
 #       Protected route
 #       """
-#       if app.core.check_authorization(app.current_request.to_dict(), environ):  # TODO (C4-138) Centralize authorization check
+#       # TODO (C4-138) Centralize authorization check
+#       if app.core.check_authorization(app.current_request.to_dict(), environ):
 #           return app.core.run_delete_environment(environ)
 #       else:
 #           return app.core.forbidden_response()
@@ -254,18 +257,24 @@ class Routes:
     def get_view_info_route(environ):
         req_dict = app.current_request.to_dict()
         domain, context = app.core.get_domain_and_context(req_dict)
-        return app.core.view_info(request=app.current_request, environ=environ, is_admin=app.core.check_authorization(req_dict, environ), domain=domain, context=context)
+        return app.core.view_info(request=app.current_request, environ=environ,
+                                  is_admin=app.core.check_authorization(req_dict, environ),
+                                  domain=domain, context=context)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + 'users/{environ}/{email}')
     def get_view_user_route(environ, email):
         req_dict = app.current_request.to_dict()
         domain, context = app.core.get_domain_and_context(req_dict)
-        return app.core.view_user(request=app.current_request, environ=environ, is_admin=app.core.check_authorization(req_dict, environ), domain=domain, context=context, email=email)
+        return app.core.view_user(request=app.current_request, environ=environ,
+                                  is_admin=app.core.check_authorization(req_dict, environ),
+                                  domain=domain, context=context, email=email)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + 'users/{environ}')
     def get_view_users_route(environ):
         req_dict = app.current_request.to_dict()
         domain, context = app.core.get_domain_and_context(req_dict)
-        return app.core.view_users(request=app.current_request, environ=environ, is_admin=app.core.check_authorization(req_dict, environ), domain=domain, context=context)
+        return app.core.view_users(request=app.current_request, environ=environ,
+                                   is_admin=app.core.check_authorization(req_dict, environ),
+                                   domain=domain, context=context)
