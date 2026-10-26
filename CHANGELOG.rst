@@ -6,6 +6,13 @@ foursight-core
 Change Log
 ----------
 
+5.10.5.1b2
+==========
+* Integration-test beta: shared Okta SPA login for React and legacy, with the
+  deployment-scoped ``FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL=false`` exception.
+  Verified email remains required by default; existing identity and group grants
+  and all other token/transaction checks are unchanged.
+
 5.10.5
 ======
 * Resolve React reindex/deployment launch networking from deployed ECS services,

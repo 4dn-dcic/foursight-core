@@ -200,13 +200,13 @@ exception described above.
 **Live acceptance still requires operator registration/configuration** above,
 a downstream app deployment, and designated tenant login/logout testing. None
 of those external configuration changes or an environment deployment is performed
-by this change. The published integration-test beta `foursight-core==5.10.5.1b1`
-predates the verified-email opt-out. It remains immutable and does **not** contain
-that exception. Rollback of the provider selection is removal of both Okta
+by this change. Pin the integration-test beta **`foursight-core==5.10.5.1b2`**
+for the verified-email opt-out. The earlier published beta `5.10.5.1b1` remains
+immutable and does **not** contain that exception. Rollback of the provider selection is removal of both Okta
 issuer/client settings while retaining existing Auth0/Cognito configuration;
 normal session expiry and signing-key policy continue to apply.
 
-### Consume the continuation without another publication
+### Optional immutable-source packaging
 
 The existing `pyproject.toml` defines the Poetry Core PEP 517 build backend and
 includes `foursight_core`, including checked-in generated UI assets and legacy
@@ -220,13 +220,13 @@ cd foursight-core-source
 git checkout --detach <validated-full-commit-sha>
 python -m pip wheel --no-deps --wheel-dir ../core-wheels .
 # In the downstream application's existing dependency environment:
-python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b1-py3-none-any.whl
+python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b2-py3-none-any.whl
 ```
 
 Resolve the downstream application's normal dependencies first (including its
 Chalice runtime). Keep the source SHA and wheel SHA-256 with the deployment
-receipt: the local wheel retains the existing beta version but is **not the
-published beta**, and a subsequent dependency sync from PyPI can overwrite it.
+receipt: a local build retains the source's version but is not the downloaded
+PyPI artifact, and a subsequent dependency sync from PyPI can overwrite it.
 Do not upload this wheel or reuse/move the published release tag. A dependency
 tool supporting Git revisions may instead pin the full source commit directly.
 The already committed assets need no Node rebuild in the downstream packaging
