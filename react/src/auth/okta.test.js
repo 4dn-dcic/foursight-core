@@ -1,4 +1,4 @@
-import { createClient, fullLogout, safeReturn, sdkTransport, fetchBounded } from './okta';
+import { createClient, fullLogout, safeReturn, sdkTransport, fetchBounded, runBridge } from './okta';
 import { webcrypto, generateKeyPairSync, createSign, createHash } from 'crypto';
 import { TextEncoder, TextDecoder } from 'util';
 
@@ -70,6 +70,56 @@ test.each([{ nonce: 'other' }, { iss: 'https://wrong.invalid' }, { aud: 'other' 
         await expect(client.token.verify(idToken(changes), { nonce: 'nonce' })).rejects.toBeDefined();
         client.stop();
     });
+
+test.each([
+    ['/api/react/synthetic/checks', false], ['/api/view/synthetic', false],
+    ['/api/react/synthetic/checks', true], ['/api/view/synthetic', true]
+])('unverified email callback to %s obeys backend acceptance %s', async (target, accepted) => {
+    const oldLocation = window.location;
+    const assign = jest.fn();
+    const replace = jest.fn();
+    delete window.location;
+    window.location = { ...oldLocation, assign, replace, pathname: '/api/okta/callback' };
+    const sessionRequests = [];
+    const unverified = idToken({ email_verified: false });
+    global.fetch = jest.fn(async (url, options = {}) => {
+        let body = metadata;
+        let ok = true;
+        if (url.endsWith('/keys')) body = { keys: [jwk] };
+        if (url.endsWith('/token')) body = { id_token: unverified.idToken,
+            access_token: idToken({ aud: 'resource', scp: ['openid'] }).idToken,
+            token_type: 'Bearer', expires_in: 3600, scope: 'openid email profile' };
+        if (url === '/api/okta/config') body = { ...config, enabled: true };
+        if (url === '/api/okta/session') {
+            sessionRequests.push(JSON.parse(options.body));
+            ok = accepted; // Transport boundary: Python tests exercise the actual server policy.
+            body = accepted ? { authenticated: true } : { error: 'Unable to complete Okta authentication.' };
+        }
+        return { ok, status: ok ? 200 : 403, headers: new Map(), text: async () => JSON.stringify(body) };
+    });
+    const client = createClient(config);
+    try {
+        await client.signInWithRedirect({ nonce: 'nonce' });
+        const state = new URL(assign.mock.calls[0][0]).searchParams.get('state');
+        window.history.replaceState(null, '', '/api/okta/callback?code=synthetic&state=' + state);
+        window.location.search = '?code=synthetic&state=' + state;
+        window.location.href = config.redirectUri + window.location.search;
+        sessionStorage.setItem('foursight-okta-transaction', JSON.stringify({ nonce: 'nonce', csrf: 'csrf', target }));
+        const outcome = await runBridge().then(() => 'accepted', error => error.message);
+        expect(outcome).toBe(accepted ? 'accepted' :
+            'Sign-in or sign-out could not be completed. Return to Foursight and try again.');
+        expect(replace.mock.calls).toEqual(accepted ? [[target]] : []);
+        const stored = client.tokenManager.getTokensSync();
+        expect(Object.keys(stored)).toEqual(accepted ? ['idToken'] : []);
+        expect(stored.idToken?.claims.email_verified).toBe(accepted ? false : undefined);
+        expect(sessionRequests).toEqual([{ idToken: unverified.idToken, csrf: 'csrf' }]);
+        expect(sessionStorage.getItem('foursight-okta-transaction')).toBeNull();
+    } finally {
+        client.stop();
+        window.location = oldLocation;
+        window.history.replaceState(null, '', '/');
+    }
+});
 
 test('SDK rejects tampered signature', async () => {
     const client = createClient(config);

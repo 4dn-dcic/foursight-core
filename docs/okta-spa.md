@@ -17,6 +17,7 @@ names; no new Secrets Manager lookup happens on a login request.
 | `FOURSIGHT_OKTA_ISSUER` | Exact HTTPS issuer, **no trailing slash**, e.g. `https://example.okta.com/oauth2/default` or the org issuer `https://example.okta.com`. |
 | `FOURSIGHT_OKTA_CLIENT_ID` | Public SPA application's client ID. |
 | `FOURSIGHT_OKTA_SCOPES` | Space-separated scopes; default `openid email profile`. Must include `openid email`. `offline_access` is deliberately not supported: this flow does not introduce refresh/renewal policy. |
+| `FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL` | Server-only policy, enforced by default. Only the exact string `false` permits an Okta ID token with boolean `email_verified: false`; missing/malformed claims still fail. See the temporary exception below. |
 | `FOURSIGHT_SESSION_SECRET` | Server-only signing key for the existing HMAC session contract, needed only when the existing `CLIENT_SECRET` / `ENCODED_AUTH0_SECRET` is absent. Use an independently generated high-entropy application signing key, **not an Okta client secret**. Never expose it to the browser. |
 
 Existing Auth0 session-signing credentials take precedence when present, so
@@ -32,9 +33,30 @@ client**, Authorization Code with **PKCE S256**, token endpoint authentication
 The issuer must issue RS256 ID tokens with the SPA client audience, `sub`,
 `iat`, `exp`, `nonce`, `email`, and boolean **`email_verified: true`**. Configure
 the email scope/claims accordingly. Access tokens are not accepted as identity
-credentials. If the tenant does not assert verified email, login fails closed;
-this implementation does **not** copy the portal's temporary verified-email
-exception or change Foursight's authorization policy.
+credentials. If the tenant does not assert verified email, login fails closed
+by default.
+
+### Temporary deployment-scoped unverified-email exception
+
+For the SRCE integration test only, the deployment operator may set
+`FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL` to the exact string `false` through the
+same deployment environment/GAC loading path. Unset it (or set `true`) to restore
+the strict policy. Other values, including empty strings, `0`, and `False`, do
+not opt out. This does not require changing the Okta application's claims.
+
+The exception is owned by the shared backend and applies to both React session
+establishment and legacy authorization of signed `okta|` identities. It accepts
+only boolean `email_verified: false`, never absent, null, numeric or string
+claims. The original flag remains false in session/UI data; it is not rewritten
+as verified. This temporarily trusts the issuer's unverified email for the
+**existing email-based account lookup**, so restrict it to the intended test
+deployment and remove it after testing. It neither provisions accounts nor
+changes environment/group grants, Auth0/Cognito behavior, or other token,
+transaction and session checks. Existing React sessions retain their normal
+expiry; removing the exception is not a global session-revocation operation.
+
+This document is not approval to update a CloudFormation stack or replace a
+Secrets Manager document. Deployment/configuration changes remain operator-owned.
 
 ### Register these exact URLs for every Foursight origin
 
@@ -104,8 +126,9 @@ this restriction.
    state and token validity; the bridge explicitly compares the ID-token nonce
    to its saved transaction as well. The backend independently verifies the
    nonce, RS256 signature, issuer, single client audience, token type, expiry,
-   required identity claims and verified email before creating any session.
-4. Verified identity is normalized into the existing HMAC session format.
+   required identity claims and the deployment's email-verification policy before
+   creating any session.
+4. Validated identity is normalized into the existing HMAC session format.
    Legacy uses `c4_st`; React uses `authtoken` plus `c4_st` when Redis is enabled.
    The same cookies permit switching UIs. Provider ID/access/refresh tokens are
    not placed in backend session cookies or Redis. Existing portal user/group
@@ -170,13 +193,41 @@ services were synthetic; no real users, credentials or AWS calls were used.
 
 Reference reviewed: current head `ea2ed0bfa97a553de107d0eb5d0cc1306047ac19` of
 https://github.com/smaht-dac/smaht-portal/pull/729, including its corrected
-pendingRemove logout behavior. This implementation intentionally does not copy
-its unbounded session-properties wait or its verified-email exception.
+pendingRemove logout behavior. This implementation does not copy its unbounded
+session-properties wait; unverified email requires the explicit server-side
+exception described above.
 
 **Live acceptance still requires operator registration/configuration** above,
 a downstream app deployment, and designated tenant login/logout testing. None
 of those external configuration changes or an environment deployment is performed
-by this change. The integration-test beta is `foursight-core==5.10.5.1b1`; pin
-that exact version rather than upgrading to an unbounded prerelease. Rollback of the provider selection is removal of both Okta settings
-while retaining the existing Auth0/Cognito configuration; normal session expiry
-and signing-key policy continue to apply.
+by this change. The published integration-test beta `foursight-core==5.10.5.1b1`
+predates the verified-email opt-out. It remains immutable and does **not** contain
+that exception. Rollback of the provider selection is removal of both Okta
+issuer/client settings while retaining existing Auth0/Cognito configuration;
+normal session expiry and signing-key policy continue to apply.
+
+### Consume the continuation without another publication
+
+The existing `pyproject.toml` defines the Poetry Core PEP 517 build backend and
+includes `foursight_core`, including checked-in generated UI assets and legacy
+templates. A wheel can therefore be built locally from an exact source commit;
+no PyPI publication or tag change is required:
+
+```sh
+# In a deployment worker's isolated build directory, using the validated full SHA:
+git clone https://github.com/4dn-dcic/foursight-core.git foursight-core-source
+cd foursight-core-source
+git checkout --detach <validated-full-commit-sha>
+python -m pip wheel --no-deps --wheel-dir ../core-wheels .
+# In the downstream application's existing dependency environment:
+python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b1-py3-none-any.whl
+```
+
+Resolve the downstream application's normal dependencies first (including its
+Chalice runtime). Keep the source SHA and wheel SHA-256 with the deployment
+receipt: the local wheel retains the existing beta version but is **not the
+published beta**, and a subsequent dependency sync from PyPI can overwrite it.
+Do not upload this wheel or reuse/move the published release tag. A dependency
+tool supporting Git revisions may instead pin the full source commit directly.
+The already committed assets need no Node rebuild in the downstream packaging
+step; they were regenerated and validated with `scripts/react_build.sh`.

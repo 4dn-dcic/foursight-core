@@ -48,6 +48,7 @@ from .fs_connection import FSConnection
 from .s3_connection import S3Connection
 from .react.api.auth import Auth
 from .react.api.jwt_utils import jwt_decode
+from .react.api.okta import email_is_acceptable as okta_email_is_acceptable
 from .react.api.react_api import ReactApi
 from .react.api.datetime_utils import (
     convert_time_t_to_utc_datetime_string,
@@ -395,7 +396,10 @@ class AppUtilsCore(ReactApi, Routes):
                         # self.user_record_error = "nogroups"
                         # self.user_record_error_email = jwt_decoded.get('email')
                         return False
-                    if not (('admin' in user_res['groups'] or 'foursight' in user_res['groups']) and jwt_decoded.get('email_verified')):
+                    email_acceptable = jwt_decoded.get('email_verified')
+                    if str(jwt_decoded.get('sub', '')).startswith('okta|'):
+                        email_acceptable = okta_email_is_acceptable(jwt_decoded)
+                    if not (('admin' in user_res['groups'] or 'foursight' in user_res['groups']) and email_acceptable):
                         logger.error("foursight_core.check_authorization: Returning False")
                         # if unauthorized for one, unauthorized for all
                         self.set_user_record(email=jwt_decoded.get('email'), record=None, error="noadmin", exception=None)

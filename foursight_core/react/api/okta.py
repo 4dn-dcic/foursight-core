@@ -86,6 +86,17 @@ def jwks_client(issuer):
     return jwt.PyJWKClient(metadata["jwks_uri"], timeout=5, lifespan=300, cache_keys=False)
 
 
+def email_is_acceptable(claims):
+    """Shared Okta email policy; only the exact deployment value 'false' opts out.
+
+    Keep the provider's boolean claim intact, including in Foursight sessions.
+    Call only for verified Okta tokens or their signed, normalized identities.
+    """
+    verified = claims.get("email_verified")
+    return verified is True or (
+        verified is False and os.environ.get("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL") == "false")
+
+
 def verify_id_token(token, nonce):
     config = settings()
     if not config or not isinstance(token, str) or len(token) > 20000:
@@ -105,7 +116,7 @@ def verify_id_token(token, nonce):
             or not isinstance(claims.get("nonce"), str) or not hmac.compare_digest(claims["nonce"], nonce)
             or type(claims.get("iat")) is not int or type(claims.get("exp")) is not int
             or claims["exp"] <= claims["iat"]
-            or claims.get("email_verified") is not True or not isinstance(claims.get("email"), str)
+            or not email_is_acceptable(claims) or not isinstance(claims.get("email"), str)
             or not claims["email"].strip() or not isinstance(claims.get("sub"), str) or not claims["sub"]):
         raise ValueError("Invalid ID token claims")
     return claims
@@ -168,7 +179,7 @@ def handle(core, request, operation, body=None):
         if not isinstance(csrf, str) or not hmac.compare_digest(csrf, transaction["csrf"]):
             raise ValueError("Invalid transaction")
         claims = verify_id_token(body.get("idToken"), transaction["nonce"])
-        # Normalize only verified identity claims into the established session format.
+        # Normalize only validated identity claims; preserve the email_verified flag.
         # Expiry is the provider expiry, never a fresh sliding lifetime.
         identity = {key: claims[key] for key in ("sub", "email", "email_verified", "iat", "exp")}
         identity["sub"] = "okta|" + identity["sub"]

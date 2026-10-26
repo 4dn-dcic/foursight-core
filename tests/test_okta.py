@@ -27,7 +27,8 @@ def offline(monkeypatch):
     monkeypatch.setenv("FOURSIGHT_OKTA_ISSUER", ISSUER)
     monkeypatch.setenv("FOURSIGHT_OKTA_CLIENT_ID", CLIENT)
     monkeypatch.setenv("FOURSIGHT_SESSION_SECRET", SECRET)
-    for key in ("CLIENT_SECRET", "CLIENT_ID", "ENCODED_AUTH0_SECRET", "ENCODED_AUTH0_CLIENT", "REDIS_HOST"):
+    for key in ("CLIENT_SECRET", "CLIENT_ID", "ENCODED_AUTH0_SECRET", "ENCODED_AUTH0_CLIENT", "REDIS_HOST",
+                "FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL"):
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setattr("requests.sessions.Session.request", Mock(side_effect=AssertionError("Network forbidden")))
     monkeypatch.setattr("boto3.session.Session.client", Mock(side_effect=AssertionError("AWS forbidden")))
@@ -75,11 +76,11 @@ def core(monkeypatch):
     return core
 
 
-def establish(core, key):
+def establish(core, key, **claims):
     req = request()
     transaction = okta.handle(core, req, "transaction")
     req["headers"]["cookie"] = cookies(transaction).output(header="", sep=";").strip()
-    payload = {"idToken": token(key, nonce=transaction.body["nonce"]), "csrf": transaction.body["csrf"]}
+    payload = {"idToken": token(key, nonce=transaction.body["nonce"], **claims), "csrf": transaction.body["csrf"]}
     return req, payload
 
 
@@ -161,31 +162,68 @@ def test_verify_real_rsa_id_token(key):
     dict(email_verified=False), dict(email_verified="true"), dict(email=""), dict(email=None),
     dict(sub=""), dict(azp="other"), dict(scp=["openid"]), dict(cid=CLIENT), dict(token_use="access"),
     dict(exp=str(int(time.time()) + 3600))])
-def test_invalid_token_claims(key, changes):
+@pytest.mark.parametrize("opt_out", [False, True])
+def test_invalid_token_claims(key, changes, monkeypatch, opt_out):
+    if opt_out:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
+        if changes == dict(email_verified=False):
+            assert okta.verify_id_token(token(key, **changes), "nonce")["email_verified"] is False
+            return
     with pytest.raises((jwt.PyJWTError, ValueError)):
         okta.verify_id_token(token(key, **changes), "nonce")
 
 
-def test_wrong_signature_algorithm_and_missing_claims(key):
+@pytest.mark.parametrize("setting", [None, "true", "", "0", "False", "false", "typo"])
+def test_unverified_email_session_requires_explicit_opt_out(core, key, monkeypatch, setting):
+    if setting is not None:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", setting)
+    req, payload = establish(core, key, email_verified=False)
+    result = okta.handle(core, req, "session", payload)
+    assert result.status_code == (200 if setting == "false" else 403)
+    if setting != "false":
+        assert "c4_st" not in cookies(result)
+        assert "authtoken" not in cookies(result)
+    # This is server policy, not browser-editable configuration.
+    assert "requireVerifiedEmail" not in okta.public_config(req)
+
+
+@pytest.mark.parametrize("verified", [None, "true", "false", 0, 1])
+def test_opt_out_still_requires_boolean_email_claim(key, monkeypatch, verified):
+    monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
+    with pytest.raises((jwt.PyJWTError, ValueError)):
+        okta.verify_id_token(token(key, email_verified=verified), "nonce")
+
+
+@pytest.mark.parametrize("opt_out", [False, True])
+def test_wrong_signature_algorithm_and_missing_claims(key, monkeypatch, opt_out):
+    if opt_out:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
     other = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     with pytest.raises(jwt.InvalidSignatureError):
         okta.verify_id_token(token(other), "nonce")
     with pytest.raises(ValueError):
         okta.verify_id_token(jwt.encode({"email": "x"}, SECRET, algorithm="HS256"), "nonce")
     claims = jwt.decode(token(key), options={"verify_signature": False})
-    del claims["nonce"]
-    with pytest.raises(jwt.MissingRequiredClaimError):
-        okta.verify_id_token(jwt.encode(claims, key, algorithm="RS256"), "nonce")
+    for name in ("nonce", "email", "email_verified"):
+        missing = {k: v for k, v in claims.items() if k != name}
+        with pytest.raises(jwt.MissingRequiredClaimError):
+            okta.verify_id_token(jwt.encode(missing, key, algorithm="RS256"), "nonce")
 
 
 @pytest.mark.parametrize("origin", [None, "null", "https://attacker.invalid", "http://foursight.invalid"])
-def test_csrf_origin_rejected(core, origin):
+@pytest.mark.parametrize("opt_out", [False, True])
+def test_csrf_origin_rejected(core, origin, monkeypatch, opt_out):
+    if opt_out:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
     for operation in ("transaction", "session", "logout"):
         assert okta.handle(core, request(origin=origin), operation, {}).status_code == 403
 
 
-def test_backend_session_both_ui_contracts_and_warm_restoration(core, key, monkeypatch):
-    req, payload = establish(core, key)
+@pytest.mark.parametrize("verified", [True, False])
+def test_backend_session_both_ui_contracts_and_warm_restoration(core, key, monkeypatch, verified):
+    if not verified:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
+    req, payload = establish(core, key, email_verified=verified)
     result = okta.handle(core, req, "session", payload)
     assert result.status_code == 200
     jar = cookies(result)
@@ -193,7 +231,8 @@ def test_backend_session_both_ui_contracts_and_warm_restoration(core, key, monke
     assert jar["c4_st"]["samesite"] == "Lax"
     assert payload["idToken"] not in str(result.body) + str(result.headers)
     identity = jwt_decode(jar["c4_st"].value, CLIENT, SECRET)
-    assert identity["email_verified"] is True
+    assert identity["email_verified"] is verified
+    assert core._auth.decode_authtoken(jar["authtoken"].value)["user_verified"] is verified
     assert identity["sub"] == "okta|synthetic-user"
     req["headers"]["cookie"] = "; ".join(f"{name}={jar[name].value}" for name in ("c4_st", "authtoken"))
     assert core._auth.authorize(req, "allowed")["authorized"] is True
@@ -213,8 +252,11 @@ def test_backend_session_both_ui_contracts_and_warm_restoration(core, key, monke
     assert core._auth.authorize(req, "allowed")["authenticated"] is False
 
 
-def test_session_requires_matching_transaction_and_nonce(core, key):
-    req, payload = establish(core, key)
+@pytest.mark.parametrize("opt_out", [False, True])
+def test_session_requires_matching_transaction_and_nonce(core, key, monkeypatch, opt_out):
+    if opt_out:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
+    req, payload = establish(core, key, email_verified=not opt_out)
     assert okta.handle(core, request(), "session", payload).status_code == 403
     assert okta.handle(core, req, "session", dict(payload, csrf="wrong")).status_code == 403
     assert okta.handle(core, req, "session", dict(payload, idToken=token(key))).status_code == 403
@@ -223,7 +265,8 @@ def test_session_requires_matching_transaction_and_nonce(core, key):
     assert okta.handle(core, req, "session", payload).status_code == 403
 
 
-def test_redis_session_and_logout_preserve_namespace_and_ttl(core, key, monkeypatch):
+@pytest.mark.parametrize("verified", [True, False])
+def test_redis_session_and_logout_preserve_namespace_and_ttl(core, key, monkeypatch, verified):
     from dcicutils.redis_utils import RedisBase
     from dcicutils.redis_tools import RedisSessionToken
     storage = {}
@@ -233,7 +276,9 @@ def test_redis_session_and_logout_preserve_namespace_and_ttl(core, key, monkeypa
     redis.ttl.return_value = 10800
     redis.delete.side_effect = lambda name: storage.pop(name, None)
     core._auth._redis = redis
-    req, payload = establish(core, key)
+    if not verified:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
+    req, payload = establish(core, key, email_verified=verified)
     result = okta.handle(core, req, "session", payload)
     assert result.status_code == 200
     jar = cookies(result)
@@ -255,9 +300,12 @@ def test_errors_do_not_reflect_credentials(core, key):
     assert result.headers["Cache-Control"] == "no-store"
 
 
-def test_no_role_grants_for_unknown_user(core, key):
+@pytest.mark.parametrize("verified", [True, False])
+def test_no_role_grants_for_unknown_user(core, key, monkeypatch, verified):
+    if not verified:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
     core._auth._envs.get_user_auth_info = lambda email: ([], None, None)
-    req, payload = establish(core, key)
+    req, payload = establish(core, key, email_verified=verified)
     result = okta.handle(core, req, "session", payload)
     jar = cookies(result)
     claims = core._auth.decode_authtoken(jar["authtoken"].value)
@@ -265,8 +313,11 @@ def test_no_role_grants_for_unknown_user(core, key):
     assert claims["authenticated_until"] == jwt.decode(payload["idToken"], options={"verify_signature": False})["exp"]
 
 
-def test_legacy_portal_role_policy_unchanged(core, key, monkeypatch):
-    req, payload = establish(core, key)
+@pytest.mark.parametrize("verified", [True, False])
+def test_legacy_portal_role_policy_unchanged(core, key, monkeypatch, verified):
+    if not verified:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
+    req, payload = establish(core, key, email_verified=verified)
     result = okta.handle(core, req, "session", payload)
     req["headers"]["cookie"] = "c4_st=" + cookies(result)["c4_st"].value
     legacy = object.__new__(AppUtils)
@@ -278,6 +329,14 @@ def test_legacy_portal_role_policy_unchanged(core, key, monkeypatch):
     for groups, permitted in [([], False), (["user"], False), (["foursight"], True), (["admin"], True)]:
         monkeypatch.setattr("foursight_core.app_utils.ff_utils.get_metadata", lambda *a, **kw: {"groups": groups})
         assert legacy.check_authorization(req, "allowed") is permitted
+    if not verified:
+        # An Okta-only exception must not relax the existing Auth0 email gate.
+        identity = jwt_decode(cookies(result)["c4_st"].value, CLIENT, SECRET)
+        legacy.get_decoded_jwt_token = lambda *args: dict(identity, sub="auth0|synthetic-user")
+        assert legacy.check_authorization(req, "allowed") is False
+        legacy.get_decoded_jwt_token = lambda *args: identity
+        monkeypatch.delenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL")
+        assert legacy.check_authorization(req, "allowed") is False
 
 
 def test_react_logout_routes_through_shared_bridge(core):
