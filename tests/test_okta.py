@@ -320,6 +320,8 @@ def test_session_requires_matching_transaction_and_nonce(core, key, monkeypatch,
 def test_redis_session_and_logout_preserve_namespace_and_ttl(core, key, monkeypatch, verified):
     from dcicutils.redis_utils import RedisBase
     from dcicutils.redis_tools import RedisSessionToken
+    opaque_token = "ey-synthetic-opaque-session-token"
+    monkeypatch.setattr("dcicutils.redis_tools.make_session_token", lambda: opaque_token)
     storage = {}
     redis = Mock(spec=RedisBase)
     redis.set.side_effect = lambda name, value, exp=None: storage.update({name: value}) or True
@@ -333,13 +335,22 @@ def test_redis_session_and_logout_preserve_namespace_and_ttl(core, key, monkeypa
     result = okta.handle(core, req, "session", payload)
     assert result.status_code == 200
     jar = cookies(result)
-    assert not jar["c4_st"].value.startswith("ey")
+    # Opaque random tokens may start with 'ey'; check the actual Redis contract.
+    assert jar["c4_st"].value == opaque_token
+    stored = RedisSessionToken.from_redis(redis_handler=redis, namespace="foursight", token=opaque_token)
+    assert jwt_decode(stored.get_jwt(), CLIENT, SECRET)["email"] == "synthetic@example.invalid"
     assert redis.set.call_args.kwargs["exp"] == RedisSessionToken(
         namespace="foursight", jwt="synthetic", email="synthetic@example.invalid").get_expiration()
     req["headers"]["cookie"] = "; ".join(f"{name}={jar[name].value}" for name in ("c4_st", "authtoken"))
     assert core._auth.authorize(req, "allowed")["authorized"] is True
+    legacy = object.__new__(AppUtils)
+    legacy._auth0_config = core._auth0_config
+    legacy.init_connection = lambda env: SimpleNamespace(get_redis_base=lambda: redis)
+    monkeypatch.setattr("foursight_core.app_utils.full_env_name", lambda env: env)
+    assert legacy.get_decoded_jwt_token("allowed", req)["email"] == "synthetic@example.invalid"
     assert okta.handle(core, req, "logout").status_code == 200
     assert core._auth.authorize(req, "allowed")["authenticated"] is False
+    assert legacy.get_decoded_jwt_token("allowed", req) is None
 
 
 def test_errors_do_not_reflect_credentials(core, key):
