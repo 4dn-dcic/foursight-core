@@ -201,10 +201,10 @@ exception described above.
 **Live acceptance still requires operator registration/configuration** above,
 a downstream app deployment, and designated tenant login/logout testing. None
 of those external configuration changes or an environment deployment is performed
-by this change. The published integration-test beta **`foursight-core==5.10.5.1b2`**
-supports the opt-out for boolean false only. The omitted-claim correction is a
-source-only continuation and is **not** in that immutable beta; no new release
-or deployment is implied here. The earlier beta `5.10.5.1b1` has no opt-out. Rollback of the provider selection is removal of both Okta
+by this change. Pin **`foursight-core==5.10.5.1b3`** for the opt-out accepting an
+omitted verification claim. The earlier immutable beta `5.10.5.1b2` accepts
+boolean false only; `5.10.5.1b1` has no opt-out. Package availability is not a
+claim of deployment or live login success. Rollback of the provider selection is removal of both Okta
 issuer/client settings while retaining existing Auth0/Cognito configuration;
 normal session expiry and signing-key policy continue to apply.
 
@@ -222,7 +222,7 @@ cd foursight-core-source
 git checkout --detach <validated-full-commit-sha>
 python -m pip wheel --no-deps --wheel-dir ../core-wheels .
 # In the downstream application's existing dependency environment:
-python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b2-py3-none-any.whl
+python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b3-py3-none-any.whl
 ```
 
 Resolve the downstream application's normal dependencies first (including its

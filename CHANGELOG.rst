@@ -6,6 +6,12 @@ foursight-core
 Change Log
 ----------
 
+5.10.5.1b3
+==========
+* Correct the explicit Okta verified-email opt-out to accept an omitted
+  ``email_verified`` claim without marking the identity verified. Strict default,
+  malformed-claim rejection, and existing token/session/authorization checks remain.
+
 5.10.5.1b2
 ==========
 * Integration-test beta: shared Okta SPA login for React and legacy, with the
