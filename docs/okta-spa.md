@@ -123,6 +123,9 @@ this restriction.
 2. An exact-Origin, JSON POST obtains a ten-minute signed HttpOnly transaction
    cookie and a random nonce/CSRF value. The real pinned Okta Auth JS **7.14.5**
    owns the PKCE verifier and OAuth state in tab-scoped transaction storage.
+   Each deliberate sign-in requests hosted interactive authentication with
+   `prompt=login`, even if the portal already has an Okta SSO session. This
+   applies only to sign-in, not restoration, callback processing or logout.
 3. The browser redeems the authorization code without a secret. The SDK checks
    state and token validity; the bridge explicitly compares the ID-token nonce
    to its saved transaction as well. The backend independently verifies the
@@ -202,7 +205,10 @@ exception described above.
 a downstream app deployment, and designated tenant login/logout testing. None
 of those external configuration changes or an environment deployment is performed
 by this change. Pin **`foursight-core==5.10.5.1b3`** for the opt-out accepting an
-omitted verification claim. The earlier immutable beta `5.10.5.1b2` accepts
+omitted verification claim. That immutable beta does **not** include the newer
+`prompt=login` change described above; it remains source-only pending a separately
+approved release/deployment. Interactive login is not a fix for a backend session
+request exceeding the existing browser budget. The earlier immutable beta `5.10.5.1b2` accepts
 boolean false only; `5.10.5.1b1` has no opt-out. Package availability is not a
 claim of deployment or live login success. Rollback of the provider selection is removal of both Okta
 issuer/client settings while retaining existing Auth0/Cognito configuration;

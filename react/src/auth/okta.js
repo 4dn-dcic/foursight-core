@@ -99,7 +99,8 @@ export async function runBridge() {
             const target = safeReturn(new URLSearchParams(window.location.search).get('returnTo'), base);
             const transaction = await api(base, 'transaction');
             sessionStorage.setItem(TRANSACTION, JSON.stringify({ ...transaction, target }));
-            await client.signInWithRedirect({ nonce: transaction.nonce });
+            // An explicit Foursight sign-in must not silently reuse portal SSO.
+            await client.signInWithRedirect({ nonce: transaction.nonce, prompt: 'login' });
         } else if (operation === 'callback') {
             // parseFromUrl verifies state/signature/issuer/audience/expiry using
             // the real SDK transaction and PKCE verifier from this browser tab.

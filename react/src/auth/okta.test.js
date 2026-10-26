@@ -58,6 +58,68 @@ test.each(['/api/react/synthetic/checks?tab=1#result', '/api/view/synthetic', '/
     '/api/info/synthetic', '/api/users/synthetic'])(
     'return navigation permits %s', target => expect(safeReturn(target, '/api')).toBe(target));
 
+test.each(['/api/react/synthetic/checks?tab=1#result', '/api/view/synthetic'])(
+    'each deliberate login to %s requests interactive auth despite existing SDK/SSO state', async target => {
+        const oldLocation = window.location;
+        const assign = jest.fn();
+        delete window.location;
+        window.location = { ...oldLocation, assign, pathname: '/api/okta/login',
+            search: '?returnTo=' + encodeURIComponent(target) };
+        const existing = createClient(config);
+        const transport = global.fetch;
+        global.fetch = jest.fn(async (url, options) => {
+            if (url === '/api/okta/config' || url === '/api/okta/transaction') {
+                return { ok: true, text: async () => JSON.stringify(url.endsWith('/config')
+                    ? { ...config, enabled: true } : { nonce: 'nonce', csrf: 'csrf' }) };
+            }
+            return transport(url, options);
+        });
+        // Synthetic hosted-issuer policy: an SSO cookie alone normally skips its
+        // screen. Inspect the REAL SDK redirect, not a spy on signInWithRedirect.
+        const hostedIssuer = (url, hasSsoSession) =>
+            url.searchParams.get('prompt') === 'login' || !hasSsoSession ? 'interactive' : 'sso';
+        try {
+            for (let attempt = 0; attempt < 2; attempt++) {
+                existing.tokenManager.setTokens({ idToken: idToken() });
+                existing.transactionManager.save({ state: 'previous', nonce: 'previous' });
+                await runBridge();
+                expect(assign).toHaveBeenCalledTimes(attempt + 1);
+                const authorize = new URL(assign.mock.calls[attempt][0]);
+                expect(authorize.origin + authorize.pathname).toBe(metadata.authorization_endpoint);
+                expect(authorize.searchParams.get('prompt')).toBe('login');
+                expect(hostedIssuer(authorize, true)).toBe('interactive');
+                const defaultRequest = new URL(authorize);
+                defaultRequest.searchParams.delete('prompt');
+                expect(hostedIssuer(defaultRequest, true)).toBe('sso');
+                expect(authorize.searchParams.get('nonce')).toBe('nonce');
+                expect(authorize.searchParams.get('state')).toBeTruthy();
+                expect(authorize.searchParams.get('state')).not.toBe('previous');
+                expect(authorize.searchParams.get('response_type')).toBe('code');
+                expect(authorize.searchParams.get('code_challenge_method')).toBe('S256');
+                expect(authorize.searchParams.get('code_challenge')).toBeTruthy();
+                expect(authorize.searchParams.get('redirect_uri')).toBe(config.redirectUri);
+                expect(authorize.searchParams.get('client_id')).toBe(config.clientId);
+                expect(authorize.searchParams.get('scope')).toBe(config.scopes.join(' '));
+                expect(JSON.parse(sessionStorage.getItem('foursight-okta-transaction')))
+                    .toEqual({ nonce: 'nonce', csrf: 'csrf', target });
+                expect(existing.tokenManager.getTokensSync()).toEqual({});
+            }
+            expect(new URL(assign.mock.calls[0][0]).searchParams.get('state'))
+                .not.toBe(new URL(assign.mock.calls[1][0]).searchParams.get('state'));
+            // Constructing the SDK on a fresh document does not authorize or
+            // silently recreate the server session from a retained logout token.
+            existing.tokenManager.setTokens({ idToken: idToken() });
+            const restored = createClient(config);
+            expect(restored.tokenManager.getTokensSync().idToken).toBeDefined();
+            expect(assign).toHaveBeenCalledTimes(2);
+            expect(fetch.mock.calls.some(([url]) => url.endsWith('/session'))).toBe(false);
+            restored.stop();
+        } finally {
+            existing.stop();
+            window.location = oldLocation;
+        }
+    });
+
 test('real pinned SDK verifies synthetic signed ID token', async () => {
     const client = createClient(config);
     await expect(client.token.verify(idToken(), { nonce: 'nonce' })).resolves.toBeDefined();
@@ -109,6 +171,7 @@ test.each([
         expect(outcome).toBe(accepted ? 'accepted' :
             'Sign-in or sign-out could not be completed. Return to Foursight and try again.');
         expect(replace.mock.calls).toEqual(accepted ? [[target]] : []);
+        expect(assign).toHaveBeenCalledTimes(1); // Callback never starts a new authorization.
         const stored = client.tokenManager.getTokensSync();
         expect(Object.keys(stored)).toEqual(accepted ? ['idToken'] : []);
         expect(stored.idToken?.claims.email_verified).toBe(accepted ? false : undefined);
@@ -159,6 +222,7 @@ test('real SDK logout clears tokens before redirect; reload cannot restore pendi
         expect(assign).toHaveBeenCalledTimes(1);
         const redirect = new URL(assign.mock.calls[0][0]);
         expect(redirect.pathname).toBe('/oauth2/default/v1/logout');
+        expect(redirect.searchParams.has('prompt')).toBe(false);
         expect(redirect.searchParams.get('post_logout_redirect_uri')).toBe(config.postLogoutRedirectUri);
         const reloaded = createClient(config);
         expect(reloaded.tokenManager.getTokensSync()).toEqual({});
@@ -187,6 +251,73 @@ test('bounded transport aborts a hung request and the body', async () => {
     }));
     await expect(fetchBounded('/api/okta/session', {}, 5)).rejects.toThrow('body aborted');
 });
+
+test.each([undefined, 'login'])(
+    'callback session budget is 15 seconds regardless of authorize prompt %s', async prompt => {
+        const oldLocation = window.location;
+        const assign = jest.fn();
+        const replace = jest.fn();
+        delete window.location;
+        window.location = { ...oldLocation, assign, replace, pathname: '/api/okta/callback' };
+        const client = createClient(config);
+        let sessionStarted;
+        const started = new Promise(resolve => { sessionStarted = resolve; });
+        let serverFinished = false;
+        let sessionSignal;
+        global.fetch = jest.fn(async (url, options = {}) => {
+            let body = metadata;
+            if (url.endsWith('/keys')) body = { keys: [jwk] };
+            if (url.endsWith('/token')) body = { id_token: idToken().idToken,
+                access_token: idToken({ aud: 'resource', scp: ['openid'] }).idToken,
+                token_type: 'Bearer', expires_in: 3600, scope: 'openid email profile' };
+            if (url === '/api/okta/config') body = { ...config, enabled: true };
+            if (url === '/api/okta/session') {
+                sessionSignal = options.signal;
+                sessionStarted();
+                // A server is not canceled by aborting its browser transport.
+                // Fake time keeps this synthetic 20-second dependency bounded.
+                return new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        serverFinished = true;
+                        resolve({ ok: true, text: async () => '{"authenticated":true}' });
+                    }, 20000);
+                    options.signal.addEventListener('abort', () => reject(new Error('aborted')));
+                });
+            }
+            return { ok: true, status: 200, headers: new Map(), text: async () => JSON.stringify(body) };
+        });
+        try {
+            await client.signInWithRedirect({ nonce: 'nonce', prompt });
+            const state = new URL(assign.mock.calls[0][0]).searchParams.get('state');
+            window.location.search = '?code=synthetic&state=' + state;
+            window.location.href = config.redirectUri + window.location.search;
+            sessionStorage.setItem('foursight-okta-transaction', JSON.stringify({
+                nonce: 'nonce', csrf: 'csrf', target: '/api/view/synthetic' }));
+            jest.useFakeTimers();
+            const outcome = runBridge().then(() => 'accepted', error => error.message);
+            await started;
+            jest.advanceTimersByTime(14999);
+            expect(sessionSignal.aborted).toBe(false);
+            expect(serverFinished).toBe(false);
+            jest.advanceTimersByTime(1);
+            expect(sessionSignal.aborted).toBe(true);
+            expect(await outcome).toBe(
+                'Sign-in or sign-out could not be completed. Return to Foursight and try again.');
+            expect(serverFinished).toBe(false);
+            expect(assign).toHaveBeenCalledTimes(1);
+            expect(replace).not.toHaveBeenCalled();
+            expect(sessionStorage.getItem('foursight-okta-transaction')).toBeNull();
+            expect(client.tokenManager.getTokensSync()).toEqual({});
+            jest.advanceTimersByTime(5000);
+            expect(serverFinished).toBe(true);
+            expect(replace).not.toHaveBeenCalled(); // Late success cannot rescue this callback.
+        } finally {
+            jest.useRealTimers();
+            client.stop();
+            window.location = oldLocation;
+            window.history.replaceState(null, '', '/');
+        }
+    });
 
 test('SDK transport never puts token exchange data in URLs', async () => {
     await sdkTransport('POST', metadata.token_endpoint, {
