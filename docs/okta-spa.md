@@ -157,7 +157,12 @@ All new session mutations require same-origin JSON requests and have no CORS
 exception. `c4_st` and transaction cookies are HttpOnly, SameSite=Lax, and Secure
 outside local HTTP development. React's existing readable, signed `authtoken`
 format is retained. Callback query parameters are removed promptly; errors are
-fixed text, never provider exception text. Browser HTTP requests (including
+fixed text, never provider exception text. Caught backend rejections log only a
+fixed stage, allowlisted exception class (`OtherError` for unknown classes), and
+fixed reason (`missing_email_verified`, `missing_required_claim`, or `unspecified`).
+No exception message/traceback, arbitrary claim name, identity or request data is
+added to this diagnostic. Successful sessions do not emit rejection diagnostics.
+Browser HTTP requests (including
 response bodies) abort after 15 seconds; backend discovery/JWKS requests have
 five-second timeouts. The bounded multi-step flow always ends in navigation or
 an error with a return link, not an unbounded session-properties spinner.
@@ -204,11 +209,11 @@ exception described above.
 **Live acceptance still requires operator registration/configuration** above,
 a downstream app deployment, and designated tenant login/logout testing. None
 of those external configuration changes or an environment deployment is performed
-by this change. Pin **`foursight-core==5.10.5.1b3`** for the opt-out accepting an
-omitted verification claim. That immutable beta does **not** include the newer
-`prompt=login` change described above; it remains source-only pending a separately
-approved release/deployment. Interactive login is not a fix for a backend session
-request exceeding the existing browser budget. The earlier immutable beta `5.10.5.1b2` accepts
+by this change. Pin **`foursight-core==5.10.5.1b4`** for explicit interactive sign-in
+and credential-free rejection classification. The immutable `5.10.5.1b3` already
+accepts an omitted verification claim under the opt-out, but contains neither the
+interactive prompt nor rejection diagnostic. Interactive login is not a fix for a
+backend session request exceeding the existing browser budget. The earlier immutable beta `5.10.5.1b2` accepts
 boolean false only; `5.10.5.1b1` has no opt-out. Package availability is not a
 claim of deployment or live login success. Rollback of the provider selection is removal of both Okta
 issuer/client settings while retaining existing Auth0/Cognito configuration;
@@ -228,7 +233,7 @@ cd foursight-core-source
 git checkout --detach <validated-full-commit-sha>
 python -m pip wheel --no-deps --wheel-dir ../core-wheels .
 # In the downstream application's existing dependency environment:
-python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b3-py3-none-any.whl
+python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b4-py3-none-any.whl
 ```
 
 Resolve the downstream application's normal dependencies first (including its

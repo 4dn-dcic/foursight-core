@@ -422,6 +422,97 @@ def test_cold_worker_and_unavailable_redis_fail_closed(core, key, monkeypatch):
     assert cookies(logout)["authtoken"].value == ""
 
 
+@pytest.mark.parametrize("failure,stage,exception", [
+    ("secret", "session_configuration", "ValueError"),
+    ("body", "request", "ValueError"),
+    ("cookie", "transaction_verify", "DecodeError"),
+    ("csrf", "csrf", "ValueError"),
+    ("jwks", "id_token_verify", "PyJWKClientConnectionError"),
+    ("sign", "session_sign", "RuntimeError"),
+    ("authtoken", "authtoken_create", "RuntimeError"),
+    ("redis", "session_store", "ConnectionError"),
+    ("response", "response", "ValueError"),
+    ("custom-exception", "id_token_verify", "OtherError")])
+def test_rejection_diagnostic_stages_never_log_sensitive_data(
+        core, key, monkeypatch, caplog, failure, stage, exception):
+    sentinel = "PRIVATE-identity-code-token-cookie-header-endpoint-secret"
+    req, payload = establish(core, key, email=sentinel + "@example.invalid")
+    req["headers"]["x-sensitive-fixture"] = sentinel
+    req["context"]["path"] += "?code=" + sentinel
+    payload["ignored"] = sentinel
+    if failure == "secret":
+        monkeypatch.setattr(core._auth0_config, "get_secret", lambda: None)
+    elif failure == "body":
+        payload = sentinel
+    elif failure == "cookie":
+        req["headers"]["cookie"] = "foursight_okta_transaction=" + sentinel
+    elif failure == "csrf":
+        payload["csrf"] = sentinel
+    elif failure in ("jwks", "custom-exception"):
+        error = (jwt.PyJWKClientConnectionError(sentinel) if failure == "jwks"
+                 else type(sentinel, (Exception,), {})(sentinel))
+        monkeypatch.setattr(okta, "jwks_client", Mock(side_effect=error))
+    elif failure == "sign":
+        monkeypatch.setattr(okta, "jwt_encode", Mock(side_effect=RuntimeError(sentinel)))
+    elif failure == "authtoken":
+        monkeypatch.setattr(core._auth, "create_authtoken", Mock(side_effect=RuntimeError(sentinel)))
+    elif failure == "redis":
+        monkeypatch.setattr(core._auth, "get_redis_handler", Mock(side_effect=ConnectionError(sentinel)))
+    elif failure == "response":
+        real_cookie = okta.cookie
+
+        def cookie(*args, **kwargs):
+            if args[1] == "authtoken":
+                raise ValueError(sentinel)
+            return real_cookie(*args, **kwargs)
+
+        monkeypatch.setattr(okta, "cookie", cookie)
+    caplog.clear()
+    result = okta.handle(core, req, "session", payload)
+    assert result.status_code == 403
+    assert result.body == {"error": "Unable to complete Okta authentication."}
+    assert set(cookies(result)) == {okta.TRANSACTION_COOKIE}
+    records = [record for record in caplog.records if record.name == okta.__name__]
+    assert len(records) == 1
+    assert records[0].getMessage() == (
+        f"Okta authentication rejected: stage={stage} exception={exception} reason=unspecified")
+    assert records[0].exc_info is None and records[0].stack_info is None
+    for private in (sentinel, SECRET, "synthetic@example.invalid", "https://synthetic.okta.invalid"):
+        assert private not in caplog.text
+    assert "Traceback" not in caplog.text
+    if isinstance(payload, dict):
+        assert payload["idToken"] not in caplog.text
+
+
+@pytest.mark.parametrize("claim,reason", [
+    ("email_verified", "missing_email_verified"),
+    ("email", "missing_required_claim"),
+    ("PRIVATE-arbitrary-claim-name", "missing_required_claim")])
+def test_missing_claim_diagnostic_uses_fixed_reason_codes(core, key, monkeypatch, caplog, claim, reason):
+    req, payload = establish(core, key)
+    if claim.startswith("PRIVATE"):
+        monkeypatch.setattr(okta, "verify_id_token", Mock(side_effect=jwt.MissingRequiredClaimError(claim)))
+    else:
+        req, payload = establish(core, key, **{claim: OMITTED})
+    caplog.clear()
+    result = okta.handle(core, req, "session", payload)
+    assert result.status_code == 403
+    assert [record.getMessage() for record in caplog.records if record.name == okta.__name__] == [
+        "Okta authentication rejected: stage=id_token_verify "
+        f"exception=MissingRequiredClaimError reason={reason}"]
+    assert "PRIVATE" not in caplog.text and payload["idToken"] not in caplog.text
+
+
+@pytest.mark.parametrize("verified,opt_out", [(True, False), (False, True), (OMITTED, True)])
+def test_successful_session_has_no_rejection_diagnostic(core, key, monkeypatch, caplog, verified, opt_out):
+    if opt_out:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
+    req, payload = establish(core, key, email_verified=verified)
+    caplog.clear()
+    assert okta.handle(core, req, "session", payload).status_code == 200
+    assert not [record for record in caplog.records if record.name == okta.__name__]
+
+
 def test_generated_bridge_is_served_by_actual_static_whitelist():
     from foursight_core.react.api.react_ui import ReactUi
     result = ReactUi(ReactApi).serve_static_file("okta-auth.js", [])

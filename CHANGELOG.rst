@@ -6,6 +6,15 @@ foursight-core
 Change Log
 ----------
 
+5.10.5.1b4
+==========
+* Request interactive hosted Okta authentication on each deliberate React/legacy
+  sign-in, even with an existing portal SSO session; restoration and logout are unchanged.
+* Classify caught authentication rejections by fixed stage, allowlisted exception
+  class and fixed missing-claim reason only. Public errors stay generic; no token,
+  identity, request data, exception message or traceback is added to these logs.
+  Existing validation, authorization and timeout policies are unchanged.
+
 5.10.5.1b3
 ==========
 * Correct the explicit Okta verified-email opt-out to accept an omitted

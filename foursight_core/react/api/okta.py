@@ -8,6 +8,7 @@ import datetime
 from functools import lru_cache
 import html
 import hmac
+import logging
 import os
 import secrets
 import time
@@ -25,6 +26,19 @@ from .misc_utils import is_running_locally
 
 TRANSACTION_COOKIE = "foursight_okta_transaction"
 TRANSACTION_AUDIENCE = "foursight-okta-transaction"
+
+logger = logging.getLogger(__name__)
+# Names, never exception messages, inputs, arbitrary claim names or tracebacks.
+# Unknown/custom exception names are also excluded (they can contain user data).
+_DIAGNOSTIC_EXCEPTIONS = frozenset({
+    "ValueError", "TypeError", "KeyError", "AttributeError", "RuntimeError",
+    "InvalidTokenError", "DecodeError", "InvalidSignatureError", "ExpiredSignatureError",
+    "InvalidAudienceError", "InvalidIssuerError", "InvalidIssuedAtError", "ImmatureSignatureError",
+    "InvalidAlgorithmError", "MissingRequiredClaimError", "InvalidKeyError", "InvalidSubjectError",
+    "PyJWKClientError", "PyJWKClientConnectionError", "PyJWKError", "PyJWKSetError",
+    "ConnectionError", "ConnectionTimeout", "Timeout", "TimeoutError", "ReadTimeout",
+    "ConnectTimeout", "SSLError", "HTTPError", "URLError", "RedisException", "ClientError"
+})
 
 
 def settings():
@@ -146,6 +160,8 @@ def session_store(core):
 
 def handle(core, request, operation, body=None):
     """All mutating endpoints require an exact Origin and JSON (no CORS)."""
+    # Assigned only fixed literals below, never the caller's operation/path.
+    stage = "configuration"
     try:
         if operation == "config":
             return response(public_config(request))
@@ -154,6 +170,7 @@ def handle(core, request, operation, body=None):
         if not same_origin(request):
             return response({"error": "Forbidden."}, 403)
         if operation == "logout":
+            stage = "logout_session_store"
             redis = session_store(core)
             if redis:
                 session = RedisSessionToken.from_redis(
@@ -163,24 +180,31 @@ def handle(core, request, operation, body=None):
                     session.delete_session_token(redis_handler=redis)
             return response({"loggedOut": True}, cookies=[cookie(request, name, expires=1)
                             for name in [AUTH_TOKEN_COOKIE, SESSION_TOKEN_COOKIE, TRANSACTION_COOKIE]])
+        stage = "session_configuration"
         secret = core._auth0_config.get_secret()
         if not secret:
             raise ValueError("No server session signing key")
         if operation == "transaction":
+            stage = "transaction_create"
             now = int(time.time())
             transaction = {"nonce": secrets.token_urlsafe(32), "csrf": secrets.token_urlsafe(32),
                            "iat": now, "exp": now + 600}
             encoded = jwt_encode(transaction, TRANSACTION_AUDIENCE, secret)
             return response({"nonce": transaction["nonce"], "csrf": transaction["csrf"]},
                             cookies=[cookie(request, TRANSACTION_COOKIE, encoded, now + 600)])
+        stage = "request"
         if operation != "session" or not isinstance(body, dict):
             raise ValueError("Invalid request")
+        stage = "transaction_verify"
         transaction = jwt.decode(read_cookie(request, TRANSACTION_COOKIE), secret, algorithms=["HS256"],
                                  audience=TRANSACTION_AUDIENCE, options={"require": ["exp", "nonce", "csrf"]})
+        stage = "csrf"
         csrf = body.get("csrf")
         if not isinstance(csrf, str) or not hmac.compare_digest(csrf, transaction["csrf"]):
             raise ValueError("Invalid transaction")
+        stage = "id_token_verify"
         claims = verify_id_token(body.get("idToken"), transaction["nonce"])
+        stage = "session_sign"
         # Normalize only validated identity claims; never invent a verification flag.
         # Expiry is the provider expiry, never a fresh sliding lifetime.
         identity = {key: claims[key] for key in ("sub", "email", "iat", "exp")}
@@ -189,20 +213,32 @@ def handle(core, request, operation, body=None):
         identity["sub"] = "okta|" + identity["sub"]
         signed = jwt_encode(identity, core._auth0_config.get_client(), secret)
         domain = request["headers"]["host"]
+        stage = "authtoken_create"
         authtoken, email = core._auth.create_authtoken(signed, claims["exp"], domain, request=request)
         c4_st = signed
         expires = claims["exp"]
+        stage = "session_store"
         redis = session_store(core)
         if redis:
             session = RedisSessionToken(namespace=Auth.get_redis_namespace(None), jwt=signed, email=email)
             session.store_session_token(redis_handler=redis)
             c4_st = session.get_session_token()
             expires = datetime.datetime.utcnow() + session.get_expiration()
+        stage = "response"
         return response({"authenticated": True}, cookies=[
             cookie(request, AUTH_TOKEN_COOKIE, authtoken, claims["exp"], http_only=False),
             cookie(request, SESSION_TOKEN_COOKIE, c4_st, expires),
             cookie(request, TRANSACTION_COOKIE, expires=1)])
-    except Exception:
+    except Exception as error:
+        # One credential-free classification owner. Do not use logger.exception,
+        # exc_info, str(error), request data or unrestricted exception/claim names.
+        exception = type(error).__name__
+        if exception not in _DIAGNOSTIC_EXCEPTIONS:
+            exception = "OtherError"
+        reason = "unspecified"
+        if isinstance(error, jwt.MissingRequiredClaimError):
+            reason = "missing_email_verified" if error.claim == "email_verified" else "missing_required_claim"
+        logger.warning("Okta authentication rejected: stage=%s exception=%s reason=%s", stage, exception, reason)
         # Never reflect IdP errors, tokens, codes, claim values or exception text.
         names = [TRANSACTION_COOKIE]
         if operation == "logout" and same_origin(request):
