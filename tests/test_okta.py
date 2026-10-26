@@ -24,7 +24,10 @@ OMITTED = object()
 
 
 @pytest.fixture(autouse=True)
-def offline(monkeypatch):
+def offline(monkeypatch, caplog):
+    # Chalice intentionally does not propagate to root; capture directly without
+    # modifying its production level or replacing the real stream handler.
+    monkeypatch.setattr(okta.logger, "handlers", [*okta.logger.handlers, caplog.handler])
     monkeypatch.setenv("FOURSIGHT_OKTA_ISSUER", ISSUER)
     monkeypatch.setenv("FOURSIGHT_OKTA_CLIENT_ID", CLIENT)
     monkeypatch.setenv("FOURSIGHT_SESSION_SECRET", SECRET)
@@ -422,6 +425,11 @@ def test_cold_worker_and_unavailable_redis_fail_closed(core, key, monkeypatch):
     assert cookies(logout)["authtoken"].value == ""
 
 
+def rejection_records(caplog):
+    return [record for record in caplog.records
+            if record.name == okta.logger.name and "outcome=reject" in record.getMessage()]
+
+
 @pytest.mark.parametrize("failure,stage,exception,reason", [
     ("secret", "session_configuration", "OktaValidationError", "missing_session_signing_key"),
     ("body", "request", "OktaValidationError", "invalid_request"),
@@ -478,10 +486,10 @@ def test_rejection_diagnostic_stages_never_log_sensitive_data(
     assert result.status_code == 403
     assert result.body == {"error": "Unable to complete Okta authentication."}
     assert set(cookies(result)) == {okta.TRANSACTION_COOKIE}
-    records = [record for record in caplog.records if record.name == okta.__name__]
+    records = rejection_records(caplog)
     assert len(records) == 1
-    assert records[0].getMessage() == (
-        f"Okta authentication rejected: stage={stage} exception={exception} reason={reason}")
+    assert (f"operation=session stage={stage} outcome=reject status=403 "
+            f"exception={exception} reason={reason} elapsed_ms=") in records[0].getMessage()
     assert records[0].exc_info is None and records[0].stack_info is None
     for private in (sentinel, SECRET, "synthetic@example.invalid", "https://synthetic.okta.invalid"):
         assert private not in caplog.text
@@ -510,8 +518,10 @@ def test_known_claim_rejections_have_safe_specific_reasons(core, key, caplog, ch
     result = okta.handle(core, req, "session", payload)
     assert result.status_code == 403
     assert result.body == {"error": "Unable to complete Okta authentication."}
-    assert [record.getMessage() for record in caplog.records if record.name == okta.__name__] == [
-        f"Okta authentication rejected: stage=id_token_verify exception=OktaValidationError reason={reason}"]
+    records = rejection_records(caplog)
+    assert len(records) == 1
+    assert ("stage=id_token_verify outcome=reject status=403 "
+            f"exception=OktaValidationError reason={reason} elapsed_ms=") in records[0].getMessage()
     assert "PRIVATE" not in caplog.text and payload["idToken"] not in caplog.text
 
 
@@ -528,9 +538,10 @@ def test_missing_claim_diagnostic_uses_fixed_reason_codes(core, key, monkeypatch
     caplog.clear()
     result = okta.handle(core, req, "session", payload)
     assert result.status_code == 403
-    assert [record.getMessage() for record in caplog.records if record.name == okta.__name__] == [
-        "Okta authentication rejected: stage=id_token_verify "
-        f"exception=MissingRequiredClaimError reason={reason}"]
+    records = rejection_records(caplog)
+    assert len(records) == 1
+    assert ("stage=id_token_verify outcome=reject status=403 "
+            f"exception=MissingRequiredClaimError reason={reason} elapsed_ms=") in records[0].getMessage()
     assert "PRIVATE" not in caplog.text and payload["idToken"] not in caplog.text
 
 
@@ -541,7 +552,8 @@ def test_successful_session_has_no_rejection_diagnostic(core, key, monkeypatch, 
     req, payload = establish(core, key, email_verified=verified)
     caplog.clear()
     assert okta.handle(core, req, "session", payload).status_code == 200
-    assert not [record for record in caplog.records if record.name == okta.__name__]
+    assert not rejection_records(caplog)
+    assert any("stage=response outcome=return status=200" in record.getMessage() for record in caplog.records)
 
 
 def test_generated_bridge_is_served_by_actual_static_whitelist():
@@ -559,6 +571,78 @@ def test_actual_chalice_route_methods_and_content_types():
     assert set(routes) == {"GET", "POST"}
     assert routes["POST"].content_types == ["application/json"]
     assert not routes["POST"].cors
+
+
+@pytest.mark.parametrize("method,operation,body,status,marker", [
+    ("GET", "config", None, 200, "stage=configuration outcome=return status=200"),
+    ("GET", "login", None, 200, "stage=page outcome=return status=200"),
+    ("GET", "callback", None, 200, "stage=page outcome=return status=200"),
+    ("GET", "logout", None, 200, "stage=page outcome=return status=200"),
+    ("GET", "signed-out", None, 200, "stage=page outcome=return status=200"),
+    ("GET", "PRIVATE-unknown-operation", None, 404, "reason=unknown_operation"),
+    ("POST", "PRIVATE-unknown-operation", "{}", 404, "reason=unknown_operation"),
+    ("POST", "transaction", "{}", 200, "stage=transaction_create outcome=return status=200"),
+    ("POST", "session", "{PRIVATE-invalid-json", 400, "stage=request_parse outcome=reject status=400"),
+    ("POST", "session", "{}", 403, "stage=transaction_verify outcome=reject status=403"),
+    ("POST", "logout", "{}", 200, "stage=logout_session_store outcome=return status=200")])
+def test_actual_chalice_handler_emits_safe_route_markers(
+        core, monkeypatch, caplog, method, operation, body, status, marker):
+    from io import StringIO
+    from chalice.test import Client as ChaliceClient
+    from foursight_core.app import app
+    from foursight_core.route_prefixes import ROUTE_PREFIX
+    stream = StringIO()
+    assert okta.logger is app.log
+    handlers = [handler for handler in app.log.handlers if handler is not caplog.handler]
+    assert handlers  # Actual Chalice wiring, not a mock error or root caplog handler.
+    for handler in handlers:
+        monkeypatch.setattr(handler, "stream", stream)
+    monkeypatch.setattr(app.log, "propagate", False)
+    monkeypatch.setattr(app, "core", core, raising=False)
+    path = ROUTE_PREFIX + "okta/" + operation + "?code=PRIVATE-code&state=PRIVATE-state"
+    with ChaliceClient(app) as client:
+        result = client.http.request(method, path,
+                                     headers={"host": "foursight.invalid", "origin": "http://foursight.invalid",
+                                              "content-type": "application/json", "x-private": "PRIVATE-header",
+                                              "cookie": "PRIVATE-cookie"}, body=body)
+    assert result.status_code == status
+    output = stream.getvalue()
+    assert "stage=route_" + method.lower() + " outcome=enter status=0" in output
+    assert marker in output
+    assert "PRIVATE" not in output and SECRET not in output and ISSUER not in output
+    assert "Traceback" not in output
+
+
+@pytest.mark.parametrize("disabled,origin,reason,status", [
+    (True, "https://foursight.invalid", "disabled", 404),
+    (False, "https://PRIVATE.invalid", "origin", 403)])
+def test_early_rejections_are_visible(core, monkeypatch, caplog, disabled, origin, reason, status):
+    if disabled:
+        monkeypatch.delenv("FOURSIGHT_OKTA_ISSUER")
+        monkeypatch.delenv("FOURSIGHT_OKTA_CLIENT_ID")
+    result = okta.handle(core, request(origin=origin), "session", {})
+    assert result.status_code == status
+    assert len(rejection_records(caplog)) == 1
+    assert f"reason={reason}" in rejection_records(caplog)[0].getMessage()
+    assert "PRIVATE" not in caplog.text
+
+
+def test_diagnostic_allowlists_and_elapsed_timings(monkeypatch, caplog):
+    import itertools
+    ticks = itertools.count(step=0.125)
+    monkeypatch.setattr(okta.time, "monotonic", lambda: next(ticks))
+    diagnostic = okta.Diagnostic("PRIVATE-operation", "PRIVATE-stage")
+    diagnostic.emit("PRIVATE-outcome", "PRIVATE-status", "PRIVATE-reason",
+                    type("PRIVATE-exception", (Exception,), {})("PRIVATE-message"))
+    diagnostic.stage("csrf")
+    diagnostic.response({}, 403, reason="csrf_mismatch")
+    records = [r for r in caplog.records if r.name == okta.logger.name]
+    assert len(records) == 4  # Unknown stage is not reported as a completed known stage.
+    assert "operation=unknown stage=unknown outcome=unknown status=0 exception=OtherError" in records[1].getMessage()
+    assert "elapsed_ms=250 stage_ms=125" in records[0].getMessage()
+    assert "elapsed_ms=750 stage_ms=250" in records[-1].getMessage()
+    assert all(r.exc_info is None and r.stack_info is None for r in records)
+    assert "PRIVATE" not in caplog.text
 
 
 def test_discovery_checks_issuer_and_uses_expiring_jwks_cache(monkeypatch):

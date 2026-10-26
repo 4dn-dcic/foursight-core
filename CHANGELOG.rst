@@ -6,6 +6,13 @@ foursight-core
 Change Log
 ----------
 
+5.10.5.1b6
+==========
+* Add fixed-vocabulary Okta route-entry, parsing, validation, early-rejection and
+  session diagnostics through the actual Chalice application logger, with status
+  and elapsed timings. No request, identity, secret or exception text is logged;
+  authentication behavior and all timeout/configuration policies remain unchanged.
+
 5.10.5.1b5
 ==========
 * Guard optional Auth0 portal URL construction when portal metadata is unavailable,

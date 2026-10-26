@@ -16,21 +16,27 @@ class Routes:
     @staticmethod
     @app.route(ROUTE_PREFIX + "okta/{operation}", methods=['GET'])
     def route_okta_page(operation):
-        from .react.api.okta import handle, page
-        request = app.current_request.to_dict()
-        if operation == "config":
-            return handle(app.core, request, operation)
-        if operation in ("login", "callback", "logout", "signed-out"):
-            return page(request, operation)
-        return Response(body="Not found", status_code=404)
+        from .react.api.okta import Diagnostic, handle, page
+        with Diagnostic(operation, "route_get") as diagnostic:
+            diagnostic.stage("request_parse")
+            request = app.current_request.to_dict()
+            if operation == "config":
+                return diagnostic.complete(handle(app.core, request, operation))
+            if operation in ("login", "callback", "logout", "signed-out"):
+                diagnostic.stage("page")
+                return diagnostic.complete(page(request, operation))
+            return diagnostic.complete(Response(body="Not found", status_code=404), reason="unknown_operation")
 
     @staticmethod
     @app.route(ROUTE_PREFIX + "okta/{operation}", methods=['POST'], content_types=['application/json'])
     def route_okta_session(operation):
-        from .react.api.okta import handle
-        if operation not in ("transaction", "session", "logout"):
-            return Response(body="Not found", status_code=404)
-        return handle(app.core, app.current_request.to_dict(), operation, app.current_request.json_body)
+        from .react.api.okta import Diagnostic, handle
+        with Diagnostic(operation, "route_post") as diagnostic:
+            if operation not in ("transaction", "session", "logout"):
+                return diagnostic.complete(Response(body="Not found", status_code=404), reason="unknown_operation")
+            diagnostic.stage("request_parse")
+            return diagnostic.complete(handle(app.core, app.current_request.to_dict(),
+                                              operation, app.current_request.json_body))
 
     @staticmethod
     @app.route("/callback")
