@@ -180,7 +180,7 @@ this same generated `okta-auth.js`. Do not hand-edit generated assets.
 AWS_EC2_METADATA_DISABLED=true PYTHONPATH=tests:. python -m pytest \
   --confcutdir=tests -o addopts='' -q tests/test_okta.py \
   tests/test_react_auth.py tests/test_react_auth_routes.py \
-  tests/test_cookie_utils.py tests/test_jwt_utils.py
+  tests/test_cookie_utils.py tests/test_jwt_utils.py tests/test_react_auth0_bootstrap.py
 cd react
 CI=true npm test -- --watchAll=false --runInBand src/auth/okta.test.js
 cd ..
@@ -210,8 +210,11 @@ exception described above.
 **Live acceptance still requires operator registration/configuration** above,
 a downstream app deployment, and designated tenant login/logout testing. None
 of those external configuration changes or an environment deployment is performed
-by this change. Pin **`foursight-core==5.10.5.1b4`** for explicit interactive sign-in
-and credential-free rejection classification. The immutable `5.10.5.1b3` already
+by this change. Pin **`foursight-core==5.10.5.1b5`** for the optional portal-URL
+startup guard, plus b4's explicit interactive sign-in and credential-free rejection
+classification. The guard preserves required portal mode and environment/session
+credentials; it does not repair upstream portal-health failures or prove live login
+success. The immutable `5.10.5.1b3` already
 accepts an omitted verification claim under the opt-out, but contains neither the
 interactive prompt nor rejection diagnostic. Interactive login is not a fix for a
 backend session request exceeding the existing browser budget. The earlier immutable beta `5.10.5.1b2` accepts
@@ -234,7 +237,7 @@ cd foursight-core-source
 git checkout --detach <validated-full-commit-sha>
 python -m pip wheel --no-deps --wheel-dir ../core-wheels .
 # In the downstream application's existing dependency environment:
-python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b4-py3-none-any.whl
+python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b5-py3-none-any.whl
 ```
 
 Resolve the downstream application's normal dependencies first (including its

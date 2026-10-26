@@ -6,6 +6,12 @@ foursight-core
 Change Log
 ----------
 
+5.10.5.1b5
+==========
+* Guard optional Auth0 portal URL construction when portal metadata is unavailable,
+  preventing a None dereference during application startup. Required portal mode,
+  environment/session credentials and all authentication checks remain unchanged.
+
 5.10.5.1b4
 ==========
 * Request interactive hosted Okta authentication on each deliberate React/legacy

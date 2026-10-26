@@ -45,6 +45,8 @@ PULL_AUTH0_INFO_FROM_PORTAL = False
 # Note that these Auth0 configuration parameters are NOT environment specific.
 # We ASSUME the same credentials/configuration across all environments for a deployment.
 #
+
+
 class Auth0Config:
 
     # Fallback values only because at least currently (2022-10-18) this is only returning auth0Client:
@@ -64,7 +66,10 @@ class Auth0Config:
         if not portal_url and PULL_AUTH0_INFO_FROM_PORTAL:
             raise ValueError("Portal URL required for Auth0Config usage.")
         self._portal_url = portal_url
-        self._portal_config_url = f"{portal_url}{'/' if not portal_url.endswith('/') else ''}auth0_config?format=json"
+        self._portal_config_url = (
+            f"{portal_url}{'/' if not portal_url.endswith('/') else ''}auth0_config?format=json"
+            if portal_url else None
+        )
 
     def get_portal_url(self) -> str:
         return self._portal_url
