@@ -20,6 +20,7 @@ from foursight_core.react.api.jwt_utils import jwt_decode
 ISSUER = "https://synthetic.okta.invalid/oauth2/default"
 CLIENT = "synthetic-spa"
 SECRET = "synthetic-server-signing-key-not-an-okta-client-secret"
+OMITTED = object()
 
 
 @pytest.fixture(autouse=True)
@@ -47,6 +48,7 @@ def token(key, **changes):
     claims = dict(iss=ISSUER, aud=CLIENT, sub="synthetic-user", iat=now, exp=now + 3600,
                   nonce="nonce", email="synthetic@example.invalid", email_verified=True)
     claims.update(changes)
+    claims = {name: value for name, value in claims.items() if value is not OMITTED}
     return jwt.encode(claims, key, algorithm="RS256", headers={"kid": "synthetic-key"})
 
 
@@ -187,11 +189,56 @@ def test_unverified_email_session_requires_explicit_opt_out(core, key, monkeypat
     assert "requireVerifiedEmail" not in okta.public_config(req)
 
 
-@pytest.mark.parametrize("verified", [None, "true", "false", 0, 1])
-def test_opt_out_still_requires_boolean_email_claim(key, monkeypatch, verified):
+@pytest.mark.parametrize("setting", [None, "true", "", "0", "False", "false", "typo"])
+def test_omitted_email_verified_session_requires_explicit_opt_out(core, key, monkeypatch, setting):
+    if setting is not None:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", setting)
+    req, payload = establish(core, key, email_verified=OMITTED)
+    result = okta.handle(core, req, "session", payload)
+    assert result.status_code == (200 if setting == "false" else 403)
+    if setting == "false":
+        identity = jwt_decode(cookies(result)["c4_st"].value, CLIENT, SECRET)
+        assert "email_verified" not in identity  # Never manufacture verified status.
+        auth = core._auth.decode_authtoken(cookies(result)["authtoken"].value)
+        assert auth["user_verified"] is None
+        assert auth["user"] == identity["email"] == "synthetic@example.invalid"
+    else:
+        assert result.body == {"error": "Unable to complete Okta authentication."}
+        assert "c4_st" not in cookies(result)
+        assert "authtoken" not in cookies(result)
+
+
+@pytest.mark.parametrize("verified", [
+    pytest.param(OMITTED, id="omitted"), True, False, None, "true", "false", "", 0, 1, 0.0, 1.0, [], [True], {}])
+@pytest.mark.parametrize("opt_out", [False, True])
+def test_session_email_claim_matrix(core, key, monkeypatch, verified, opt_out):
+    if opt_out:
+        monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
+    req, payload = establish(core, key, email_verified=verified)
+    result = okta.handle(core, req, "session", payload)
+    accepted = verified is True or (opt_out and (verified is False or verified is OMITTED))
+    assert result.status_code == (200 if accepted else 403)
+    if not accepted:
+        assert "c4_st" not in cookies(result)
+        assert "authtoken" not in cookies(result)
+
+
+@pytest.mark.parametrize("failure", ["issuer", "audience", "signature", "expiry", "nonce", "csrf", "email"])
+def test_omitted_email_claim_does_not_bypass_session_validation(core, key, monkeypatch, failure):
     monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
-    with pytest.raises((jwt.PyJWTError, ValueError)):
-        okta.verify_id_token(token(key, email_verified=verified), "nonce")
+    req, payload = establish(core, key, email_verified=OMITTED)
+    claims = jwt.decode(payload["idToken"], options={"verify_signature": False})
+    changes = {"issuer": {"iss": "https://other.invalid"}, "audience": {"aud": "other"},
+               "expiry": {"exp": 1}, "nonce": {"nonce": "wrong"}, "email": {"email": ""}}
+    claims.update(changes.get(failure, {}))
+    signing_key = rsa.generate_private_key(public_exponent=65537, key_size=2048) if failure == "signature" else key
+    payload["idToken"] = jwt.encode(claims, signing_key, algorithm="RS256")
+    if failure == "csrf":
+        payload["csrf"] = "wrong"
+    result = okta.handle(core, req, "session", payload)
+    assert result.status_code == 403
+    assert "c4_st" not in cookies(result)
+    assert "authtoken" not in cookies(result)
 
 
 @pytest.mark.parametrize("opt_out", [False, True])
@@ -206,6 +253,9 @@ def test_wrong_signature_algorithm_and_missing_claims(key, monkeypatch, opt_out)
     claims = jwt.decode(token(key), options={"verify_signature": False})
     for name in ("nonce", "email", "email_verified"):
         missing = {k: v for k, v in claims.items() if k != name}
+        if name == "email_verified" and opt_out:
+            assert "email_verified" not in okta.verify_id_token(jwt.encode(missing, key, algorithm="RS256"), "nonce")
+            continue
         with pytest.raises(jwt.MissingRequiredClaimError):
             okta.verify_id_token(jwt.encode(missing, key, algorithm="RS256"), "nonce")
 
@@ -219,9 +269,9 @@ def test_csrf_origin_rejected(core, origin, monkeypatch, opt_out):
         assert okta.handle(core, request(origin=origin), operation, {}).status_code == 403
 
 
-@pytest.mark.parametrize("verified", [True, False])
+@pytest.mark.parametrize("verified", [True, False, pytest.param(OMITTED, id="omitted")])
 def test_backend_session_both_ui_contracts_and_warm_restoration(core, key, monkeypatch, verified):
-    if not verified:
+    if verified is not True:
         monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
     req, payload = establish(core, key, email_verified=verified)
     result = okta.handle(core, req, "session", payload)
@@ -231,8 +281,9 @@ def test_backend_session_both_ui_contracts_and_warm_restoration(core, key, monke
     assert jar["c4_st"]["samesite"] == "Lax"
     assert payload["idToken"] not in str(result.body) + str(result.headers)
     identity = jwt_decode(jar["c4_st"].value, CLIENT, SECRET)
-    assert identity["email_verified"] is verified
-    assert core._auth.decode_authtoken(jar["authtoken"].value)["user_verified"] is verified
+    expected_verified = None if verified is OMITTED else verified
+    assert identity.get("email_verified") is expected_verified
+    assert core._auth.decode_authtoken(jar["authtoken"].value)["user_verified"] is expected_verified
     assert identity["sub"] == "okta|synthetic-user"
     req["headers"]["cookie"] = "; ".join(f"{name}={jar[name].value}" for name in ("c4_st", "authtoken"))
     assert core._auth.authorize(req, "allowed")["authorized"] is True
@@ -256,7 +307,7 @@ def test_backend_session_both_ui_contracts_and_warm_restoration(core, key, monke
 def test_session_requires_matching_transaction_and_nonce(core, key, monkeypatch, opt_out):
     if opt_out:
         monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
-    req, payload = establish(core, key, email_verified=not opt_out)
+    req, payload = establish(core, key, email_verified=OMITTED if opt_out else True)
     assert okta.handle(core, request(), "session", payload).status_code == 403
     assert okta.handle(core, req, "session", dict(payload, csrf="wrong")).status_code == 403
     assert okta.handle(core, req, "session", dict(payload, idToken=token(key))).status_code == 403
@@ -265,7 +316,7 @@ def test_session_requires_matching_transaction_and_nonce(core, key, monkeypatch,
     assert okta.handle(core, req, "session", payload).status_code == 403
 
 
-@pytest.mark.parametrize("verified", [True, False])
+@pytest.mark.parametrize("verified", [True, False, pytest.param(OMITTED, id="omitted")])
 def test_redis_session_and_logout_preserve_namespace_and_ttl(core, key, monkeypatch, verified):
     from dcicutils.redis_utils import RedisBase
     from dcicutils.redis_tools import RedisSessionToken
@@ -276,7 +327,7 @@ def test_redis_session_and_logout_preserve_namespace_and_ttl(core, key, monkeypa
     redis.ttl.return_value = 10800
     redis.delete.side_effect = lambda name: storage.pop(name, None)
     core._auth._redis = redis
-    if not verified:
+    if verified is not True:
         monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
     req, payload = establish(core, key, email_verified=verified)
     result = okta.handle(core, req, "session", payload)
@@ -300,9 +351,9 @@ def test_errors_do_not_reflect_credentials(core, key):
     assert result.headers["Cache-Control"] == "no-store"
 
 
-@pytest.mark.parametrize("verified", [True, False])
+@pytest.mark.parametrize("verified", [True, False, pytest.param(OMITTED, id="omitted")])
 def test_no_role_grants_for_unknown_user(core, key, monkeypatch, verified):
-    if not verified:
+    if verified is not True:
         monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
     core._auth._envs.get_user_auth_info = lambda email: ([], None, None)
     req, payload = establish(core, key, email_verified=verified)
@@ -313,9 +364,9 @@ def test_no_role_grants_for_unknown_user(core, key, monkeypatch, verified):
     assert claims["authenticated_until"] == jwt.decode(payload["idToken"], options={"verify_signature": False})["exp"]
 
 
-@pytest.mark.parametrize("verified", [True, False])
+@pytest.mark.parametrize("verified", [True, False, pytest.param(OMITTED, id="omitted")])
 def test_legacy_portal_role_policy_unchanged(core, key, monkeypatch, verified):
-    if not verified:
+    if verified is not True:
         monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
     req, payload = establish(core, key, email_verified=verified)
     result = okta.handle(core, req, "session", payload)
@@ -329,7 +380,7 @@ def test_legacy_portal_role_policy_unchanged(core, key, monkeypatch, verified):
     for groups, permitted in [([], False), (["user"], False), (["foursight"], True), (["admin"], True)]:
         monkeypatch.setattr("foursight_core.app_utils.ff_utils.get_metadata", lambda *a, **kw: {"groups": groups})
         assert legacy.check_authorization(req, "allowed") is permitted
-    if not verified:
+    if verified is not True:
         # An Okta-only exception must not relax the existing Auth0 email gate.
         identity = jwt_decode(cookies(result)["c4_st"].value, CLIENT, SECRET)
         legacy.get_decoded_jwt_token = lambda *args: dict(identity, sub="auth0|synthetic-user")

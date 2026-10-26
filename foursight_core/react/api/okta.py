@@ -89,10 +89,10 @@ def jwks_client(issuer):
 def email_is_acceptable(claims):
     """Shared Okta email policy; only the exact deployment value 'false' opts out.
 
-    Keep the provider's boolean claim intact, including in Foursight sessions.
+    Omission is unverified, not malformed; preserve it in Foursight sessions.
     Call only for verified Okta tokens or their signed, normalized identities.
     """
-    verified = claims.get("email_verified")
+    verified = claims.get("email_verified", False)
     return verified is True or (
         verified is False and os.environ.get("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL") == "false")
 
@@ -105,9 +105,11 @@ def verify_id_token(token, nonce):
     if header.get("alg") != "RS256" or header.get("typ", "JWT") != "JWT":
         raise ValueError("Invalid ID token type")
     key = jwks_client(config["issuer"]).get_signing_key_from_jwt(token).key
+    required_claims = ["iss", "aud", "sub", "iat", "exp", "nonce", "email"]
+    if not email_is_acceptable({}):  # Strict policy requires the claim as well as boolean true.
+        required_claims.append("email_verified")
     claims = jwt.decode(token, key, algorithms=["RS256"], audience=config["clientId"],
-                        issuer=config["issuer"], options={"require": [
-                            "iss", "aud", "sub", "iat", "exp", "nonce", "email", "email_verified"]})
+                        issuer=config["issuer"], options={"require": required_claims})
     # Okta access tokens carry scp/cid and target a resource audience, not this SPA.
     # Require the single client audience and nonce even if a resource is misconfigured.
     if (claims.get("aud") != config["clientId"] or "scp" in claims or "cid" in claims
@@ -179,9 +181,11 @@ def handle(core, request, operation, body=None):
         if not isinstance(csrf, str) or not hmac.compare_digest(csrf, transaction["csrf"]):
             raise ValueError("Invalid transaction")
         claims = verify_id_token(body.get("idToken"), transaction["nonce"])
-        # Normalize only validated identity claims; preserve the email_verified flag.
+        # Normalize only validated identity claims; never invent a verification flag.
         # Expiry is the provider expiry, never a fresh sliding lifetime.
-        identity = {key: claims[key] for key in ("sub", "email", "email_verified", "iat", "exp")}
+        identity = {key: claims[key] for key in ("sub", "email", "iat", "exp")}
+        if "email_verified" in claims:
+            identity["email_verified"] = claims["email_verified"]
         identity["sub"] = "okta|" + identity["sub"]
         signed = jwt_encode(identity, core._auth0_config.get_client(), secret)
         domain = request["headers"]["host"]

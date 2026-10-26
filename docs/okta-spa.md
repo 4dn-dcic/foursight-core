@@ -17,7 +17,7 @@ names; no new Secrets Manager lookup happens on a login request.
 | `FOURSIGHT_OKTA_ISSUER` | Exact HTTPS issuer, **no trailing slash**, e.g. `https://example.okta.com/oauth2/default` or the org issuer `https://example.okta.com`. |
 | `FOURSIGHT_OKTA_CLIENT_ID` | Public SPA application's client ID. |
 | `FOURSIGHT_OKTA_SCOPES` | Space-separated scopes; default `openid email profile`. Must include `openid email`. `offline_access` is deliberately not supported: this flow does not introduce refresh/renewal policy. |
-| `FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL` | Server-only policy, enforced by default. Only the exact string `false` permits an Okta ID token with boolean `email_verified: false`; missing/malformed claims still fail. See the temporary exception below. |
+| `FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL` | Server-only policy, enforced by default. Only the exact string `false` permits an Okta ID token with boolean `email_verified: false` or an omitted verification claim; malformed values still fail. See the temporary exception below. |
 | `FOURSIGHT_SESSION_SECRET` | Server-only signing key for the existing HMAC session contract, needed only when the existing `CLIENT_SECRET` / `ENCODED_AUTH0_SECRET` is absent. Use an independently generated high-entropy application signing key, **not an Okta client secret**. Never expose it to the browser. |
 
 Existing Auth0 session-signing credentials take precedence when present, so
@@ -46,9 +46,10 @@ not opt out. This does not require changing the Okta application's claims.
 
 The exception is owned by the shared backend and applies to both React session
 establishment and legacy authorization of signed `okta|` identities. It accepts
-only boolean `email_verified: false`, never absent, null, numeric or string
-claims. The original flag remains false in session/UI data; it is not rewritten
-as verified. This temporarily trusts the issuer's unverified email for the
+boolean `email_verified: false` or an omitted verification claim, but never null,
+numeric, string, array or object values. A usable email is still required. False
+remains false and omission remains absent in the signed identity; neither is
+represented as verified in either UI. This temporarily trusts the issuer's unverified email for the
 **existing email-based account lookup**, so restrict it to the intended test
 deployment and remove it after testing. It neither provisions accounts nor
 changes environment/group grants, Auth0/Cognito behavior, or other token,
@@ -200,9 +201,10 @@ exception described above.
 **Live acceptance still requires operator registration/configuration** above,
 a downstream app deployment, and designated tenant login/logout testing. None
 of those external configuration changes or an environment deployment is performed
-by this change. Pin the integration-test beta **`foursight-core==5.10.5.1b2`**
-for the verified-email opt-out. The earlier published beta `5.10.5.1b1` remains
-immutable and does **not** contain that exception. Rollback of the provider selection is removal of both Okta
+by this change. The published integration-test beta **`foursight-core==5.10.5.1b2`**
+supports the opt-out for boolean false only. The omitted-claim correction is a
+source-only continuation and is **not** in that immutable beta; no new release
+or deployment is implied here. The earlier beta `5.10.5.1b1` has no opt-out. Rollback of the provider selection is removal of both Okta
 issuer/client settings while retaining existing Auth0/Cognito configuration;
 normal session expiry and signing-key policy continue to apply.
 
