@@ -37,8 +37,23 @@ _DIAGNOSTIC_EXCEPTIONS = frozenset({
     "InvalidAlgorithmError", "MissingRequiredClaimError", "InvalidKeyError", "InvalidSubjectError",
     "PyJWKClientError", "PyJWKClientConnectionError", "PyJWKError", "PyJWKSetError",
     "ConnectionError", "ConnectionTimeout", "Timeout", "TimeoutError", "ReadTimeout",
-    "ConnectTimeout", "SSLError", "HTTPError", "URLError", "RedisException", "ClientError"
+    "ConnectTimeout", "SSLError", "HTTPError", "URLError", "RedisException", "ClientError",
+    "OktaValidationError"
 })
+_DIAGNOSTIC_REASONS = frozenset({
+    "configuration", "discovery_metadata", "id_token_input", "token_header", "token_audience",
+    "token_type", "token_authorized_party", "token_nonce", "token_lifetime", "email_policy",
+    "email_identity", "token_subject", "session_store_unavailable", "missing_session_signing_key",
+    "invalid_request", "csrf_mismatch"
+})
+
+
+class OktaValidationError(ValueError):
+    """An existing ValueError rejection with a fixed, credential-free reason."""
+
+    def __init__(self, reason, message):
+        super().__init__(message)
+        self.reason = reason
 
 
 def settings():
@@ -52,7 +67,7 @@ def settings():
     if (parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password
             or parsed.query or parsed.fragment or issuer.endswith("/") or not client
             or not {"openid", "email"}.issubset(scopes) or "offline_access" in scopes):
-        raise ValueError("Invalid Okta SPA configuration")
+        raise OktaValidationError("configuration", "Invalid Okta SPA configuration")
     return {"issuer": issuer, "clientId": client, "scopes": scopes}
 
 
@@ -95,7 +110,7 @@ def jwks_client(issuer):
     keys = urlsplit(metadata.get("jwks_uri", ""))
     if (metadata.get("issuer") != issuer or keys.scheme != "https" or not keys.hostname
             or keys.username or keys.password or keys.fragment):
-        raise ValueError("Invalid Okta discovery")
+        raise OktaValidationError("discovery_metadata", "Invalid Okta discovery")
     # No indefinite per-key cache: key withdrawal is bounded by the JWKS-set TTL.
     return jwt.PyJWKClient(metadata["jwks_uri"], timeout=5, lifespan=300, cache_keys=False)
 
@@ -114,10 +129,10 @@ def email_is_acceptable(claims):
 def verify_id_token(token, nonce):
     config = settings()
     if not config or not isinstance(token, str) or len(token) > 20000:
-        raise ValueError("Invalid ID token")
+        raise OktaValidationError("id_token_input", "Invalid ID token")
     header = jwt.get_unverified_header(token)
     if header.get("alg") != "RS256" or header.get("typ", "JWT") != "JWT":
-        raise ValueError("Invalid ID token type")
+        raise OktaValidationError("token_header", "Invalid ID token type")
     key = jwks_client(config["issuer"]).get_signing_key_from_jwt(token).key
     required_claims = ["iss", "aud", "sub", "iat", "exp", "nonce", "email"]
     if not email_is_acceptable({}):  # Strict policy requires the claim as well as boolean true.
@@ -126,15 +141,25 @@ def verify_id_token(token, nonce):
                         issuer=config["issuer"], options={"require": required_claims})
     # Okta access tokens carry scp/cid and target a resource audience, not this SPA.
     # Require the single client audience and nonce even if a resource is misconfigured.
-    if (claims.get("aud") != config["clientId"] or "scp" in claims or "cid" in claims
-            or claims.get("token_use", "id") != "id"
-            or claims.get("azp", config["clientId"]) != config["clientId"]
-            or not isinstance(claims.get("nonce"), str) or not hmac.compare_digest(claims["nonce"], nonce)
-            or type(claims.get("iat")) is not int or type(claims.get("exp")) is not int
-            or claims["exp"] <= claims["iat"]
-            or not email_is_acceptable(claims) or not isinstance(claims.get("email"), str)
-            or not claims["email"].strip() or not isinstance(claims.get("sub"), str) or not claims["sub"]):
-        raise ValueError("Invalid ID token claims")
+    # Preserve the original rejection order/conditions; split only to classify
+    # the known failing boundary without logging any claim name or value.
+    if claims.get("aud") != config["clientId"]:
+        raise OktaValidationError("token_audience", "Invalid ID token claims")
+    if "scp" in claims or "cid" in claims or claims.get("token_use", "id") != "id":
+        raise OktaValidationError("token_type", "Invalid ID token claims")
+    if claims.get("azp", config["clientId"]) != config["clientId"]:
+        raise OktaValidationError("token_authorized_party", "Invalid ID token claims")
+    if not isinstance(claims.get("nonce"), str) or not hmac.compare_digest(claims["nonce"], nonce):
+        raise OktaValidationError("token_nonce", "Invalid ID token claims")
+    if (type(claims.get("iat")) is not int or type(claims.get("exp")) is not int
+            or claims["exp"] <= claims["iat"]):
+        raise OktaValidationError("token_lifetime", "Invalid ID token claims")
+    if not email_is_acceptable(claims):
+        raise OktaValidationError("email_policy", "Invalid ID token claims")
+    if not isinstance(claims.get("email"), str) or not claims["email"].strip():
+        raise OktaValidationError("email_identity", "Invalid ID token claims")
+    if not isinstance(claims.get("sub"), str) or not claims["sub"]:
+        raise OktaValidationError("token_subject", "Invalid ID token claims")
     return claims
 
 
@@ -154,7 +179,7 @@ def response(body, status=200, cookies=None):
 def session_store(core):
     redis = core._auth.get_redis_handler()
     if os.environ.get("REDIS_HOST") and not redis:
-        raise ValueError("Session store unavailable")
+        raise OktaValidationError("session_store_unavailable", "Session store unavailable")
     return redis
 
 
@@ -183,7 +208,7 @@ def handle(core, request, operation, body=None):
         stage = "session_configuration"
         secret = core._auth0_config.get_secret()
         if not secret:
-            raise ValueError("No server session signing key")
+            raise OktaValidationError("missing_session_signing_key", "No server session signing key")
         if operation == "transaction":
             stage = "transaction_create"
             now = int(time.time())
@@ -194,23 +219,24 @@ def handle(core, request, operation, body=None):
                             cookies=[cookie(request, TRANSACTION_COOKIE, encoded, now + 600)])
         stage = "request"
         if operation != "session" or not isinstance(body, dict):
-            raise ValueError("Invalid request")
+            raise OktaValidationError("invalid_request", "Invalid request")
         stage = "transaction_verify"
         transaction = jwt.decode(read_cookie(request, TRANSACTION_COOKIE), secret, algorithms=["HS256"],
                                  audience=TRANSACTION_AUDIENCE, options={"require": ["exp", "nonce", "csrf"]})
         stage = "csrf"
         csrf = body.get("csrf")
         if not isinstance(csrf, str) or not hmac.compare_digest(csrf, transaction["csrf"]):
-            raise ValueError("Invalid transaction")
+            raise OktaValidationError("csrf_mismatch", "Invalid transaction")
         stage = "id_token_verify"
         claims = verify_id_token(body.get("idToken"), transaction["nonce"])
-        stage = "session_sign"
+        stage = "identity_normalize"
         # Normalize only validated identity claims; never invent a verification flag.
         # Expiry is the provider expiry, never a fresh sliding lifetime.
         identity = {key: claims[key] for key in ("sub", "email", "iat", "exp")}
         if "email_verified" in claims:
             identity["email_verified"] = claims["email_verified"]
         identity["sub"] = "okta|" + identity["sub"]
+        stage = "session_sign"
         signed = jwt_encode(identity, core._auth0_config.get_client(), secret)
         domain = request["headers"]["host"]
         stage = "authtoken_create"
@@ -236,7 +262,10 @@ def handle(core, request, operation, body=None):
         if exception not in _DIAGNOSTIC_EXCEPTIONS:
             exception = "OtherError"
         reason = "unspecified"
-        if isinstance(error, jwt.MissingRequiredClaimError):
+        if (isinstance(error, OktaValidationError) and isinstance(error.reason, str)
+                and error.reason in _DIAGNOSTIC_REASONS):
+            reason = error.reason
+        elif isinstance(error, jwt.MissingRequiredClaimError):
             reason = "missing_email_verified" if error.claim == "email_verified" else "missing_required_claim"
         logger.warning("Okta authentication rejected: stage=%s exception=%s reason=%s", stage, exception, reason)
         # Never reflect IdP errors, tokens, codes, claim values or exception text.

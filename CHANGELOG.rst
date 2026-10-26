@@ -11,7 +11,7 @@ Change Log
 * Request interactive hosted Okta authentication on each deliberate React/legacy
   sign-in, even with an existing portal SSO session; restoration and logout are unchanged.
 * Classify caught authentication rejections by fixed stage, allowlisted exception
-  class and fixed missing-claim reason only. Public errors stay generic; no token,
+  class and fixed known-rejection reason only. Public errors stay generic; no token,
   identity, request data, exception message or traceback is added to these logs.
   Existing validation, authorization and timeout policies are unchanged.
 

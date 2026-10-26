@@ -159,7 +159,8 @@ outside local HTTP development. React's existing readable, signed `authtoken`
 format is retained. Callback query parameters are removed promptly; errors are
 fixed text, never provider exception text. Caught backend rejections log only a
 fixed stage, allowlisted exception class (`OtherError` for unknown classes), and
-fixed reason (`missing_email_verified`, `missing_required_claim`, or `unspecified`).
+fixed reason for known validation failures (for example `token_nonce`, `email_policy`,
+`csrf_mismatch`, or `missing_email_verified`; unknown failures use `unspecified`).
 No exception message/traceback, arbitrary claim name, identity or request data is
 added to this diagnostic. Successful sessions do not emit rejection diagnostics.
 Browser HTTP requests (including

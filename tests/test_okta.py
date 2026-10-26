@@ -422,19 +422,21 @@ def test_cold_worker_and_unavailable_redis_fail_closed(core, key, monkeypatch):
     assert cookies(logout)["authtoken"].value == ""
 
 
-@pytest.mark.parametrize("failure,stage,exception", [
-    ("secret", "session_configuration", "ValueError"),
-    ("body", "request", "ValueError"),
-    ("cookie", "transaction_verify", "DecodeError"),
-    ("csrf", "csrf", "ValueError"),
-    ("jwks", "id_token_verify", "PyJWKClientConnectionError"),
-    ("sign", "session_sign", "RuntimeError"),
-    ("authtoken", "authtoken_create", "RuntimeError"),
-    ("redis", "session_store", "ConnectionError"),
-    ("response", "response", "ValueError"),
-    ("custom-exception", "id_token_verify", "OtherError")])
+@pytest.mark.parametrize("failure,stage,exception,reason", [
+    ("secret", "session_configuration", "OktaValidationError", "missing_session_signing_key"),
+    ("body", "request", "OktaValidationError", "invalid_request"),
+    ("cookie", "transaction_verify", "DecodeError", "unspecified"),
+    ("csrf", "csrf", "OktaValidationError", "csrf_mismatch"),
+    ("jwks", "id_token_verify", "PyJWKClientConnectionError", "unspecified"),
+    ("normalize", "identity_normalize", "KeyError", "unspecified"),
+    ("sign", "session_sign", "RuntimeError", "unspecified"),
+    ("authtoken", "authtoken_create", "RuntimeError", "unspecified"),
+    ("redis", "session_store", "ConnectionError", "unspecified"),
+    ("response", "response", "ValueError", "unspecified"),
+    ("custom-exception", "id_token_verify", "OtherError", "unspecified"),
+    ("custom-reason", "id_token_verify", "OktaValidationError", "unspecified")])
 def test_rejection_diagnostic_stages_never_log_sensitive_data(
-        core, key, monkeypatch, caplog, failure, stage, exception):
+        core, key, monkeypatch, caplog, failure, stage, exception, reason):
     sentinel = "PRIVATE-identity-code-token-cookie-header-endpoint-secret"
     req, payload = establish(core, key, email=sentinel + "@example.invalid")
     req["headers"]["x-sensitive-fixture"] = sentinel
@@ -452,6 +454,10 @@ def test_rejection_diagnostic_stages_never_log_sensitive_data(
         error = (jwt.PyJWKClientConnectionError(sentinel) if failure == "jwks"
                  else type(sentinel, (Exception,), {})(sentinel))
         monkeypatch.setattr(okta, "jwks_client", Mock(side_effect=error))
+    elif failure == "custom-reason":
+        monkeypatch.setattr(okta, "verify_id_token", Mock(side_effect=okta.OktaValidationError(sentinel, sentinel)))
+    elif failure == "normalize":
+        monkeypatch.setattr(okta, "verify_id_token", lambda *args: {})
     elif failure == "sign":
         monkeypatch.setattr(okta, "jwt_encode", Mock(side_effect=RuntimeError(sentinel)))
     elif failure == "authtoken":
@@ -475,13 +481,38 @@ def test_rejection_diagnostic_stages_never_log_sensitive_data(
     records = [record for record in caplog.records if record.name == okta.__name__]
     assert len(records) == 1
     assert records[0].getMessage() == (
-        f"Okta authentication rejected: stage={stage} exception={exception} reason=unspecified")
+        f"Okta authentication rejected: stage={stage} exception={exception} reason={reason}")
     assert records[0].exc_info is None and records[0].stack_info is None
     for private in (sentinel, SECRET, "synthetic@example.invalid", "https://synthetic.okta.invalid"):
         assert private not in caplog.text
     assert "Traceback" not in caplog.text
     if isinstance(payload, dict):
         assert payload["idToken"] not in caplog.text
+
+
+@pytest.mark.parametrize("changes,reason", [
+    ({"aud": [CLIENT, "resource"]}, "token_audience"),
+    ({"scp": ["openid"]}, "token_type"),
+    ({"cid": CLIENT}, "token_type"),
+    ({"token_use": "access"}, "token_type"),
+    ({"azp": "PRIVATE-other-client"}, "token_authorized_party"),
+    ({"nonce": "PRIVATE-wrong-nonce"}, "token_nonce"),
+    ({"iat": str(int(time.time()))}, "token_lifetime"),
+    ({"email_verified": False}, "email_policy"),
+    ({"email_verified": "PRIVATE-malformed"}, "email_policy"),
+    ({"email": ""}, "email_identity"),
+    ({"sub": ""}, "token_subject")])
+def test_known_claim_rejections_have_safe_specific_reasons(core, key, caplog, changes, reason):
+    req, payload = establish(core, key, **{name: value for name, value in changes.items() if name != "nonce"})
+    if "nonce" in changes:
+        payload["idToken"] = token(key, **changes)
+    caplog.clear()
+    result = okta.handle(core, req, "session", payload)
+    assert result.status_code == 403
+    assert result.body == {"error": "Unable to complete Okta authentication."}
+    assert [record.getMessage() for record in caplog.records if record.name == okta.__name__] == [
+        f"Okta authentication rejected: stage=id_token_verify exception=OktaValidationError reason={reason}"]
+    assert "PRIVATE" not in caplog.text and payload["idToken"] not in caplog.text
 
 
 @pytest.mark.parametrize("claim,reason", [
