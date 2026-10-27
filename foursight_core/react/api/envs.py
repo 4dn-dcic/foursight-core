@@ -237,11 +237,13 @@ class Envs:
     def _env_is_value(env: dict, value: str) -> bool:
         if isinstance(env, dict) and isinstance(value, str):
             value = value.lower()
-            if ((env.get("name").lower() == value) or
+            if (
+                (env.get("name").lower() == value) or
                 (env.get("short_name").lower() == value) or
                 (env.get("full_name").lower() == value) or
                 (env.get("public_name").lower() == value) or
-                (env.get("foursight_name").lower() == value)):
+                (env.get("foursight_name").lower() == value)
+            ):
                 return True
         return False
 

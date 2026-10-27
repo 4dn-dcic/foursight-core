@@ -15,7 +15,6 @@ import os
 from os.path import dirname
 import pkg_resources
 import platform
-import pytz
 import requests
 import socket
 import sys
@@ -283,7 +282,7 @@ class AppUtilsCore(ReactApi, Routes):
         user_record["error"] = error
         user_record["exception"] = exception
 
-    @function_cache(key=lambda self, env_name, raise_exception = False: env_name, nocache=None)
+    @function_cache(key=lambda self, env_name, raise_exception=False: env_name, nocache=None)
     def get_portal_url(self, env_name: str, raise_exception: bool = False) -> Optional[str]:
         try:
             environment_and_bucket_info = (
@@ -318,7 +317,8 @@ class AppUtilsCore(ReactApi, Routes):
                 self.auth0_client_id = response.get("auth0Client", auth0_client_id_fallback)
             except Exception as e:
                 # TODO: Fallback behavior to old hardcoded value (previously in templates/header.html).
-                logger.error(f"Error fetching Auth0 client ID from portal ({auth0_config_url}); using default value: {e}")
+                logger.error(
+                    f"Error fetching Auth0 client ID from portal ({auth0_config_url}); using default value: {e}")
         logger.warning(f"Done fetching Auth0 client ID from portal ({auth0_config_url}): {self.auth0_client_id}")
         return self.auth0_client_id or auth0_client_id_fallback
 
@@ -392,8 +392,10 @@ class AppUtilsCore(ReactApi, Routes):
                     logger.warning(user_res)
                     groups = user_res.get('groups')
                     if not groups:
-                        logger.warning("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
-                        self.set_user_record(email=jwt_decoded.get('email'), record=None, error="nogroups", exception=None)
+                        logger.warning("foursight_core.check_authorization: "
+                                       "No 'groups' element for user record! Returning False.")
+                        self.set_user_record(email=jwt_decoded.get('email'), record=None,
+                                             error="nogroups", exception=None)
                         # self.user_record = None
                         # self.user_record_error = "nogroups"
                         # self.user_record_error_email = jwt_decoded.get('email')
@@ -404,7 +406,8 @@ class AppUtilsCore(ReactApi, Routes):
                     if not (('admin' in user_res['groups'] or 'foursight' in user_res['groups']) and email_acceptable):
                         logger.error("foursight_core.check_authorization: Returning False")
                         # if unauthorized for one, unauthorized for all
-                        self.set_user_record(email=jwt_decoded.get('email'), record=None, error="noadmin", exception=None)
+                        self.set_user_record(email=jwt_decoded.get('email'), record=None,
+                                             error="noadmin", exception=None)
                         # self.user_record = None
                         # self.user_record_error = "noadmin"
                         # self.user_record_error_email = jwt_decoded.get('email')
@@ -451,7 +454,7 @@ class AppUtilsCore(ReactApi, Routes):
             redir_url_cookie = simple_cookies.get("redir")
             if redir_url_cookie:
                 redir_url = redir_url_cookie
-        except Exception as e:
+        except Exception:
             logger.error("Exception loading cookies: {cookies} - {get_error_message(e)}")
 
         resp_headers = {'Location': redir_url}
@@ -1698,12 +1701,15 @@ class AppUtilsCore(ReactApi, Routes):
         Returns:
             dict: runner input of queued messages, used for testing
         """
-        logger.warning(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
+        logger.warning(f"queue_scheduled_checks: sched_environ={sched_environ} "
+                       f"schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
         logger.warning(f"queue_scheduled_checks: queue={queue}")
         if schedule_name is not None:
             logger.warning(f"queue_scheduled_checks: have schedule_name")
-            logger.warning(f"queue_scheduled_checks: environment.is_valid_environment_name(sched_environ, or_all=True)={self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
+            logger.warning("queue_scheduled_checks: "
+                           "environment.is_valid_environment_name(sched_environ, or_all=True)="
+                           f"{self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
             if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
                 logger.warning(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
@@ -2001,10 +2007,10 @@ class AppUtilsCore(ReactApi, Routes):
                                           params=action_params, uuid=run_uuid)
                     except Exception as exc:
                         logger.warning('-RUN-> Could not queue action %s on stage %s with kwargs: %s. Error: %s'
-                              % (run_result['action'], stage, action_params, str(exc)))
+                                       % (run_result['action'], stage, action_params, str(exc)))
                     else:
                         logger.warning('-RUN-> Queued action %s on stage %s with kwargs: %s'
-                              % (run_result['action'], stage, action_params))
+                                       % (run_result['action'], stage, action_params))
             logger.warning(f'-RUN-> Finished: {run_name}')
             self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return run_result
