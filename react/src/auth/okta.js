@@ -1,6 +1,68 @@
-import { OktaAuth } from '@okta/okta-auth-js';
+import { OktaAuth, AuthSdkError, AuthApiError, OAuthError } from '@okta/okta-auth-js';
 
 const TRANSACTION = 'foursight-okta-transaction';
+
+const DIAGNOSTIC_STAGES = new Set([
+    'config_fetch', 'config_parse', 'sdk_init', 'logout', 'login_transaction', 'login_redirect',
+    'bridge_read', 'bridge_check', 'sdk_parse', 'id_token_check', 'session_submit', 'session_store', 'return'
+]);
+// Exact static literals from pinned SDK 7.14.5 only. Never extract fragments of
+// dynamic messages (issuer/audience errors can contain identity/claim values).
+const SDK_REASONS = new Map([
+    ["OAuth flow response state doesn't match request state", 'sdk_state_mismatch'],
+    ['Could not load PKCE codeVerifier from storage. This may indicate the auth flow has already completed or multiple auth flows are executing concurrently.', 'sdk_pkce_missing'],
+    ['Unable to retrieve OAuth redirect params from storage', 'sdk_redirect_missing'],
+    ["OAuth flow response nonce doesn't match request nonce", 'sdk_nonce_mismatch'],
+    ['The token signature is not valid', 'sdk_signature_invalid'],
+    ['Token hash verification failed', 'sdk_token_hash_invalid'],
+    ['The JWT expired and is no longer valid', 'sdk_expired'],
+    ['The JWT was issued in the future', 'sdk_issued_future'],
+    ['The JWT expired before it was issued', 'sdk_lifetime_invalid']
+]);
+const OAUTH_REASONS = new Map([
+    ['access_denied', 'oauth_access_denied'], ['invalid_grant', 'oauth_invalid_grant'],
+    ['invalid_client', 'oauth_invalid_client'], ['invalid_request', 'oauth_invalid_request'],
+    ['login_required', 'oauth_login_required'], ['interaction_required', 'oauth_interaction_required']
+]);
+const CLIENT_REASONS = new Set([
+    'bridge_transaction_missing', 'redirect_not_recognized', 'id_token_missing', 'id_token_pending_remove',
+    'bridge_nonce_mismatch', 'session_transport', 'session_timeout', 'session_http', 'session_invalid_json'
+]);
+const DIAGNOSTIC_REASONS = new Set([...SDK_REASONS.values(), ...OAUTH_REASONS.values(), ...CLIENT_REASONS]);
+const DIAGNOSTIC_CLASSES = new Set(['AuthSdkError', 'AuthApiError', 'OAuthError']);
+
+export function createDiagnostic() {
+    return { stage: 'config_fetch', exception: 'unknown', reason: 'unknown', captured: false };
+}
+
+export function captureDiagnostic(diagnostic, error) {
+    // Preserve the original classification when the entrypoint catches our
+    // generic rethrow, or if cleanup itself fails. Keep no reference to error.
+    if (diagnostic.captured) return;
+    diagnostic.captured = true;
+    diagnostic.exception = 'unknown';
+    const knownGuard = CLIENT_REASONS.has(diagnostic.reason) ? diagnostic.reason : 'unknown';
+    diagnostic.reason = 'unknown';
+    if (error instanceof AuthSdkError) {
+        diagnostic.exception = 'AuthSdkError';
+        diagnostic.reason = SDK_REASONS.get(error.message) || 'unknown';
+    } else if (error instanceof OAuthError) {
+        diagnostic.exception = 'OAuthError';
+        diagnostic.reason = OAUTH_REASONS.get(error.errorCode) || 'unknown';
+    } else if (error instanceof AuthApiError) {
+        diagnostic.exception = 'AuthApiError';
+    }
+    if (knownGuard !== 'unknown') diagnostic.reason = knownGuard;
+}
+
+export function formatDiagnostic(diagnostic) {
+    // Re-allowlist at the presentation boundary; never stringify an error or
+    // arbitrary field, even if a caller supplied a malformed diagnostic object.
+    const stage = DIAGNOSTIC_STAGES.has(diagnostic.stage) ? diagnostic.stage : 'unknown';
+    const exception = DIAGNOSTIC_CLASSES.has(diagnostic.exception) ? diagnostic.exception : 'unknown';
+    const reason = DIAGNOSTIC_REASONS.has(diagnostic.reason) ? diagnostic.reason : 'unknown';
+    return `stage=${stage} class=${exception} reason=${reason}`;
+}
 
 // Restrict navigation to UI routes in this deployment, never an auth endpoint.
 export function safeReturn(value, base, fallback = `${base}/react`) {
@@ -20,14 +82,22 @@ export function safeReturn(value, base, fallback = `${base}/react`) {
 }
 
 // Abort covers the response body too, not just receipt of HTTP headers.
-export async function fetchBounded(url, options = {}, timeout = 15000) {
+export async function fetchBounded(url, options = {}, timeout = 15000, diagnostic) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
         const result = await fetch(url, { ...options, signal: controller.signal });
         const text = await result.text();
-        if (!result.ok) throw new Error('Authentication request failed');
+        if (!result.ok) {
+            if (diagnostic) diagnostic.reason = 'session_http';
+            throw new Error('Authentication request failed');
+        }
         return { result, text };
+    } catch (error) {
+        if (diagnostic && diagnostic.reason === 'unknown') {
+            diagnostic.reason = controller.signal.aborted ? 'session_timeout' : 'session_transport';
+        }
+        throw error;
     } finally { clearTimeout(timer); }
 }
 
@@ -56,12 +126,16 @@ export function createClient(config) {
     });
 }
 
-async function api(base, operation, body) {
+async function api(base, operation, body, diagnostic) {
     const { text } = await fetchBounded(`${base}/okta/${operation}`, {
         method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body || {})
-    });
-    return JSON.parse(text);
+    }, 15000, diagnostic);
+    try { return JSON.parse(text); }
+    catch (error) {
+        if (diagnostic) diagnostic.reason = 'session_invalid_json';
+        throw error;
+    }
 }
 
 export async function fullLogout(client, clearSession) {
@@ -80,49 +154,79 @@ export async function fullLogout(client, clearSession) {
     }
 }
 
-export async function runBridge() {
+export async function runBridge(diagnostic = createDiagnostic()) {
     const path = window.location.pathname;
     const base = path.slice(0, path.lastIndexOf('/okta/'));
     const operation = path.split('/').pop();
+    diagnostic.stage = 'config_fetch';
     const { text } = await fetchBounded(`${base}/okta/config`, { credentials: 'same-origin' });
+    diagnostic.stage = 'config_parse';
     const config = JSON.parse(text);
     if (!config.enabled) throw new Error('Okta is not configured');
+    diagnostic.stage = 'sdk_init';
     const client = createClient(config);
     // One owner, no background renewal service: the bridge uses explicit SDK APIs.
     try {
         if (operation === 'logout') {
+            diagnostic.stage = 'logout';
             const redirected = await fullLogout(client, () => api(base, 'logout'));
             if (!redirected) window.location.replace(config.postLogoutRedirectUri);
         } else if (operation === 'login') {
+            diagnostic.stage = 'login_transaction';
             client.tokenManager.clear();
             client.transactionManager.clear();
             const target = safeReturn(new URLSearchParams(window.location.search).get('returnTo'), base);
             const transaction = await api(base, 'transaction');
             sessionStorage.setItem(TRANSACTION, JSON.stringify({ ...transaction, target }));
             // An explicit Foursight sign-in must not silently reuse portal SSO.
+            diagnostic.stage = 'login_redirect';
             await client.signInWithRedirect({ nonce: transaction.nonce, prompt: 'login' });
         } else if (operation === 'callback') {
             // parseFromUrl verifies state/signature/issuer/audience/expiry using
             // the real SDK transaction and PKCE verifier from this browser tab.
             // Also bind the ID-token nonce explicitly (and independently on the
             // server); the SDK's code-exchange path need not propagate it.
+            diagnostic.stage = 'bridge_read';
             const transaction = JSON.parse(sessionStorage.getItem(TRANSACTION) || 'null');
-            if (!transaction || !client.isLoginRedirect()) throw new Error('Missing transaction');
+            diagnostic.stage = 'bridge_check';
+            if (!transaction) {
+                diagnostic.reason = 'bridge_transaction_missing';
+                throw new Error('Missing transaction');
+            }
+            if (!client.isLoginRedirect()) {
+                diagnostic.reason = 'redirect_not_recognized';
+                throw new Error('Missing transaction');
+            }
             let parsed;
+            diagnostic.stage = 'sdk_parse';
             try { parsed = await client.token.parseFromUrl(); }
             finally { window.history.replaceState(null, '', path); }
+            diagnostic.stage = 'id_token_check';
             const token = parsed.tokens.idToken;
-            if (!token || token.pendingRemove || token.claims.nonce !== transaction.nonce) {
+            if (!token) {
+                diagnostic.reason = 'id_token_missing';
                 throw new Error('Invalid ID token transaction');
             }
-            await api(base, 'session', { idToken: token.idToken, csrf: transaction.csrf });
+            if (token.pendingRemove) {
+                diagnostic.reason = 'id_token_pending_remove';
+                throw new Error('Invalid ID token transaction');
+            }
+            if (token.claims.nonce !== transaction.nonce) {
+                diagnostic.reason = 'bridge_nonce_mismatch';
+                throw new Error('Invalid ID token transaction');
+            }
+            diagnostic.stage = 'session_submit';
+            await api(base, 'session', { idToken: token.idToken, csrf: transaction.csrf }, diagnostic);
             // Retain only the ID token for explicit IdP logout; never use it to
             // silently recreate/extend a Foursight session on document reload.
+            diagnostic.stage = 'session_store';
             client.tokenManager.setTokens({ idToken: token });
+            diagnostic.stage = 'return';
             sessionStorage.removeItem(TRANSACTION);
             window.location.replace(safeReturn(transaction.target, base));
         } else { throw new Error('Unknown operation'); }
     } catch (error) {
+        captureDiagnostic(diagnostic, error);
         client.tokenManager.clear();
         client.transactionManager.clear();
         sessionStorage.removeItem(TRANSACTION);

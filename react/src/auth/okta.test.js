@@ -1,4 +1,6 @@
-import { createClient, fullLogout, safeReturn, sdkTransport, fetchBounded, runBridge } from './okta';
+import { createClient, fullLogout, safeReturn, sdkTransport, fetchBounded, runBridge,
+    createDiagnostic, captureDiagnostic, formatDiagnostic } from './okta';
+import { AuthSdkError, AuthApiError, OAuthError } from '@okta/okta-auth-js';
 import { webcrypto, generateKeyPairSync, createSign, createHash } from 'crypto';
 import { TextEncoder, TextDecoder } from 'util';
 
@@ -9,7 +11,7 @@ jest.mock('@okta/okta-auth-js', () => {
     global.TextEncoder = require('util').TextEncoder;
     global.TextDecoder = require('util').TextDecoder;
     const sdk = jest.requireActual('@okta/okta-auth-js/umd/default.js');
-    return { OktaAuth: sdk.OktaAuth || sdk };
+    return { ...sdk, OktaAuth: sdk.OktaAuth || sdk };
 });
 
 const config = {
@@ -117,6 +119,132 @@ test.each(['/api/react/synthetic/checks?tab=1#result', '/api/view/synthetic'])(
         } finally {
             existing.stop();
             window.location = oldLocation;
+        }
+    });
+
+test.each([
+    [new AuthSdkError("OAuth flow response state doesn't match request state"), 'AuthSdkError', 'sdk_state_mismatch'],
+    [new AuthSdkError("OAuth flow response nonce doesn't match request nonce"), 'AuthSdkError', 'sdk_nonce_mismatch'],
+    [new AuthSdkError('The issuer [PRIVATE-value] does not match [PRIVATE-value]'), 'AuthSdkError', 'unknown'],
+    [new OAuthError('access_denied', 'PRIVATE-message', { token: 'PRIVATE-token' }), 'OAuthError', 'oauth_access_denied'],
+    [new OAuthError('PRIVATE-code', 'PRIVATE-message'), 'OAuthError', 'unknown'],
+    [new AuthApiError({ errorSummary: 'PRIVATE-message', errorCode: 'PRIVATE-code' }), 'AuthApiError', 'unknown'],
+    [Object.assign(new Error('PRIVATE-message'), { name: 'PRIVATE-class' }), 'unknown', 'unknown']
+])('diagnostic class/reason uses only pinned SDK vocabulary %#', (error, exception, reason) => {
+    const diagnostic = createDiagnostic();
+    diagnostic.stage = 'sdk_parse';
+    captureDiagnostic(diagnostic, error);
+    captureDiagnostic(diagnostic, new Error('PRIVATE-cleanup-error')); // Never replace the first failure.
+    expect(formatDiagnostic(diagnostic)).toBe(`stage=sdk_parse class=${exception} reason=${reason}`);
+    expect(JSON.stringify(diagnostic)).not.toContain('PRIVATE');
+    expect(Object.values(diagnostic)).not.toContain(error);
+    expect(formatDiagnostic({ stage: 'PRIVATE-stage', exception: 'PRIVATE-class', reason: 'PRIVATE-reason' }))
+        .toBe('stage=unknown class=unknown reason=unknown');
+});
+
+test.each(['/api/react/synthetic', '/api/view/synthetic'].flatMap(target => [
+    ['valid', null], ['missing-bridge', 'stage=bridge_check class=unknown reason=bridge_transaction_missing'],
+    ['missing-query', 'stage=bridge_check class=unknown reason=redirect_not_recognized'],
+    ['missing-sdk', 'stage=sdk_parse class=AuthSdkError reason=sdk_pkce_missing'],
+    ['wrong-state', 'stage=sdk_parse class=AuthSdkError reason=sdk_state_mismatch'],
+    ['wrong-nonce', 'stage=id_token_check class=unknown reason=bridge_nonce_mismatch'],
+    ['bad-signature', 'stage=sdk_parse class=AuthSdkError reason=sdk_signature_invalid'],
+    ['oauth-denied', 'stage=sdk_parse class=OAuthError reason=oauth_access_denied'],
+    ['token-network', 'stage=sdk_parse class=AuthApiError reason=unknown'],
+    ['session-denied', 'stage=session_submit class=unknown reason=session_http'],
+    ['session-network', 'stage=session_submit class=unknown reason=session_transport'],
+    ['session-invalid', 'stage=session_submit class=unknown reason=session_invalid_json'],
+    ['config-network', 'stage=config_fetch class=unknown reason=unknown'],
+    ['config-invalid', 'stage=config_parse class=unknown reason=unknown'],
+    ['sdk-init', 'stage=sdk_init class=AuthSdkError reason=unknown']
+].map(([mode, expected]) => [target, mode, expected])))(
+    'actual entrypoint for %s shows fixed diagnostic for %s', async (target, mode, expected) => {
+        const sentinel = 'PRIVATE-code-state-nonce-csrf-token-claim-identity-message';
+        document.body.innerHTML = '<h1 id="status">Completing sign-in</h1><a id="retry" hidden>Return</a>';
+        const oldLocation = window.location;
+        const assign = jest.fn();
+        const replace = jest.fn();
+        delete window.location;
+        window.location = { ...oldLocation, assign, replace, pathname: '/api/okta/callback' };
+        let callback = false;
+        const signed = idToken({ nonce: mode === 'wrong-nonce' ? 'other' : sentinel,
+            email: sentinel + '@example.invalid', sub: sentinel });
+        global.fetch = jest.fn(async url => {
+            let body = metadata;
+            let status = 200;
+            if (url === '/api/okta/config') {
+                if (mode === 'config-network') throw new TypeError(sentinel);
+                body = { ...config, enabled: true, ...(mode === 'sdk-init' ? { issuer: '' } : {}) };
+            }
+            if (url.endsWith('/keys')) body = { keys: [jwk] };
+            if (url.endsWith('/token')) {
+                if (callback && mode === 'token-network') throw new TypeError(sentinel);
+                let jwt = signed.idToken;
+                if (mode === 'bad-signature') {
+                    const parts = jwt.split('.');
+                    parts[2] = 'AAAAAAAA' + parts[2].slice(8);
+                    jwt = parts.join('.');
+                }
+                body = { id_token: jwt, access_token: idToken({ aud: 'resource' }).idToken,
+                    token_type: 'Bearer', expires_in: 3600, scope: 'openid email profile' };
+            }
+            if (url === '/api/okta/session') {
+                if (mode === 'session-network') throw new TypeError(sentinel);
+                status = mode === 'session-denied' ? 403 : 200;
+                body = status === 200 ? { authenticated: true } : { error: sentinel };
+            }
+            return { ok: status < 400, status, headers: new Map(), text: async () =>
+                (callback && mode === 'config-invalid' && url === '/api/okta/config') ||
+                (mode === 'session-invalid' && url === '/api/okta/session') ? sentinel : JSON.stringify(body) };
+        });
+        const client = createClient(config);
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            await client.signInWithRedirect({ nonce: sentinel, prompt: 'login' });
+            const state = new URL(assign.mock.calls[0][0]).searchParams.get('state');
+            window.location.search = mode === 'oauth-denied' ? '?error=access_denied&error_description=' + sentinel +
+                '&state=' + state : '?code=' + sentinel + '&state=' + (mode === 'wrong-state' ? 'other' : state);
+            if (mode === 'missing-query') window.location.search = '';
+            window.location.href = config.redirectUri + window.location.search;
+            sessionStorage.setItem('foursight-okta-transaction', JSON.stringify({ nonce: sentinel, csrf: sentinel, target }));
+            if (mode === 'missing-bridge') sessionStorage.removeItem('foursight-okta-transaction');
+            if (mode === 'missing-sdk') client.transactionManager.clear();
+            callback = true;
+            const history = jest.spyOn(window.history, 'replaceState');
+            let running;
+            jest.isolateModules(() => {
+                const module = require('./okta');
+                const real = module.runBridge;
+                jest.spyOn(module, 'runBridge').mockImplementation(diagnostic => {
+                    running = real(diagnostic);
+                    return running;
+                });
+                require('./okta-entry');
+            });
+            await running.catch(() => {});
+            await Promise.resolve();
+            const succeeded = mode === 'valid';
+            expect(document.getElementById('status').textContent).toBe(succeeded ? 'Completing sign-in' :
+                'Sign-in or sign-out could not be completed. Return to Foursight and try again.');
+            expect(document.getElementById('diagnostic')?.textContent || null)
+                .toBe(expected ? 'Diagnostic: ' + expected : null);
+            expect(document.getElementById('retry').hidden).toBe(succeeded);
+            expect(replace.mock.calls).toEqual(succeeded ? [[target]] : []);
+            expect(Object.keys(client.tokenManager.getTokensSync())).toEqual(succeeded ? ['idToken'] : []);
+            expect(history).toHaveBeenLastCalledWith(null, '', '/api/okta/callback');
+            expect(sessionStorage.getItem('foursight-okta-transaction') !== null)
+                .toBe(['config-invalid', 'config-network', 'sdk-init'].includes(mode));
+            const sessionCalls = fetch.mock.calls.filter(([url]) => url === '/api/okta/session');
+            expect(sessionCalls).toHaveLength(['valid', 'session-denied', 'session-network', 'session-invalid']
+                .includes(mode) ? 1 : 0);
+            expect(document.body.textContent).not.toContain(sentinel);
+            expect(document.body.textContent).not.toContain(signed.idToken);
+            expect(document.body.textContent).not.toContain(state);
+            expect(consoleError).not.toHaveBeenCalled(); // UI only: no raw SDK/browser exception logging.
+        } finally {
+            client.stop();
+            window.location = oldLocation;
+            window.history.replaceState(null, '', '/');
         }
     });
 
@@ -294,7 +422,8 @@ test.each([undefined, 'login'])(
             sessionStorage.setItem('foursight-okta-transaction', JSON.stringify({
                 nonce: 'nonce', csrf: 'csrf', target: '/api/view/synthetic' }));
             jest.useFakeTimers();
-            const outcome = runBridge().then(() => 'accepted', error => error.message);
+            const diagnostic = createDiagnostic();
+            const outcome = runBridge(diagnostic).then(() => 'accepted', error => error.message);
             await started;
             jest.advanceTimersByTime(14999);
             expect(sessionSignal.aborted).toBe(false);
@@ -303,6 +432,7 @@ test.each([undefined, 'login'])(
             expect(sessionSignal.aborted).toBe(true);
             expect(await outcome).toBe(
                 'Sign-in or sign-out could not be completed. Return to Foursight and try again.');
+            expect(formatDiagnostic(diagnostic)).toBe('stage=session_submit class=unknown reason=session_timeout');
             expect(serverFinished).toBe(false);
             expect(assign).toHaveBeenCalledTimes(1);
             expect(replace).not.toHaveBeenCalled();

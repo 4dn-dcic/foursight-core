@@ -172,6 +172,22 @@ alone does not indicate authentication failure. No app logging level is changed.
 Before relying on deployed diagnostics, verify an unauthenticated GET of
 `/api/okta/config` produces `operation=config stage=route_get outcome=enter status=0`
 and a status-200 return marker in CloudWatch. This proves logging delivery, not login.
+Starting with b7, the shared failure page also shows `Diagnostic: stage=… class=…
+reason=…` below the unchanged generic message. These are fixed allowlisted codes,
+not exception messages; no raw errors are sent to console or any new server endpoint.
+The first failure classification is preserved before the existing transaction/token/
+query cleanup. Early config parsing and SDK initialization are covered as well.
+Examples include `bridge_check/bridge_transaction_missing`,
+`bridge_check/redirect_not_recognized`, `sdk_parse/sdk_pkce_missing`,
+`sdk_parse/sdk_state_mismatch`, `id_token_check/bridge_nonce_mismatch`, and
+`session_submit/session_http`, `session_transport`, `session_timeout` or
+`session_invalid_json`. These denote stages/known checks, not a diagnosed root cause.
+SDK errors are classified only by pinned known static errors or OAuth codes; unknown
+messages/classes/codes become `unknown`. No identity, token/claims, code/state/nonce,
+CSRF, URL/query, request/storage contents or arbitrary error text is displayed.
+The fixed diagnostic line may be shared for investigation; do not share callback URLs,
+network bodies, storage contents or raw browser error objects. Success adds no diagnostic.
+
 Browser HTTP requests (including
 response bodies) abort after 15 seconds; backend discovery/JWKS requests have
 five-second timeouts. The bounded multi-step flow always ends in navigation or
@@ -219,9 +235,10 @@ exception described above.
 **Live acceptance still requires operator registration/configuration** above,
 a downstream app deployment, and designated tenant login/logout testing. None
 of those external configuration changes or an environment deployment is performed
-by this change. Pin **`foursight-core==5.10.5.1b6`** for the Lambda route/stage
-instrumentation, b5's optional portal-URL startup guard, and b4's explicit interactive
-sign-in and credential-free rejection classification. The guard preserves required portal mode and environment/session
+by this change. Pin **`foursight-core==5.10.5.1b7`** for fixed client failure-page
+diagnostics, b6's Lambda route/stage instrumentation, b5's optional portal-URL startup
+guard, and b4's explicit interactive sign-in and credential-free rejection classification.
+The client diagnostics do not themselves repair or identify the reported login failure. The guard preserves required portal mode and environment/session
 credentials; it does not repair upstream portal-health failures or prove live login
 success. The immutable `5.10.5.1b3` already
 accepts an omitted verification claim under the opt-out, but contains neither the
@@ -246,7 +263,7 @@ cd foursight-core-source
 git checkout --detach <validated-full-commit-sha>
 python -m pip wheel --no-deps --wheel-dir ../core-wheels .
 # In the downstream application's existing dependency environment:
-python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b6-py3-none-any.whl
+python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b7-py3-none-any.whl
 ```
 
 Resolve the downstream application's normal dependencies first (including its

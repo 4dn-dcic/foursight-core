@@ -6,6 +6,15 @@ foursight-core
 Change Log
 ----------
 
+5.10.5.1b7
+==========
+* Display fixed client stage/class/reason diagnostics on the shared React/legacy
+  Okta failure page, preserving classification before existing cleanup. Known
+  guards and pinned SDK errors are allowlisted; no credentials, identity, request
+  values, exception messages or stacks are displayed or logged. Authentication,
+  session validation, cleanup and timeout behavior are unchanged.
+* Include formatting-only cleanup of six pre-existing route lint findings.
+
 5.10.5.1b6
 ==========
 * Add fixed-vocabulary Okta route-entry, parsing, validation, early-rejection and
