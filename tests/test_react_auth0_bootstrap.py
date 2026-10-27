@@ -152,6 +152,34 @@ def test_bootstrap_required_portal_mode_still_fails_closed(bootstrap, monkeypatc
     assert bootstrap["calls"] == 2
 
 
+@pytest.mark.parametrize("operation", ["login", "callback", "logout", "signed-out"])
+def test_smaht_0811_transition_template_uses_real_app_identity(bootstrap, monkeypatch, operation):
+    import importlib
+    import importlib.metadata
+    from chalice.test import Client
+    from foursight_core.route_prefixes import ROUTE_PREFIX
+    from test_okta import PageElements
+
+    pytest.importorskip("chalicelib_smaht")
+    assert importlib.metadata.version("foursight-smaht") == "0.8.11"
+    monkeypatch.setenv("ES_HOST", "https://synthetic-es.invalid")
+    monkeypatch.setattr("foursight_core.identity.apply_identity_globally", lambda: None)
+    downstream = importlib.import_module("chalicelib_smaht.app_utils")
+    core = app_utils.AppUtilsCore.singleton(downstream.AppUtils)
+    assert type(core) is downstream.AppUtils and app.core is core
+    assert core.APP_PACKAGE_NAME == "foursight-smaht"
+    bootstrap_calls = bootstrap["calls"]
+    monkeypatch.setattr(okta, "handle", Mock(side_effect=AssertionError("No auth request while rendering")))
+    with Client(app) as client:
+        result = client.http.get(ROUTE_PREFIX + "okta/" + operation, headers={"host": "foursight.invalid"})
+    assert result.status_code == 200
+    document = PageElements(result.body.decode())
+    assert document.tags("body") == [{"class": "smaht"}]
+    assert '>SMaHT</span>' in result.body.decode()
+    assert len(document.tags("script")) == (0 if operation == "signed-out" else 1)
+    assert bootstrap["calls"] == bootstrap_calls
+
+
 @pytest.mark.parametrize("s3_fault", [None, "missing_key", "invalid_key", "portal_denied"])
 @pytest.mark.parametrize("redis_host", [None, "disabled", "redis://synthetic.invalid", "rediss://synthetic.invalid"])
 @pytest.mark.parametrize("groups", [["foursight"], ["admin"], ["user"]])

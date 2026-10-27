@@ -24,7 +24,8 @@ class Routes:
                 return diagnostic.complete(handle(app.core, request, operation))
             if operation in ("login", "callback", "logout", "signed-out"):
                 diagnostic.stage("page")
-                return diagnostic.complete(page(request, operation))
+                return diagnostic.complete(page(request, operation,
+                                                package=getattr(app.core, "APP_PACKAGE_NAME", None)))
             return diagnostic.complete(Response(body="Not found", status_code=404), reason="unknown_operation")
 
     @staticmethod

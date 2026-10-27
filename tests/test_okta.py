@@ -1,5 +1,6 @@
 """Offline auth tests. Run with --confcutdir=tests (root setup purges an AWS queue)."""
 import copy
+from html.parser import HTMLParser
 from http.cookies import SimpleCookie
 import json
 import time
@@ -718,6 +719,77 @@ def test_successful_session_has_no_rejection_diagnostic(core, key, monkeypatch, 
     assert okta.handle(core, req, "session", payload).status_code == 200
     assert not rejection_records(caplog)
     assert any("stage=response outcome=return status=200" in record.getMessage() for record in caplog.records)
+
+
+class PageElements(HTMLParser):
+    def __init__(self, body):
+        super().__init__()
+        self.elements = []
+        self.feed(body)
+
+    def handle_starttag(self, tag, attrs):
+        self.elements.append((tag, dict(attrs)))
+
+    def tags(self, tag):
+        return [attrs for name, attrs in self.elements if name == tag]
+
+
+@pytest.mark.parametrize("operation", ["login", "callback", "logout", "signed-out"])
+@pytest.mark.parametrize("prefix", ["", "/api", "/custom/stage"])
+def test_transition_shell_preserves_protocol_and_accessible_controls(operation, prefix):
+    req = request(path=prefix + "/okta/" + operation)
+    req["query_params"] = {"code": "PRIVATE-code", "state": "PRIVATE-state", "returnTo": "PRIVATE-return"}
+    result = okta.page(req, operation, package="foursight-smaht")
+    document = PageElements(result.body)
+    assert result.status_code == 200
+    assert result.headers == {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store",
+                              "Pragma": "no-cache", "Referrer-Policy": "no-referrer"}
+    assert document.tags("html") == [{"lang": "en"}]
+    assert {"name": "viewport", "content": "width=device-width, initial-scale=1"} in document.tags("meta")
+    assert {"name": "referrer", "content": "no-referrer"} in document.tags("meta")
+    assert len(document.tags("main")) == 1 and len(document.tags("h1")) == 1
+    assert "PRIVATE" not in result.body
+    anchors = document.tags("a")
+    assert len(anchors) == 1 and anchors[0]["href"] == "https://foursight.invalid" + prefix + "/react"
+    if operation == "signed-out":
+        assert not document.tags("script") and "hidden" not in anchors[0]
+        assert "Signed out" in result.body
+    else:
+        assert document.tags("script") == [{"src": "https://foursight.invalid" + prefix + "/react/okta-auth.js",
+                                            "defer": None}]
+        assert anchors[0]["id"] == "retry" and "hidden" in anchors[0]
+        assert document.tags("h1")[0] == {"id": "status", "role": "status", "aria-live": "polite"}
+        assert "Completing sign-in…" in result.body and "Return to Foursight" in result.body
+
+
+def test_transition_template_escapes_urls_and_rejects_arbitrary_brand_markup():
+    req = request()
+    req["headers"]["host"] = 'synthetic.invalid/\" onload=\"PRIVATE-event\"><script>PRIVATE-script</script>'
+    result = okta.page(req, "callback", package='<script>PRIVATE-brand</script>')
+    document = PageElements(result.body)
+    assert document.tags("body") == [{"class": "default"}]
+    assert "PRIVATE-brand" not in result.body
+    assert len(document.tags("script")) == 1
+    assert all(not key.startswith("on") for _, attrs in document.elements for key in attrs)
+    assert '&lt;script&gt;' in result.body and '&#34;' in result.body
+
+
+@pytest.mark.parametrize("package,theme", [
+    ("foursight", "fourfront"), ("foursight-cgap", "cgap"), ("foursight-smaht", "smaht"), (None, "default")])
+def test_actual_route_uses_only_existing_package_identity_for_shell(core, monkeypatch, package, theme):
+    from chalice.test import Client as ChaliceClient
+    from foursight_core.app import app
+    from foursight_core.route_prefixes import ROUTE_PREFIX
+    core.APP_PACKAGE_NAME = package
+    monkeypatch.setattr(app, "core", core, raising=False)
+    # Rendering must not create sessions or fetch user/config/Portal metadata.
+    monkeypatch.setattr(okta, "handle", Mock(side_effect=AssertionError("Authentication forbidden")))
+    with ChaliceClient(app) as client:
+        result = client.http.get(ROUTE_PREFIX + "okta/callback", headers={"host": "foursight.invalid"})
+    assert result.status_code == 200
+    document = PageElements(result.body.decode())
+    assert document.tags("body") == [{"class": theme}]
+    assert len(document.tags("script")) == 1
 
 
 def test_generated_bridge_is_served_by_actual_static_whitelist():

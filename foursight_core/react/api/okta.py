@@ -6,7 +6,6 @@ No Okta secret, provider token, or authorization code enters a Foursight session
 """
 import datetime
 from functools import lru_cache
-import html
 import hmac
 import os
 import secrets
@@ -14,6 +13,7 @@ import time
 from urllib.parse import urlsplit
 
 from chalice import Response
+from jinja2 import Environment, PackageLoader, select_autoescape
 import jwt
 import requests
 from dcicutils.redis_tools import RedisSessionToken, SESSION_TOKEN_COOKIE
@@ -336,15 +336,18 @@ def handle(core, request, operation, body=None):
                                    cookies=[cookie(request, name, expires=1) for name in names], error=error)
 
 
-def page(request, operation):
-    base = base_url(request)
-    if operation == "signed-out":
-        content = '<h1>Signed out</h1><a href="' + html.escape(base + '/react', quote=True) + '">Foursight</a>'
-    else:
-        content = ('<h1 id="status">Completing sign-in…</h1><a id="retry" hidden href="'
-                   + html.escape(base + '/react', quote=True) + '">Return to Foursight</a>'
-                   + '<script src="' + html.escape(base + '/react/okta-auth.js', quote=True) + '" defer></script>')
-    result = response('<!doctype html><html><head><meta charset="utf-8"><title>Foursight authentication</title>'
-                      '<meta name="referrer" content="no-referrer"></head><body>' + content + '</body></html>')
+@lru_cache(maxsize=1)
+def _page_template():
+    return Environment(loader=PackageLoader("foursight_core", "templates"),
+                       autoescape=select_autoescape(["html"])).get_template("okta.html")
+
+
+def page(request, operation, package=None):
+    # Match the existing app themes without loading user/session/header metadata.
+    themes = {"foursight": ("fourfront", "4DN"), "foursight-cgap": ("cgap", "CGAP"),
+              "foursight-smaht": ("smaht", "SMaHT")}
+    theme, brand = themes.get(package, ("default", ""))
+    result = response(_page_template().render(base=base_url(request), signed_out=operation == "signed-out",
+                                              theme=theme, brand=brand))
     result.headers["Content-Type"] = "text/html; charset=utf-8"
     return result
