@@ -89,6 +89,23 @@ def establish(core, key, **claims):
     return req, payload
 
 
+@pytest.mark.parametrize("which_token,which_csrf,status", [
+    ("first", "first", 403), ("first", "current", 403),
+    ("current", "first", 403), ("current", "current", 200)])
+def test_concurrent_bridge_records_cannot_mix_server_cookie_bindings(core, key, which_token, which_csrf, status):
+    # Two independent snapshots, not a browser applying an earlier rejection's
+    # cookie deletion: the single server transaction cookie still selects only
+    # the latest nonce/CSRF pair, even if both client state records are retained.
+    _, first = establish(core, key)
+    req, current = establish(core, key)
+    payloads = {"first": first, "current": current}
+    result = okta.handle(core, req, "session", {
+        "idToken": payloads[which_token]["idToken"], "csrf": payloads[which_csrf]["csrf"]})
+    assert result.status_code == status
+    assert result.body == ({"authenticated": True} if status == 200 else
+                           {"error": "Unable to complete Okta authentication."})
+
+
 def test_public_config_and_exact_paths():
     config = okta.public_config(request())
     assert config["redirectUri"] == "https://foursight.invalid/api/okta/callback"

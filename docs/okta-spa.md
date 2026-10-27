@@ -121,14 +121,26 @@ this restriction.
    Only same-origin UI paths in this deployment are allowed; authentication
    endpoints and external URLs fall back to the React landing page.
 2. An exact-Origin, JSON POST obtains a ten-minute signed HttpOnly transaction
-   cookie and a random nonce/CSRF value. The real pinned Okta Auth JS **7.14.5**
-   owns the PKCE verifier and OAuth state in tab-scoped transaction storage.
+   cookie and a random nonce/CSRF value. The bridge generates a fresh256-bit OAuth
+   state and passes it explicitly to the real pinned Okta Auth JS **7.14.5**,
+   which retains all PKCE/state validation. The SDK has both per-tab primary
+   transaction storage and an existing state-keyed shared-localStorage fallback.
+   Starting with b8, the separate bridge nonce/CSRF/target record is also shared
+   across same-origin tabs, keyed by that exact state and namespaced by origin,
+   app/base path, issuer and client. It contains no authorization code, provider
+   token or identity. Its usable lifetime is at most the existing10-minute server
+   transaction window, not the SDK's longer shared-storage lifetime.
    Each deliberate sign-in requests hosted interactive authentication with
    `prompt=login`, even if the portal already has an Okta SSO session. This
    applies only to sign-in, not restoration, callback processing or logout.
 3. The browser redeems the authorization code without a secret. The SDK checks
    state and token validity; the bridge explicitly compares the ID-token nonce
-   to its saved transaction as well. The backend independently verifies the
+   to its saved transaction as well. Callback must supply one exact, well-formed
+   state with a matching unexpired bridge record; no "latest record", missing-state
+   or token-based fallback exists. The bridge record is consumed before asynchronous
+   code redemption; missing SDK state/PKCE still fails closed. Expired/malformed
+   records are pruned on use/new login, and matched failure/success cleanup never
+   deletes a different pending state's bridge. The backend independently verifies the
    nonce, RS256 signature, issuer, single client audience, token type, expiry,
    required identity claims and the deployment's email-verification policy before
    creating any session.
@@ -145,13 +157,22 @@ this restriction.
    session. No background SDK renewal service is started. Only the ID token is
    retained in SDK local storage for explicit IdP logout; access/refresh tokens
    are not retained.
-7. Logout clears local SDK tokens, deletes Foursight cookies and the Redis
+7. Logout clears the current app/client's bridge records and local SDK tokens,
+   deletes Foursight cookies and the Redis
    session, then invokes Okta sign-out with `clearTokensBeforeRedirect: true`.
    Pending-removal tokens are not reused. Local tokens stay cleared on errors;
    if the session store cannot be reached, cookies are still cleared but the
    UI reports failure instead of claiming confirmed server revocation. If no
    ID token remains, logout can clear Foursight but cannot guarantee ending an
    existing IdP SSO session. It never automatically signs back in on reload.
+
+New-tab returns no longer depend on an opener's sessionStorage copy; a changed
+scheme/host/port or different client/base namespace still cannot recover another
+app's record. Storage failures fail closed. Multiple deliberate concurrent logins
+still share the existing single server transaction cookie: older nonce/CSRF pairs
+may be rejected, never mixed or silently replaced. Logins already in flight from
+b7's per-tab format need a fresh deliberate sign-in after upgrading; there is no
+unsafe legacy/latest-transaction fallback. Existing authenticated sessions are unchanged.
 
 All new session mutations require same-origin JSON requests and have no CORS
 exception. `c4_st` and transaction cookies are HttpOnly, SameSite=Lax, and Secure
@@ -207,7 +228,7 @@ AWS_EC2_METADATA_DISABLED=true PYTHONPATH=tests:. python -m pytest \
   tests/test_react_auth.py tests/test_react_auth_routes.py \
   tests/test_cookie_utils.py tests/test_jwt_utils.py tests/test_react_auth0_bootstrap.py
 cd react
-CI=true npm test -- --watchAll=false --runInBand src/auth/okta.test.js
+CI=true npm test -- --watchAll=false --runInBand src/auth/okta.test.js src/auth/okta-transaction.test.js
 cd ..
 sh scripts/react_build.sh
 ```
@@ -235,10 +256,12 @@ exception described above.
 **Live acceptance still requires operator registration/configuration** above,
 a downstream app deployment, and designated tenant login/logout testing. None
 of those external configuration changes or an environment deployment is performed
-by this change. Pin **`foursight-core==5.10.5.1b7`** for fixed client failure-page
-diagnostics, b6's Lambda route/stage instrumentation, b5's optional portal-URL startup
+by this change. Pin **`foursight-core==5.10.5.1b8`** for state-bound same-origin
+cross-tab return support, b7's fixed client failure-page diagnostics, b6's Lambda
+route/stage instrumentation, b5's optional portal-URL startup
 guard, and b4's explicit interactive sign-in and credential-free rejection classification.
-The client diagnostics do not themselves repair or identify the reported login failure. The guard preserves required portal mode and environment/session
+The cross-tab fix addresses the reproduced missing bridge transaction on a new-tab
+return; package availability still does not prove live authentication success. The guard preserves required portal mode and environment/session
 credentials; it does not repair upstream portal-health failures or prove live login
 success. The immutable `5.10.5.1b3` already
 accepts an omitted verification claim under the opt-out, but contains neither the
@@ -263,7 +286,7 @@ cd foursight-core-source
 git checkout --detach <validated-full-commit-sha>
 python -m pip wheel --no-deps --wheel-dir ../core-wheels .
 # In the downstream application's existing dependency environment:
-python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b7-py3-none-any.whl
+python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b8-py3-none-any.whl
 ```
 
 Resolve the downstream application's normal dependencies first (including its

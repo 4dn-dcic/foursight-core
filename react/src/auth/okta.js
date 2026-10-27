@@ -1,6 +1,7 @@
 import { OktaAuth, AuthSdkError, AuthApiError, OAuthError } from '@okta/okta-auth-js';
 
-const TRANSACTION = 'foursight-okta-transaction';
+import { beginBridgeTransaction, callbackState, takeBridgeTransaction,
+    clearBridgeTransaction, clearBridgeTransactions } from './okta-transaction';
 
 const DIAGNOSTIC_STAGES = new Set([
     'config_fetch', 'config_parse', 'sdk_init', 'logout', 'login_transaction', 'login_redirect',
@@ -138,11 +139,11 @@ async function api(base, operation, body, diagnostic) {
     }
 }
 
-export async function fullLogout(client, clearSession) {
+export async function fullLogout(client, clearSession, clearBridge = () => {}) {
     const tokens = client.tokenManager.getTokensSync();
     // Do not rely on SDK start() to remove pendingRemove tokens on a later page.
     client.tokenManager.clear();
-    sessionStorage.removeItem(TRANSACTION);
+    clearBridge();
     client.transactionManager.clear();
     try {
         await clearSession();
@@ -165,11 +166,13 @@ export async function runBridge(diagnostic = createDiagnostic()) {
     if (!config.enabled) throw new Error('Okta is not configured');
     diagnostic.stage = 'sdk_init';
     const client = createClient(config);
+    let activeState = null;
     // One owner, no background renewal service: the bridge uses explicit SDK APIs.
     try {
         if (operation === 'logout') {
             diagnostic.stage = 'logout';
-            const redirected = await fullLogout(client, () => api(base, 'logout'));
+            const redirected = await fullLogout(client, () => api(base, 'logout'),
+                () => clearBridgeTransactions(config, base));
             if (!redirected) window.location.replace(config.postLogoutRedirectUri);
         } else if (operation === 'login') {
             diagnostic.stage = 'login_transaction';
@@ -177,17 +180,20 @@ export async function runBridge(diagnostic = createDiagnostic()) {
             client.transactionManager.clear();
             const target = safeReturn(new URLSearchParams(window.location.search).get('returnTo'), base);
             const transaction = await api(base, 'transaction');
-            sessionStorage.setItem(TRANSACTION, JSON.stringify({ ...transaction, target }));
+            activeState = beginBridgeTransaction(config, base, transaction, target);
             // An explicit Foursight sign-in must not silently reuse portal SSO.
             diagnostic.stage = 'login_redirect';
-            await client.signInWithRedirect({ nonce: transaction.nonce, prompt: 'login' });
+            await client.signInWithRedirect({ state: activeState, nonce: transaction.nonce, prompt: 'login' });
         } else if (operation === 'callback') {
             // parseFromUrl verifies state/signature/issuer/audience/expiry using
-            // the real SDK transaction and PKCE verifier from this browser tab.
+            // the real SDK transaction/PKCE verifier, including its state-keyed
+            // shared storage when the IdP returns in another same-origin tab.
             // Also bind the ID-token nonce explicitly (and independently on the
             // server); the SDK's code-exchange path need not propagate it.
             diagnostic.stage = 'bridge_read';
-            const transaction = JSON.parse(sessionStorage.getItem(TRANSACTION) || 'null');
+            const state = callbackState(window.location.search);
+            const transaction = takeBridgeTransaction(config, base, state);
+            if (transaction) activeState = state;
             diagnostic.stage = 'bridge_check';
             if (!transaction) {
                 diagnostic.reason = 'bridge_transaction_missing';
@@ -222,14 +228,17 @@ export async function runBridge(diagnostic = createDiagnostic()) {
             diagnostic.stage = 'session_store';
             client.tokenManager.setTokens({ idToken: token });
             diagnostic.stage = 'return';
-            sessionStorage.removeItem(TRANSACTION);
+            clearBridgeTransaction(config, base, activeState);
             window.location.replace(safeReturn(transaction.target, base));
         } else { throw new Error('Unknown operation'); }
     } catch (error) {
         captureDiagnostic(diagnostic, error);
         client.tokenManager.clear();
-        client.transactionManager.clear();
-        sessionStorage.removeItem(TRANSACTION);
+        // Never let an unrecognized callback erase another state's pending login.
+        if (activeState) {
+            client.transactionManager.clear({ state: activeState });
+            clearBridgeTransaction(config, base, activeState);
+        }
         window.history.replaceState(null, '', path);
         throw new Error('Sign-in or sign-out could not be completed. Return to Foursight and try again.');
     } finally { client.stop(); }

@@ -1,6 +1,7 @@
 import { createClient, fullLogout, safeReturn, sdkTransport, fetchBounded, runBridge,
     createDiagnostic, captureDiagnostic, formatDiagnostic } from './okta';
 import { AuthSdkError, AuthApiError, OAuthError } from '@okta/okta-auth-js';
+import { beginBridgeTransaction, clearBridgeTransaction } from './okta-transaction';
 import { webcrypto, generateKeyPairSync, createSign, createHash } from 'crypto';
 import { TextEncoder, TextDecoder } from 'util';
 
@@ -19,6 +20,12 @@ const config = {
     redirectUri: 'http://localhost/api/okta/callback',
     postLogoutRedirectUri: 'http://localhost/api/okta/signed-out', scopes: ['openid', 'email', 'profile']
 };
+function bridgeRecord(state) {
+    const key = Object.keys(localStorage).find(key => key.startsWith('foursight-okta-transaction:v2:') &&
+        key.endsWith(':' + state));
+    return key ? JSON.parse(localStorage.getItem(key)) : null;
+}
+
 const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const jwk = { ...publicKey.export({ format: 'jwk' }), kid: 'synthetic', use: 'sig', alg: 'RS256' };
 const encode = value => Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -102,8 +109,8 @@ test.each(['/api/react/synthetic/checks?tab=1#result', '/api/view/synthetic'])(
                 expect(authorize.searchParams.get('redirect_uri')).toBe(config.redirectUri);
                 expect(authorize.searchParams.get('client_id')).toBe(config.clientId);
                 expect(authorize.searchParams.get('scope')).toBe(config.scopes.join(' '));
-                expect(JSON.parse(sessionStorage.getItem('foursight-okta-transaction')))
-                    .toEqual({ nonce: 'nonce', csrf: 'csrf', target });
+                expect(bridgeRecord(authorize.searchParams.get('state')))
+                    .toEqual(expect.objectContaining({ nonce: 'nonce', csrf: 'csrf', target }));
                 expect(existing.tokenManager.getTokensSync()).toEqual({});
             }
             expect(new URL(assign.mock.calls[0][0]).searchParams.get('state'))
@@ -143,10 +150,11 @@ test.each([
 });
 
 test.each(['/api/react/synthetic', '/api/view/synthetic'].flatMap(target => [
-    ['valid', null], ['missing-bridge', 'stage=bridge_check class=unknown reason=bridge_transaction_missing'],
+    ['valid', null], ['new-tab', null], ['missing-bridge', 'stage=bridge_check class=unknown reason=bridge_transaction_missing'],
     ['missing-query', 'stage=bridge_check class=unknown reason=redirect_not_recognized'],
     ['missing-sdk', 'stage=sdk_parse class=AuthSdkError reason=sdk_pkce_missing'],
-    ['wrong-state', 'stage=sdk_parse class=AuthSdkError reason=sdk_state_mismatch'],
+    ['sdk-state', 'stage=sdk_parse class=AuthSdkError reason=sdk_state_mismatch'],
+    ['wrong-state', 'stage=bridge_check class=unknown reason=bridge_transaction_missing'],
     ['wrong-nonce', 'stage=id_token_check class=unknown reason=bridge_nonce_mismatch'],
     ['bad-signature', 'stage=sdk_parse class=AuthSdkError reason=sdk_signature_invalid'],
     ['oauth-denied', 'stage=sdk_parse class=OAuthError reason=oauth_access_denied'],
@@ -200,15 +208,21 @@ test.each(['/api/react/synthetic', '/api/view/synthetic'].flatMap(target => [
         const client = createClient(config);
         const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
         try {
-            await client.signInWithRedirect({ nonce: sentinel, prompt: 'login' });
-            const state = new URL(assign.mock.calls[0][0]).searchParams.get('state');
+            const state = beginBridgeTransaction(config, '/api', { nonce: sentinel, csrf: sentinel }, target);
+            await client.signInWithRedirect({ state, nonce: sentinel, prompt: 'login' });
+            expect(new URL(assign.mock.calls[0][0]).searchParams.get('state')).toBe(state);
             window.location.search = mode === 'oauth-denied' ? '?error=access_denied&error_description=' + sentinel +
                 '&state=' + state : '?code=' + sentinel + '&state=' + (mode === 'wrong-state' ? 'other' : state);
-            if (mode === 'missing-query') window.location.search = '';
+            if (mode === 'missing-query') window.location.search = '?state=' + state;
             window.location.href = config.redirectUri + window.location.search;
-            sessionStorage.setItem('foursight-okta-transaction', JSON.stringify({ nonce: sentinel, csrf: sentinel, target }));
-            if (mode === 'missing-bridge') sessionStorage.removeItem('foursight-okta-transaction');
+            if (mode === 'missing-bridge') clearBridgeTransaction(config, '/api', state);
             if (mode === 'missing-sdk') client.transactionManager.clear();
+            if (mode === 'new-tab') sessionStorage.clear(); // No opener copy; SDK shared state and bridge remain.
+            if (mode === 'sdk-state') {
+                const shared = JSON.parse(localStorage.getItem('okta-shared-transaction-storage'));
+                shared[state].transaction.state = 'synthetic-other-state';
+                localStorage.setItem('okta-shared-transaction-storage', JSON.stringify(shared));
+            }
             callback = true;
             const history = jest.spyOn(window.history, 'replaceState');
             let running;
@@ -223,7 +237,7 @@ test.each(['/api/react/synthetic', '/api/view/synthetic'].flatMap(target => [
             });
             await running.catch(() => {});
             await Promise.resolve();
-            const succeeded = mode === 'valid';
+            const succeeded = ['valid', 'new-tab'].includes(mode);
             expect(document.getElementById('status').textContent).toBe(succeeded ? 'Completing sign-in' :
                 'Sign-in or sign-out could not be completed. Return to Foursight and try again.');
             expect(document.getElementById('diagnostic')?.textContent || null)
@@ -232,10 +246,10 @@ test.each(['/api/react/synthetic', '/api/view/synthetic'].flatMap(target => [
             expect(replace.mock.calls).toEqual(succeeded ? [[target]] : []);
             expect(Object.keys(client.tokenManager.getTokensSync())).toEqual(succeeded ? ['idToken'] : []);
             expect(history).toHaveBeenLastCalledWith(null, '', '/api/okta/callback');
-            expect(sessionStorage.getItem('foursight-okta-transaction') !== null)
-                .toBe(['config-invalid', 'config-network', 'sdk-init'].includes(mode));
+            expect(bridgeRecord(state) !== null)
+                .toBe(['config-invalid', 'config-network', 'sdk-init', 'wrong-state'].includes(mode));
             const sessionCalls = fetch.mock.calls.filter(([url]) => url === '/api/okta/session');
-            expect(sessionCalls).toHaveLength(['valid', 'session-denied', 'session-network', 'session-invalid']
+            expect(sessionCalls).toHaveLength(['valid', 'new-tab', 'session-denied', 'session-network', 'session-invalid']
                 .includes(mode) ? 1 : 0);
             expect(document.body.textContent).not.toContain(sentinel);
             expect(document.body.textContent).not.toContain(signed.idToken);
@@ -247,6 +261,25 @@ test.each(['/api/react/synthetic', '/api/view/synthetic'].flatMap(target => [
             window.history.replaceState(null, '', '/');
         }
     });
+
+test('shared logout route clears only its app bridge namespace without silently signing in', async () => {
+    const own = beginBridgeTransaction(config, '/api', { nonce: 'nonce', csrf: 'csrf' }, '/api/react');
+    const foreign = beginBridgeTransaction({ ...config, clientId: 'other-spa' }, '/api',
+        { nonce: 'other', csrf: 'other' }, '/api/react');
+    const old = window.location;
+    const replace = jest.fn();
+    delete window.location;
+    window.location = { ...old, pathname: '/api/okta/logout', replace };
+    global.fetch = jest.fn(async url => ({ ok: true, text: async () => JSON.stringify(
+        url === '/api/okta/config' ? { ...config, enabled: true } : { loggedOut: true }) }));
+    try {
+        await runBridge();
+        expect(bridgeRecord(own)).toBeNull();
+        expect(bridgeRecord(foreign)).toEqual(expect.objectContaining({ nonce: 'other', csrf: 'other' }));
+        expect(fetch.mock.calls.map(([url]) => url)).toEqual(['/api/okta/config', '/api/okta/logout']);
+        expect(replace).toHaveBeenCalledWith(config.postLogoutRedirectUri);
+    } finally { window.location = old; }
+});
 
 test('real pinned SDK verifies synthetic signed ID token', async () => {
     const client = createClient(config);
@@ -289,12 +322,11 @@ test.each([
     });
     const client = createClient(config);
     try {
-        await client.signInWithRedirect({ nonce: 'nonce' });
-        const state = new URL(assign.mock.calls[0][0]).searchParams.get('state');
+        const state = beginBridgeTransaction(config, '/api', { nonce: 'nonce', csrf: 'csrf' }, target);
+        await client.signInWithRedirect({ state, nonce: 'nonce' });
         window.history.replaceState(null, '', '/api/okta/callback?code=synthetic&state=' + state);
         window.location.search = '?code=synthetic&state=' + state;
         window.location.href = config.redirectUri + window.location.search;
-        sessionStorage.setItem('foursight-okta-transaction', JSON.stringify({ nonce: 'nonce', csrf: 'csrf', target }));
         const outcome = await runBridge().then(() => 'accepted', error => error.message);
         expect(outcome).toBe(accepted ? 'accepted' :
             'Sign-in or sign-out could not be completed. Return to Foursight and try again.');
@@ -304,7 +336,7 @@ test.each([
         expect(Object.keys(stored)).toEqual(accepted ? ['idToken'] : []);
         expect(stored.idToken?.claims.email_verified).toBe(accepted ? false : undefined);
         expect(sessionRequests).toEqual([{ idToken: unverified.idToken, csrf: 'csrf' }]);
-        expect(sessionStorage.getItem('foursight-okta-transaction')).toBeNull();
+        expect(bridgeRecord(state)).toBeNull();
     } finally {
         client.stop();
         window.location = oldLocation;
@@ -415,12 +447,10 @@ test.each([undefined, 'login'])(
             return { ok: true, status: 200, headers: new Map(), text: async () => JSON.stringify(body) };
         });
         try {
-            await client.signInWithRedirect({ nonce: 'nonce', prompt });
-            const state = new URL(assign.mock.calls[0][0]).searchParams.get('state');
+            const state = beginBridgeTransaction(config, '/api', { nonce: 'nonce', csrf: 'csrf' }, '/api/view/synthetic');
+            await client.signInWithRedirect({ state, nonce: 'nonce', prompt });
             window.location.search = '?code=synthetic&state=' + state;
             window.location.href = config.redirectUri + window.location.search;
-            sessionStorage.setItem('foursight-okta-transaction', JSON.stringify({
-                nonce: 'nonce', csrf: 'csrf', target: '/api/view/synthetic' }));
             jest.useFakeTimers();
             const diagnostic = createDiagnostic();
             const outcome = runBridge(diagnostic).then(() => 'accepted', error => error.message);
@@ -436,7 +466,7 @@ test.each([undefined, 'login'])(
             expect(serverFinished).toBe(false);
             expect(assign).toHaveBeenCalledTimes(1);
             expect(replace).not.toHaveBeenCalled();
-            expect(sessionStorage.getItem('foursight-okta-transaction')).toBeNull();
+            expect(bridgeRecord(state)).toBeNull();
             expect(client.tokenManager.getTokensSync()).toEqual({});
             jest.advanceTimersByTime(5000);
             expect(serverFinished).toBe(true);

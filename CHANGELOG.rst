@@ -6,6 +6,14 @@ foursight-core
 Change Log
 ----------
 
+5.10.5.1b8
+==========
+* Support same-origin cross-tab Okta returns using short-lived, app-namespaced,
+  OAuth-state-keyed bridge records. Retain SDK PKCE/state validation, explicit
+  nonce and existing server transaction-cookie/CSRF checks; no latest-record or
+  token-restoration fallback. Limit records to the existing ten-minute transaction
+  window, consume on callback and scope cleanup to matched state/current app.
+
 5.10.5.1b7
 ==========
 * Display fixed client stage/class/reason diagnostics on the shared React/legacy
