@@ -181,11 +181,13 @@ class AppUtilsCore(ReactApi, Routes):
         stage_name = self.stage.get_stage()
         return self.environment.get_environment_and_bucket_info_in_batch(stage=stage_name, env=env, envs=envs)
 
-    def init_connection(self, environ, _environments=None):
+    def init_connection(self, environ, _environments=None, use_es=True):
         """
         Initialize the fourfront/s3 connection using the FSConnection object
         and the given environment.
         Returns an FSConnection object or raises an error.
+        Auth-only callers use the existing S3-backed mode without initializing ES;
+        monitoring callers keep the default ES-enabled connection.
         """
         environments = self.init_environments(environ) if _environments is None else _environments
         if not environments:
@@ -201,7 +203,7 @@ class AppUtilsCore(ReactApi, Routes):
                 'checks': {}
             }
             raise Exception(str(error_res))
-        connection = FSConnection(environ, environments[environ], host=self.host)
+        connection = FSConnection(environ, environments[environ], host=self.host, use_es=use_es)
         return connection
 
     def init_response(self, environ):
@@ -380,7 +382,7 @@ class AppUtilsCore(ReactApi, Routes):
                     return False  # we have no env to check auth
                 envs = self.init_environments(env)
                 for env_info in envs.values():
-                    connection = self.init_connection(env, envs)
+                    connection = self.init_connection(env, envs, use_es=False)
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
                                                      key=connection.ff_keys,
                                                      add_on='frame=object&datastore=database')
@@ -483,7 +485,7 @@ class AppUtilsCore(ReactApi, Routes):
         expires_in = res.json().get('expires_in', None)
 
         # store redis token if turned on
-        conn = self.init_connection(env)
+        conn = self.init_connection(env, use_es=False)
         redis_handler = conn.get_redis_base()
         if redis_handler:
             # Get email from JWT.
@@ -539,7 +541,7 @@ class AppUtilsCore(ReactApi, Routes):
 
             # if redis is enabled check for session token and extract JWT from there
             canonical_env_name = full_env_name(env_name)
-            conn = self.init_connection(canonical_env_name)
+            conn = self.init_connection(canonical_env_name, use_es=False)
             redis_handler = conn.get_redis_base()
             if redis_handler:
                 redis_session_token = RedisSessionToken.from_redis(

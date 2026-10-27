@@ -106,6 +106,12 @@ Run the built frontend and Chalice at the **same origin** with
 - Trusted Origin `http://localhost:8000`, if required by the tenant.
 
 HTTP is only for loopback development; Okta's issuer still requires HTTPS.
+Authentication uses the existing S3-backed connection mode without initializing
+Elasticsearch. S3 supplies the existing Portal access key, not a replacement user
+store: user/environment/group authorization still reads authoritative Portal
+metadata with `datastore=database`. Missing keys or denied users do not gain access.
+This applies to both UI session readers and Auth0 as well as Okta; monitoring
+connections remain ES-enabled by default and may have separate network requirements.
 The existing Auth0 local callback `/callback/` is unchanged. The existing
 Cognito callback `/api/react/cognito/callback` is also unchanged.
 

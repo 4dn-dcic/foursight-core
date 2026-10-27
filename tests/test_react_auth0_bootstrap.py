@@ -152,18 +152,20 @@ def test_bootstrap_required_portal_mode_still_fails_closed(bootstrap, monkeypatc
     assert bootstrap["calls"] == 2
 
 
+@pytest.mark.parametrize("s3_fault", [None, "missing_key", "invalid_key", "portal_denied"])
 @pytest.mark.parametrize("redis_host", [None, "disabled", "redis://synthetic.invalid", "rediss://synthetic.invalid"])
 @pytest.mark.parametrize("groups", [["foursight"], ["admin"], ["user"]])
-def test_smaht_0811_session_routes_restore_and_logout(bootstrap, monkeypatch, redis_host, groups):
+def test_smaht_0811_session_routes_restore_and_logout(bootstrap, monkeypatch, redis_host, groups, s3_fault):
     """Actual downstream subclass/bootstrap/routes; only external services are fixtures."""
     import importlib
     import importlib.metadata
+    import requests
     from http.cookies import SimpleCookie
     from chalice import Response
     from chalice.test import Client
     from cryptography.hazmat.primitives.asymmetric import rsa
     from dcicutils.redis_tools import RedisBase
-    from foursight_core import fs_connection
+    from foursight_core import fs_connection, s3_connection
     from foursight_core.react.api import auth, envs
     from foursight_core.route_prefixes import ROUTE_PREFIX
     from test_okta import token
@@ -191,18 +193,59 @@ def test_smaht_0811_session_routes_restore_and_logout(bootstrap, monkeypatch, re
     monkeypatch.setattr(auth, "RedisBase", lambda client: client)
     monkeypatch.setattr(fs_connection, "create_redis_client", factory)
     monkeypatch.setattr(fs_connection, "RedisBase", lambda client: client)
-    monkeypatch.setattr(fs_connection, "S3Connection", lambda *args: None)
     monkeypatch.setattr(fs_connection, "full_env_name", lambda name: name)
     monkeypatch.setattr(fs_connection, "is_stg_or_prd_env", lambda name: False)
-    connection = fs_connection.FSConnection(
-        "synthetic", dict(fourfront=PORTAL, ff_env="synthetic", es="synthetic-es", bucket="synthetic"),
-        test=True, use_es=False)
-    monkeypatch.setattr(core, "init_connection", lambda *args: connection)
-    monkeypatch.setattr(core, "init_environments", lambda name: {name: {}})
+    info = dict(fourfront=PORTAL, ff_env="synthetic", es="synthetic-es", bucket="synthetic-results")
+    monkeypatch.setattr(core, "init_environments", lambda name: {name: info})
     monkeypatch.setattr(envs, "foursight_env_name", lambda name: name)
     monkeypatch.setattr(core._envs, "get_known_envs_with_gac_names", core._envs.get_known_envs)
-    # Keep both real Envs and legacy user/group authorization, not a grant stub.
-    monkeypatch.setattr(app_utils.ff_utils, "get_metadata", lambda *args, **kwargs: {"groups": groups})
+    # Exercise real AppUtils -> FSConnection -> S3Connection and s3Utils key
+    # parsing, never a dummy auth connection or a replacement get_access_keys.
+    es = Mock(side_effect=AssertionError("Authentication must not construct Elasticsearch"))
+    monkeypatch.setattr(fs_connection, "ESConnection", es)
+    monkeypatch.setenv("S3_ENCRYPT_KEY", "synthetic-encryption-key")
+    s3_reads = []
+
+    def s3_get_object(**kwargs):
+        assert kwargs["Bucket"] == "synthetic-system"
+        assert kwargs["Key"] == "access_key_foursight"
+        assert kwargs["SSECustomerKey"] == "synthetic-encryption-key"
+        assert kwargs["SSECustomerAlgorithm"] == "AES256"
+        s3_reads.append(kwargs["Key"])
+        if s3_fault == "missing_key":
+            raise KeyError("synthetic missing service key")
+        keys = {"key": "synthetic-access", "secret": "synthetic-secret"}
+        if s3_fault == "invalid_key":
+            keys.pop("secret")
+        return {"Body": BytesIO(json.dumps(keys).encode())}
+
+    s3 = SimpleNamespace(get_object=s3_get_object, head_bucket=lambda **kwargs: {
+        "ResponseMetadata": {"HTTPStatusCode": 200}})
+    monkeypatch.setattr(s3_connection, "boto_s3_client", lambda: s3)
+    monkeypatch.setattr(s3_connection, "boto_s3_resource", lambda: SimpleNamespace())
+    monkeypatch.setattr(s3_connection, "boto3", SimpleNamespace(client=lambda *args: SimpleNamespace()))
+
+    def s3_init(self, *args, **kwargs):
+        self.url = PORTAL
+        self.sys_bucket = "synthetic-system"
+        self.s3 = s3
+
+    monkeypatch.setattr(s3_utils.s3Utils, "__init__", s3_init)
+    portal_reads = []
+
+    def portal_request(session, method, url, **kwargs):
+        assert method.upper() == "GET"
+        assert url == PORTAL + "/users/synthetic@example.invalid?frame=object&datastore=database"
+        assert kwargs["auth"] == ("synthetic-access", "synthetic-secret")
+        portal_reads.append(method)
+        response = requests.Response()
+        response.status_code = 403 if s3_fault == "portal_denied" else 200
+        response._content = json.dumps({"groups": groups}).encode()
+        return response
+
+    # Keep the actual metadata URL, S3-derived authentication and both real
+    # Envs/legacy group decisions. Only the outbound transport is synthetic.
+    monkeypatch.setattr(requests.sessions.Session, "request", portal_request)
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     monkeypatch.setattr(okta, "jwks_client", lambda issuer: SimpleNamespace(
         get_signing_key_from_jwt=lambda encoded: SimpleNamespace(key=key.public_key())))
@@ -231,6 +274,9 @@ def test_smaht_0811_session_routes_restore_and_logout(bootstrap, monkeypatch, re
                        csrf=transaction.json_body["csrf"])
         result = send(client, "POST", "okta/session", payload)
         assert result.status_code == 200
+        es.assert_not_called()
+        assert s3_reads
+        assert bool(portal_reads) is (s3_fault not in ("missing_key", "invalid_key"))
         use_redis = redis_host in ("redis://synthetic.invalid", "rediss://synthetic.invalid")
         assert bool(factory.call_count) is use_redis
         if not use_redis:
@@ -241,13 +287,27 @@ def test_smaht_0811_session_routes_restore_and_logout(bootstrap, monkeypatch, re
                 core._auth._redis = None  # Separate worker must select the same mode.
             for path in paths:
                 response = send(client, "GET", path)
-                assert response.status_code == (200 if groups != ["user"] else 403)
+                permitted = groups != ["user"] and s3_fault is None
+                assert response.status_code == (200 if permitted else 403)
         result = send(client, "POST", "okta/logout", {})
         assert result.status_code == 200
         for name in ("c4_st", "authtoken", okta.TRANSACTION_COOKIE):
             assert jar[name].value == ""
         assert not storage
         assert all(send(client, "GET", path).status_code != 200 for path in paths)
+        es.assert_not_called()
+
+
+@pytest.mark.parametrize("use_es", [None, True, False])
+def test_init_connection_preserves_monitoring_default(bootstrap, monkeypatch, use_es):
+    core = app_utils.AppUtilsCore.singleton()
+    info = {"synthetic": {"bucket": "synthetic-results"}}
+    factory = Mock(return_value=object())
+    monkeypatch.setattr(app_utils, "FSConnection", factory)
+    kwargs = {} if use_es is None else {"use_es": use_es}
+    assert core.init_connection("synthetic", info, **kwargs) is factory.return_value
+    factory.assert_called_once_with("synthetic", info["synthetic"], host=core.host,
+                                    use_es=True if use_es is None else use_es)
 
 
 def test_warm_singleton_and_successful_url_cache_mask_later_health_failure(bootstrap):

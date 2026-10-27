@@ -315,7 +315,7 @@ def test_backend_session_both_ui_contracts_and_warm_restoration(core, key, monke
     # The legacy reader sees the exact existing signed identity contract.
     legacy = object.__new__(AppUtils)
     legacy._auth0_config = core._auth0_config
-    legacy.init_connection = lambda env: SimpleNamespace(get_redis_base=lambda: None)
+    legacy.init_connection = lambda env, **kwargs: SimpleNamespace(get_redis_base=lambda: None)
     monkeypatch.setattr("foursight_core.app_utils.full_env_name", lambda env: env)
     assert legacy.get_decoded_jwt_token("allowed", req)["email"] == identity["email"]
     logout = okta.handle(core, req, "logout")
@@ -368,7 +368,7 @@ def test_redis_session_and_logout_preserve_namespace_and_ttl(core, key, monkeypa
     assert core._auth.authorize(req, "allowed")["authorized"] is True
     legacy = object.__new__(AppUtils)
     legacy._auth0_config = core._auth0_config
-    legacy.init_connection = lambda env: SimpleNamespace(get_redis_base=lambda: redis)
+    legacy.init_connection = lambda env, **kwargs: SimpleNamespace(get_redis_base=lambda: redis)
     monkeypatch.setattr("foursight_core.app_utils.full_env_name", lambda env: env)
     assert legacy.get_decoded_jwt_token("allowed", req)["email"] == "synthetic@example.invalid"
     assert okta.handle(core, req, "logout").status_code == 200
@@ -407,7 +407,7 @@ def test_legacy_portal_role_policy_unchanged(core, key, monkeypatch, verified):
     req["headers"]["cookie"] = "c4_st=" + cookies(result)["c4_st"].value
     legacy = object.__new__(AppUtils)
     legacy._auth0_config = core._auth0_config
-    legacy.init_connection = lambda *args: SimpleNamespace(get_redis_base=lambda: None, ff_keys={})
+    legacy.init_connection = lambda *args, **kwargs: SimpleNamespace(get_redis_base=lambda: None, ff_keys={})
     legacy.init_environments = lambda env: {env: {}}
     legacy.set_user_record = Mock()
     monkeypatch.setattr("foursight_core.app_utils.full_env_name", lambda env: env)
@@ -504,7 +504,7 @@ def test_selected_redis_operation_failure_is_not_jwt_mode(core, key, monkeypatch
     assert core._auth.authorize(req, "allowed")["authorized"] is True
     legacy = object.__new__(AppUtils)
     legacy._auth0_config = core._auth0_config
-    legacy.init_connection = lambda env: SimpleNamespace(get_redis_base=lambda: redis)
+    legacy.init_connection = lambda env, **kwargs: SimpleNamespace(get_redis_base=lambda: redis)
     monkeypatch.setattr("foursight_core.app_utils.full_env_name", lambda env: env)
     if failure == "read":
         redis.get.side_effect = ConnectionError("synthetic outage")
@@ -528,7 +528,7 @@ def test_no_selected_redis_does_not_accept_arbitrary_session_jwt(core, key, monk
     jar = cookies(result)
     legacy = object.__new__(AppUtils)
     legacy._auth0_config = core._auth0_config
-    legacy.init_connection = lambda env: SimpleNamespace(get_redis_base=lambda: None)
+    legacy.init_connection = lambda env, **kwargs: SimpleNamespace(get_redis_base=lambda: None)
     monkeypatch.setattr("foursight_core.app_utils.full_env_name", lambda env: env)
     changed = {}
     for name in ("c4_st", "authtoken"):
@@ -558,7 +558,7 @@ def test_auth0_no_redis_reference_callback(core, monkeypatch, redis_host, ui):
     legacy._auth0_config = core._auth0_config
     legacy._auth = core._auth
     legacy.auth0_domain = "synthetic.auth0.invalid"
-    legacy.init_connection = lambda *args: SimpleNamespace(get_redis_base=lambda: None, ff_keys={})
+    legacy.init_connection = Mock(return_value=SimpleNamespace(get_redis_base=lambda: None, ff_keys={}))
     monkeypatch.setattr(app, "core", legacy, raising=False)
     monkeypatch.setattr(core._auth0_config, "get_domain", lambda: "synthetic.auth0.invalid")
     now = int(time.time())
@@ -586,6 +586,7 @@ def test_auth0_no_redis_reference_callback(core, monkeypatch, redis_host, ui):
     else:
         monkeypatch.setattr("foursight_core.app_utils.full_env_name", lambda env: env)
         assert legacy.get_decoded_jwt_token("allowed", req)["sub"] == "auth0|synthetic"
+        assert all(call.kwargs == {"use_es": False} for call in legacy.init_connection.call_args_list)
 
 
 def rejection_records(caplog):

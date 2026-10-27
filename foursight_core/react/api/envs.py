@@ -105,7 +105,7 @@ class Envs:
                 # in the database are lowercased; it causes issues with OAuth if we don't do this.
                 known_env_name = known_env["full_name"]
                 envs = app.core.init_environments(known_env_name)
-                connection = app.core.init_connection(known_env_name, envs)
+                connection = app.core.init_connection(known_env_name, envs, use_es=False)
                 user = ff_utils.get_metadata('users/' + email.lower(),
                                              key=connection.ff_keys,
                                              add_on="frame=object&datastore=database")
