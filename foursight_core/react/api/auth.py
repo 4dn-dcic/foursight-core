@@ -4,7 +4,6 @@ import logging
 import time
 import redis
 from typing import Optional, Tuple
-from dcicutils.env_utils import full_env_name
 from dcicutils.function_cache_decorator import function_cache
 from dcicutils.misc_utils import ignored, PRINT
 from dcicutils.redis_tools import RedisBase, RedisSessionToken, SESSION_TOKEN_COOKIE
@@ -32,6 +31,16 @@ class Auth:
         self._envs = envs
         self._redis = None
 
+    @staticmethod
+    def get_redis_url() -> Optional[str]:
+        """Use the existing URL-based session mode, not REDIS_HOST truthiness.
+
+        Non-URL placeholders select signed JWT sessions, as in legacy FSConnection.
+        A selected Redis URL still requires a working store; an outage is not JWT mode.
+        """
+        url = os.environ.get('REDIS_HOST')
+        return url if url and ("redis://" in url or "rediss://" in url) else None
+
     def get_redis_handler(self):
         """
         Returns a handler to Redis or None if not in use
@@ -40,7 +49,7 @@ class Auth:
             # 2023-09-21: Moved this from __init__ to here;
             # it speeds up provision/deploy from 4dn-cloud-infra.
             try:
-                if (redis_url := os.environ.get('REDIS_HOST')) and ("redis://" in redis_url or "rediss://" in redis_url):
+                if redis_url := self.get_redis_url():
                     self._redis = RedisBase(create_redis_client(url=redis_url))
             except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
                 PRINT('Cannot connect to Redis')
@@ -66,7 +75,7 @@ class Auth:
             # Initialize Redis on cold workers as well as the worker that handled
             # login. A configured but unavailable session store must fail closed.
             redis_handler = self.get_redis_handler()
-            if os.environ.get('REDIS_HOST') and not redis_handler:
+            if self.get_redis_url() and not redis_handler:
                 return self._create_unauthenticated_response(request, "session-store-unavailable")
             # Read the c4_st token (new Redis session token if Redis is in use)
             if redis_handler:
@@ -130,7 +139,8 @@ class Auth:
             logger.error(f"Authorization exception: {e}")
             return self._create_unauthenticated_response(request, "exception: " + str(e))
 
-    def create_authtoken(self, jwt: str, jwt_expires_at: int, domain: str, request: Optional[dict] = None) -> Tuple[str, str]:
+    def create_authtoken(self, jwt: str, jwt_expires_at: int, domain: str,
+                         request: Optional[dict] = None) -> Tuple[str, str]:
         """
         Creates and returns a new signed JWT, to be used as the login authtoken (cookie), from
         the given AUTHENTICATED and signed and encoded JWT, which will contain the following:
@@ -173,7 +183,7 @@ class Auth:
                     raise Exception("test_mode_access_key_simulate_error")
             allowed_envs, first_name, last_name = self._envs.get_user_auth_info(email)
             user_exception = False
-        except Exception as e:
+        except Exception:
             #
             # Here there was a problem getting the user info via Portal (e.g. due to expired or otherwise bad
             # Portal acesss key); this will NOT prevent the user from being logged in BUT it WILL prevent the

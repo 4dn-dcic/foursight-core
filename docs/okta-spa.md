@@ -150,8 +150,15 @@ this restriction.
    not placed in backend session cookies or Redis. Existing portal user/group
    lookups still determine access: no users are created and no roles granted.
 5. Provider expiry remains the identity/session expiry; Redis uses its existing
-   default expiration. Cold workers initialize the configured Redis validator,
-   and an unavailable configured store fails closed rather than bypassing it.
+   default expiration. Redis is optional: the existing `REDIS_HOST` URL selection
+   (`redis://` or `rediss://`) selects server-side sessions. An unset/empty value
+   or non-URL placeholder keeps the existing Auth0 signed-JWT session mode; a
+   truthy placeholder alone does not require Redis. Login, cold-worker React
+   authorization and shared logout use the same selection. When a Redis URL is
+   selected, an unavailable store fails closed rather than falling back to JWT.
+   JWT mode still verifies signatures, audience, expiry and authorization; logout
+   clears browser cookies, not a server-side revocation record. As with existing
+   Auth0 JWT sessions, a separately retained signed cookie expires naturally.
 6. Warm/cold page restoration uses existing Foursight cookies. A stored Okta ID
    token **never silently recreates or extends** an expired/deleted Foursight
    session. No background SDK renewal service is started. Only the ID token is

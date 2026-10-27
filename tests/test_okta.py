@@ -289,8 +289,11 @@ def test_csrf_origin_rejected(core, origin, monkeypatch, opt_out):
         assert okta.handle(core, request(origin=origin), operation, {}).status_code == 403
 
 
+@pytest.mark.parametrize("redis_host", [None, "", "disabled", "False"])
 @pytest.mark.parametrize("verified", [True, False, pytest.param(OMITTED, id="omitted")])
-def test_backend_session_both_ui_contracts_and_warm_restoration(core, key, monkeypatch, verified):
+def test_backend_session_both_ui_contracts_and_warm_restoration(core, key, monkeypatch, verified, redis_host):
+    if redis_host is not None:
+        monkeypatch.setenv("REDIS_HOST", redis_host)
     if verified is not True:
         monkeypatch.setenv("FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL", "false")
     req, payload = establish(core, key, email_verified=verified)
@@ -426,20 +429,163 @@ def test_react_logout_routes_through_shared_bridge(core):
     assert result.headers["Location"] == "https://foursight.invalid/api/okta/logout"
 
 
-def test_cold_worker_and_unavailable_redis_fail_closed(core, key, monkeypatch):
+@pytest.mark.parametrize("redis_host", ["redis://synthetic.invalid", "rediss://synthetic.invalid"])
+def test_cold_worker_and_unavailable_redis_fail_closed(core, key, monkeypatch, caplog, redis_host):
     req, payload = establish(core, key)
     result = okta.handle(core, req, "session", payload)
     jar = cookies(result)
     req["headers"]["cookie"] = "; ".join(f"{name}={jar[name].value}" for name in ("c4_st", "authtoken"))
-    monkeypatch.setenv("REDIS_HOST", "redis://synthetic.invalid")
+    # Keep the actual valid transaction cookie: rejection must be at storage,
+    # not the earlier missing-transaction branch.
+    session_req, session_payload = establish(core, key)
+    monkeypatch.setenv("REDIS_HOST", redis_host)
     core._auth.get_redis_handler = Mock(return_value=None)
     assert core._auth.authorize(req, "allowed")["authenticated"] is False
     core._auth.get_redis_handler.assert_called_once()
-    assert okta.handle(core, req, "session", payload).status_code == 403
+    rejected = okta.handle(core, session_req, "session", session_payload)
+    assert rejected.status_code == 403
+    assert "c4_st" not in cookies(rejected) and "authtoken" not in cookies(rejected)
+    assert "reason=session_store_unavailable" in rejection_records(caplog)[-1].getMessage()
     logout = okta.handle(core, req, "logout")
     assert logout.status_code == 403
     assert cookies(logout)["c4_st"].value == ""
     assert cookies(logout)["authtoken"].value == ""
+
+
+@pytest.mark.parametrize("redis_host", ["redis://synthetic.invalid", "rediss://synthetic.invalid"])
+@pytest.mark.parametrize("error", ["ConnectionError", "TimeoutError"])
+def test_selected_redis_connection_failure_is_not_jwt_mode(core, key, monkeypatch, caplog, redis_host, error):
+    import redis
+
+    req, payload = establish(core, key)
+    result = okta.handle(core, req, "session", payload)
+    jar = cookies(result)
+    authenticated = request()
+    authenticated["headers"]["cookie"] = "; ".join(f"{name}={jar[name].value}" for name in ("c4_st", "authtoken"))
+    monkeypatch.setenv("REDIS_HOST", redis_host)
+    factory = Mock(side_effect=getattr(redis.exceptions, error)("synthetic outage"))
+    monkeypatch.setattr(auth_module, "create_redis_client", factory)
+    assert core._auth.get_redis_handler() is None
+    assert core._auth.authorize(authenticated, "allowed")["status"] == "session-store-unavailable"
+    result = okta.handle(core, req, "session", payload)
+    assert result.status_code == 403
+    assert "reason=session_store_unavailable" in rejection_records(caplog)[-1].getMessage()
+    assert "c4_st" not in cookies(result) and "authtoken" not in cookies(result)
+    result = okta.handle(core, authenticated, "logout")
+    assert result.status_code == 403
+    assert cookies(result)["c4_st"].value == cookies(result)["authtoken"].value == ""
+    assert factory.call_count == 4
+
+
+@pytest.mark.parametrize("failure", ["write", "read", "delete"])
+def test_selected_redis_operation_failure_is_not_jwt_mode(core, key, monkeypatch, failure):
+    from dcicutils.redis_tools import RedisBase
+    from redis.exceptions import ConnectionError
+
+    monkeypatch.setenv("REDIS_HOST", "rediss://synthetic.invalid")
+    storage = {}
+    redis = Mock(spec=RedisBase)
+    redis.set.side_effect = lambda name, value, exp=None: storage.update({name: value}) or True
+    redis.get.side_effect = lambda name: storage.get(name)
+    redis.ttl.return_value = 10800
+    redis.delete.side_effect = lambda name: int(storage.pop(name, None) is not None)
+    core._auth._redis = redis
+    req, payload = establish(core, key)
+    if failure == "write":
+        redis.set.side_effect = ConnectionError("synthetic outage")
+        result = okta.handle(core, req, "session", payload)
+        assert result.status_code == 403
+        assert "c4_st" not in cookies(result) and "authtoken" not in cookies(result)
+        return
+    result = okta.handle(core, req, "session", payload)
+    assert result.status_code == 200
+    jar = cookies(result)
+    req["headers"]["cookie"] = "; ".join(f"{name}={jar[name].value}" for name in ("c4_st", "authtoken"))
+    assert core._auth.authorize(req, "allowed")["authorized"] is True
+    legacy = object.__new__(AppUtils)
+    legacy._auth0_config = core._auth0_config
+    legacy.init_connection = lambda env: SimpleNamespace(get_redis_base=lambda: redis)
+    monkeypatch.setattr("foursight_core.app_utils.full_env_name", lambda env: env)
+    if failure == "read":
+        redis.get.side_effect = ConnectionError("synthetic outage")
+        assert core._auth.authorize(req, "allowed")["authenticated"] is False
+        assert legacy.get_decoded_jwt_token("allowed", req) is None
+    else:
+        redis.delete.side_effect = ConnectionError("synthetic outage")
+    result = okta.handle(core, req, "logout")
+    assert result.status_code == 403  # No claim of confirmed server revocation.
+    assert cookies(result)["c4_st"].value == cookies(result)["authtoken"].value == ""
+
+
+@pytest.mark.parametrize("invalid", ["signature", "audience", "expiry"])
+def test_no_selected_redis_does_not_accept_arbitrary_session_jwt(core, key, monkeypatch, invalid):
+    from foursight_core.react.api.jwt_utils import jwt_encode
+
+    monkeypatch.setenv("REDIS_HOST", "disabled")
+    req, payload = establish(core, key)
+    result = okta.handle(core, req, "session", payload)
+    assert result.status_code == 200
+    jar = cookies(result)
+    legacy = object.__new__(AppUtils)
+    legacy._auth0_config = core._auth0_config
+    legacy.init_connection = lambda env: SimpleNamespace(get_redis_base=lambda: None)
+    monkeypatch.setattr("foursight_core.app_utils.full_env_name", lambda env: env)
+    changed = {}
+    for name in ("c4_st", "authtoken"):
+        claims = jwt_decode(jar[name].value, CLIENT, SECRET)
+        if invalid == "expiry":
+            claims["exp"] = claims["authenticated_until"] = int(time.time()) - 120
+        changed[name] = jwt_encode(claims, "wrong-client" if invalid == "audience" else CLIENT,
+                                   "wrong-key" if invalid == "signature" else SECRET)
+    req["headers"]["cookie"] = "; ".join(f"{name}={value}" for name, value in changed.items())
+    assert core._auth.authorize(req, "allowed")["authenticated"] is False
+    assert legacy.get_decoded_jwt_token("allowed", req) is None
+    # Existing valid cookies cannot substitute for a valid new IdP transaction/token.
+    req["headers"]["cookie"] = "; ".join(f"{name}={m.value}" for name, m in jar.items())
+    assert okta.handle(core, req, "session", payload).status_code == 403
+
+
+@pytest.mark.parametrize("redis_host", [None, "", "disabled", "False"])
+@pytest.mark.parametrize("ui", ["react", "legacy"])
+def test_auth0_no_redis_reference_callback(core, monkeypatch, redis_host, ui):
+    """Known-good Auth0 issuance selects JWT mode by handler, not host truthiness."""
+    from foursight_core.app import app
+    from foursight_core.react.api.jwt_utils import jwt_encode
+
+    if redis_host is not None:
+        monkeypatch.setenv("REDIS_HOST", redis_host)
+    legacy = object.__new__(AppUtils)
+    legacy._auth0_config = core._auth0_config
+    legacy._auth = core._auth
+    legacy.auth0_domain = "synthetic.auth0.invalid"
+    legacy.init_connection = lambda *args: SimpleNamespace(get_redis_base=lambda: None, ff_keys={})
+    monkeypatch.setattr(app, "core", legacy, raising=False)
+    monkeypatch.setattr(core._auth0_config, "get_domain", lambda: "synthetic.auth0.invalid")
+    now = int(time.time())
+    signed = jwt_encode(dict(sub="auth0|synthetic", email="synthetic@example.invalid",
+                             email_verified=True, iat=now, exp=now + 3600), CLIENT, SECRET)
+    post = Mock(return_value=SimpleNamespace(json=lambda: dict(id_token=signed, expires_in=3600)))
+    monkeypatch.setattr("requests.post", post)
+    req = request("/api/callback/")
+    req["query_params"] = {"code": "synthetic-code"}
+    if ui == "react":
+        req["query_params"]["react"] = ""
+    result = legacy.auth0_callback(SimpleNamespace(to_dict=lambda: req), "allowed")
+    assert result.status_code == 302
+    post.assert_called_once()
+    jar = SimpleCookie()
+    values = result.headers["Set-Cookie"]
+    for value in values if isinstance(values, list) else [values]:
+        jar.load(value)
+    req["headers"]["cookie"] = "; ".join(f"{name}={m.value}" for name, m in jar.items())
+    assert core._auth.get_redis_handler() is None
+    if ui == "react":
+        # Auth0 has already issued a cryptographically valid signed authtoken.
+        assert core._auth.decode_authtoken(jar["authtoken"].value)["authenticated"] is True
+        assert core._auth.authorize(req, "allowed")["authorized"] is True
+    else:
+        monkeypatch.setattr("foursight_core.app_utils.full_env_name", lambda env: env)
+        assert legacy.get_decoded_jwt_token("allowed", req)["sub"] == "auth0|synthetic"
 
 
 def rejection_records(caplog):

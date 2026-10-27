@@ -249,7 +249,7 @@ def response(body, status=200, cookies=None):
 
 def session_store(core):
     redis = core._auth.get_redis_handler()
-    if os.environ.get("REDIS_HOST") and not redis:
+    if core._auth.get_redis_url() and not redis:
         raise OktaValidationError("session_store_unavailable", "Session store unavailable")
     return redis
 
