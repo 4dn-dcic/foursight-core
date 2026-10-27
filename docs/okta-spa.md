@@ -269,8 +269,9 @@ exception described above.
 **Live acceptance still requires operator registration/configuration** above,
 a downstream app deployment, and designated tenant login/logout testing. None
 of those external configuration changes or an environment deployment is performed
-by this change. Pin **`foursight-core==5.10.5.1b9`** for optional-Redis JWT
-sessions and S3-only authentication initialization, retaining b8's state-bound
+by this change. Pin **`foursight-core==5.10.5.1b10`** for the desktop transition
+page styled to match the existing Foursight app, retaining b9's optional-Redis JWT
+sessions and S3-only authentication initialization, plus b8's state-bound
 same-origin cross-tab return support, b7's fixed client failure-page diagnostics, b6's Lambda
 route/stage instrumentation, b5's optional portal-URL startup
 guard, and b4's explicit interactive sign-in and credential-free rejection classification.
@@ -300,7 +301,7 @@ cd foursight-core-source
 git checkout --detach <validated-full-commit-sha>
 python -m pip wheel --no-deps --wheel-dir ../core-wheels .
 # In the downstream application's existing dependency environment:
-python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b9-py3-none-any.whl
+python -m pip install --no-deps --force-reinstall ../core-wheels/foursight_core-5.10.5.1b10-py3-none-any.whl
 ```
 
 Resolve the downstream application's normal dependencies first (including its
