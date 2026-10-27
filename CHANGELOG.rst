@@ -6,6 +6,58 @@ foursight-core
 Change Log
 ----------
 
+5.10.5.1b8
+==========
+* Support same-origin cross-tab Okta returns using short-lived, app-namespaced,
+  OAuth-state-keyed bridge records. Retain SDK PKCE/state validation, explicit
+  nonce and existing server transaction-cookie/CSRF checks; no latest-record or
+  token-restoration fallback. Limit records to the existing ten-minute transaction
+  window, consume on callback and scope cleanup to matched state/current app.
+
+5.10.5.1b7
+==========
+* Display fixed client stage/class/reason diagnostics on the shared React/legacy
+  Okta failure page, preserving classification before existing cleanup. Known
+  guards and pinned SDK errors are allowlisted; no credentials, identity, request
+  values, exception messages or stacks are displayed or logged. Authentication,
+  session validation, cleanup and timeout behavior are unchanged.
+* Include formatting-only cleanup of six pre-existing route lint findings.
+
+5.10.5.1b6
+==========
+* Add fixed-vocabulary Okta route-entry, parsing, validation, early-rejection and
+  session diagnostics through the actual Chalice application logger, with status
+  and elapsed timings. No request, identity, secret or exception text is logged;
+  authentication behavior and all timeout/configuration policies remain unchanged.
+
+5.10.5.1b5
+==========
+* Guard optional Auth0 portal URL construction when portal metadata is unavailable,
+  preventing a None dereference during application startup. Required portal mode,
+  environment/session credentials and all authentication checks remain unchanged.
+
+5.10.5.1b4
+==========
+* Request interactive hosted Okta authentication on each deliberate React/legacy
+  sign-in, even with an existing portal SSO session; restoration and logout are unchanged.
+* Classify caught authentication rejections by fixed stage, allowlisted exception
+  class and fixed known-rejection reason only. Public errors stay generic; no token,
+  identity, request data, exception message or traceback is added to these logs.
+  Existing validation, authorization and timeout policies are unchanged.
+
+5.10.5.1b3
+==========
+* Correct the explicit Okta verified-email opt-out to accept an omitted
+  ``email_verified`` claim without marking the identity verified. Strict default,
+  malformed-claim rejection, and existing token/session/authorization checks remain.
+
+5.10.5.1b2
+==========
+* Integration-test beta: shared Okta SPA login for React and legacy, with the
+  deployment-scoped ``FOURSIGHT_OKTA_REQUIRE_VERIFIED_EMAIL=false`` exception.
+  Verified email remains required by default; existing identity and group grants
+  and all other token/transaction checks are unchanged.
+
 5.10.5
 ======
 * Resolve React reindex/deployment launch networking from deployed ECS services,

@@ -105,7 +105,7 @@ class Envs:
                 # in the database are lowercased; it causes issues with OAuth if we don't do this.
                 known_env_name = known_env["full_name"]
                 envs = app.core.init_environments(known_env_name)
-                connection = app.core.init_connection(known_env_name, envs)
+                connection = app.core.init_connection(known_env_name, envs, use_es=False)
                 user = ff_utils.get_metadata('users/' + email.lower(),
                                              key=connection.ff_keys,
                                              add_on="frame=object&datastore=database")
@@ -237,11 +237,13 @@ class Envs:
     def _env_is_value(env: dict, value: str) -> bool:
         if isinstance(env, dict) and isinstance(value, str):
             value = value.lower()
-            if ((env.get("name").lower() == value) or
+            if (
+                (env.get("name").lower() == value) or
                 (env.get("short_name").lower() == value) or
                 (env.get("full_name").lower() == value) or
                 (env.get("public_name").lower() == value) or
-                (env.get("foursight_name").lower() == value)):
+                (env.get("foursight_name").lower() == value)
+            ):
                 return True
         return False
 

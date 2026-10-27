@@ -299,10 +299,12 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/auth0_config or /auth0_config
         Note that this in an UNPROTECTED route.
         """
-        auth0_config = self._auth0_config.get_config_data()
-        # Note we add the callback for the UI to setup its Auth0 login for.
+        from .okta import public_config
+        auth0_config = dict(self._auth0_config.get_config_data())
+        # Keep Auth0/Cognito unchanged when Okta is not configured.
         auth0_config["callback"] = self._auth0_config.get_callback_url(request)
-        return self.create_success_response(self._auth0_config.get_config_data())
+        auth0_config["okta"] = public_config(request)
+        return self.create_success_response(auth0_config)
 
     def reactapi_cognito_config(self, request: dict) -> Response:
         """
@@ -339,6 +341,9 @@ class ReactApi(ReactApiBase, ReactRoutes):
         Called from react_routes for endpoint: GET /{env}/logout or GET /logout
         Note that this in an UNPROTECTED route.
         """
+        from .okta import base_url, settings
+        if settings():
+            return self.create_redirect_response(base_url(request) + "/okta/logout")
         authorize_response = self._auth.authorize(request, env)
         if not authorize_response or not authorize_response["authorized"]:
             body = {"status": "Already logged out."}

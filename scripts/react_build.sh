@@ -8,7 +8,9 @@
 cd react
 rm -rf build
 npm install
-PUBLIC_URL=/api/react npm run build
+PUBLIC_URL=/api/react npm run build || exit 1
+# Shared standalone SPA protocol bridge for BOTH legacy and React login.
+npx --no-install esbuild src/auth/okta-entry.js --bundle --minify --legal-comments=eof --outfile=build/okta-auth.js || exit 1
 cd ..
 
 REACT_BUILD_DIR=react/build

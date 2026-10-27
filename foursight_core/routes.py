@@ -1,7 +1,7 @@
 from chalice import Response
 import json
 from .app import app
-from .route_prefixes import *
+from .route_prefixes import ROUTE_PREFIX, ROUTE_PREFIX_EXPLICIT
 
 
 class Routes:
@@ -12,6 +12,32 @@ class Routes:
     # ----------------------------------------------------------------------------------------------
     # Foursight Original routes.
     # ----------------------------------------------------------------------------------------------
+
+    @staticmethod
+    @app.route(ROUTE_PREFIX + "okta/{operation}", methods=['GET'])
+    def route_okta_page(operation):
+        from .react.api.okta import Diagnostic, handle, page
+        with Diagnostic(operation, "route_get") as diagnostic:
+            diagnostic.stage("request_parse")
+            request = app.current_request.to_dict()
+            if operation == "config":
+                return diagnostic.complete(handle(app.core, request, operation))
+            if operation in ("login", "callback", "logout", "signed-out"):
+                diagnostic.stage("page")
+                return diagnostic.complete(page(request, operation,
+                                                package=getattr(app.core, "APP_PACKAGE_NAME", None)))
+            return diagnostic.complete(Response(body="Not found", status_code=404), reason="unknown_operation")
+
+    @staticmethod
+    @app.route(ROUTE_PREFIX + "okta/{operation}", methods=['POST'], content_types=['application/json'])
+    def route_okta_session(operation):
+        from .react.api.okta import Diagnostic, handle
+        with Diagnostic(operation, "route_post") as diagnostic:
+            if operation not in ("transaction", "session", "logout"):
+                return diagnostic.complete(Response(body="Not found", status_code=404), reason="unknown_operation")
+            diagnostic.stage("request_parse")
+            return diagnostic.complete(handle(app.core, app.current_request.to_dict(),
+                                              operation, app.current_request.json_body))
 
     @staticmethod
     @app.route("/callback")
@@ -98,7 +124,8 @@ class Routes:
         """
         req_dict = app.current_request.to_dict()
         domain, context = app.core.get_domain_and_context(req_dict)
-        return app.core.view_foursight(app.current_request, environ, app.core.check_authorization(req_dict, environ), domain, context)
+        return app.core.view_foursight(app.current_request, environ,
+                                       app.core.check_authorization(req_dict, environ), domain, context)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + 'view/{environ}/{check}/{uuid}', methods=['GET'])
@@ -125,8 +152,9 @@ class Routes:
         start = int(query_params.get('start', '0')) if query_params else 0
         limit = int(query_params.get('limit', '25')) if query_params else 25
         domain, context = app.core.get_domain_and_context(req_dict)
-        return app.core.view_foursight_history(app.current_request, environ, check, start, limit,
-                                      app.core.check_authorization(req_dict, environ), domain, context)
+        return app.core.view_foursight_history(
+            app.current_request, environ, check, start, limit,
+            app.core.check_authorization(req_dict, environ), domain, context)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + 'checks/{environ}/{check}/{uuid}', methods=['GET'])
@@ -217,7 +245,8 @@ class Routes:
 #
 #       Protected route
 #       """
-#       if app.core.check_authorization(app.current_request.to_dict(), environ):  # TODO (C4-138) Centralize authorization check
+#       # TODO (C4-138) Centralize authorization check
+#       if app.core.check_authorization(app.current_request.to_dict(), environ):
 #           return app.core.run_delete_environment(environ)
 #       else:
 #           return app.core.forbidden_response()
@@ -229,18 +258,24 @@ class Routes:
     def get_view_info_route(environ):
         req_dict = app.current_request.to_dict()
         domain, context = app.core.get_domain_and_context(req_dict)
-        return app.core.view_info(request=app.current_request, environ=environ, is_admin=app.core.check_authorization(req_dict, environ), domain=domain, context=context)
+        return app.core.view_info(request=app.current_request, environ=environ,
+                                  is_admin=app.core.check_authorization(req_dict, environ),
+                                  domain=domain, context=context)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + 'users/{environ}/{email}')
     def get_view_user_route(environ, email):
         req_dict = app.current_request.to_dict()
         domain, context = app.core.get_domain_and_context(req_dict)
-        return app.core.view_user(request=app.current_request, environ=environ, is_admin=app.core.check_authorization(req_dict, environ), domain=domain, context=context, email=email)
+        return app.core.view_user(request=app.current_request, environ=environ,
+                                  is_admin=app.core.check_authorization(req_dict, environ),
+                                  domain=domain, context=context, email=email)
 
     @staticmethod
     @app.route(ROUTE_PREFIX + 'users/{environ}')
     def get_view_users_route(environ):
         req_dict = app.current_request.to_dict()
         domain, context = app.core.get_domain_and_context(req_dict)
-        return app.core.view_users(request=app.current_request, environ=environ, is_admin=app.core.check_authorization(req_dict, environ), domain=domain, context=context)
+        return app.core.view_users(request=app.current_request, environ=environ,
+                                   is_admin=app.core.check_authorization(req_dict, environ),
+                                   domain=domain, context=context)

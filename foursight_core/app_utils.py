@@ -15,7 +15,6 @@ import os
 from os.path import dirname
 import pkg_resources
 import platform
-import pytz
 import requests
 import socket
 import sys
@@ -48,6 +47,7 @@ from .fs_connection import FSConnection
 from .s3_connection import S3Connection
 from .react.api.auth import Auth
 from .react.api.jwt_utils import jwt_decode
+from .react.api.okta import email_is_acceptable as okta_email_is_acceptable
 from .react.api.react_api import ReactApi
 from .react.api.datetime_utils import (
     convert_time_t_to_utc_datetime_string,
@@ -135,6 +135,8 @@ class AppUtilsCore(ReactApi, Routes):
             #       and https://github.com/pallets/jinja/issues/1203
             autoescape=jinja2.select_autoescape(['html', 'xml'])
         )
+        self.jin_env.globals["okta_enabled"] = bool(
+            os.environ.get("FOURSIGHT_OKTA_ISSUER") or os.environ.get("FOURSIGHT_OKTA_CLIENT_ID"))
         self.auth0_domain = None
         self.auth0_client_id = None
         self.user_records = {}
@@ -178,11 +180,13 @@ class AppUtilsCore(ReactApi, Routes):
         stage_name = self.stage.get_stage()
         return self.environment.get_environment_and_bucket_info_in_batch(stage=stage_name, env=env, envs=envs)
 
-    def init_connection(self, environ, _environments=None):
+    def init_connection(self, environ, _environments=None, use_es=True):
         """
         Initialize the fourfront/s3 connection using the FSConnection object
         and the given environment.
         Returns an FSConnection object or raises an error.
+        Auth-only callers use the existing S3-backed mode without initializing ES;
+        monitoring callers keep the default ES-enabled connection.
         """
         environments = self.init_environments(environ) if _environments is None else _environments
         if not environments:
@@ -198,7 +202,7 @@ class AppUtilsCore(ReactApi, Routes):
                 'checks': {}
             }
             raise Exception(str(error_res))
-        connection = FSConnection(environ, environments[environ], host=self.host)
+        connection = FSConnection(environ, environments[environ], host=self.host, use_es=use_es)
         return connection
 
     def init_response(self, environ):
@@ -278,7 +282,7 @@ class AppUtilsCore(ReactApi, Routes):
         user_record["error"] = error
         user_record["exception"] = exception
 
-    @function_cache(key=lambda self, env_name, raise_exception = False: env_name, nocache=None)
+    @function_cache(key=lambda self, env_name, raise_exception=False: env_name, nocache=None)
     def get_portal_url(self, env_name: str, raise_exception: bool = False) -> Optional[str]:
         try:
             environment_and_bucket_info = (
@@ -292,7 +296,8 @@ class AppUtilsCore(ReactApi, Routes):
             return None
 
     def get_auth0_client_id(self, env_name: str) -> str:
-        auth0_client_id = os.environ.get("CLIENT_ID")
+        auth0_client_id = (os.environ.get("CLIENT_ID") or os.environ.get("ENCODED_AUTH0_CLIENT")
+                           or os.environ.get("FOURSIGHT_OKTA_CLIENT_ID"))
         if not auth0_client_id:
             # TODO: Confirm that we do not actually need to do this.
             # Just in case. We should already have this value from the GAC.
@@ -312,7 +317,8 @@ class AppUtilsCore(ReactApi, Routes):
                 self.auth0_client_id = response.get("auth0Client", auth0_client_id_fallback)
             except Exception as e:
                 # TODO: Fallback behavior to old hardcoded value (previously in templates/header.html).
-                logger.error(f"Error fetching Auth0 client ID from portal ({auth0_config_url}); using default value: {e}")
+                logger.error(
+                    f"Error fetching Auth0 client ID from portal ({auth0_config_url}); using default value: {e}")
         logger.warning(f"Done fetching Auth0 client ID from portal ({auth0_config_url}): {self.auth0_client_id}")
         return self.auth0_client_id or auth0_client_id_fallback
 
@@ -339,7 +345,7 @@ class AppUtilsCore(ReactApi, Routes):
 
     def get_auth0_secret(self, env_name: str) -> str:
         ignored(env_name)
-        return os.environ.get("CLIENT_SECRET")
+        return self._auth0_config.get_secret()
 
     def check_authorization(self, request_dict, env=None):
         """
@@ -376,7 +382,7 @@ class AppUtilsCore(ReactApi, Routes):
                     return False  # we have no env to check auth
                 envs = self.init_environments(env)
                 for env_info in envs.values():
-                    connection = self.init_connection(env, envs)
+                    connection = self.init_connection(env, envs, use_es=False)
                     user_res = ff_utils.get_metadata('users/' + jwt_decoded.get('email').lower(),
                                                      key=connection.ff_keys,
                                                      add_on='frame=object&datastore=database')
@@ -386,16 +392,22 @@ class AppUtilsCore(ReactApi, Routes):
                     logger.warning(user_res)
                     groups = user_res.get('groups')
                     if not groups:
-                        logger.warning("foursight_core.check_authorization: No 'groups' element for user record! Returning False.")
-                        self.set_user_record(email=jwt_decoded.get('email'), record=None, error="nogroups", exception=None)
+                        logger.warning("foursight_core.check_authorization: "
+                                       "No 'groups' element for user record! Returning False.")
+                        self.set_user_record(email=jwt_decoded.get('email'), record=None,
+                                             error="nogroups", exception=None)
                         # self.user_record = None
                         # self.user_record_error = "nogroups"
                         # self.user_record_error_email = jwt_decoded.get('email')
                         return False
-                    if not (('admin' in user_res['groups'] or 'foursight' in user_res['groups']) and jwt_decoded.get('email_verified')):
+                    email_acceptable = jwt_decoded.get('email_verified')
+                    if str(jwt_decoded.get('sub', '')).startswith('okta|'):
+                        email_acceptable = okta_email_is_acceptable(jwt_decoded)
+                    if not (('admin' in user_res['groups'] or 'foursight' in user_res['groups']) and email_acceptable):
                         logger.error("foursight_core.check_authorization: Returning False")
                         # if unauthorized for one, unauthorized for all
-                        self.set_user_record(email=jwt_decoded.get('email'), record=None, error="noadmin", exception=None)
+                        self.set_user_record(email=jwt_decoded.get('email'), record=None,
+                                             error="noadmin", exception=None)
                         # self.user_record = None
                         # self.user_record_error = "noadmin"
                         # self.user_record_error_email = jwt_decoded.get('email')
@@ -442,7 +454,7 @@ class AppUtilsCore(ReactApi, Routes):
             redir_url_cookie = simple_cookies.get("redir")
             if redir_url_cookie:
                 redir_url = redir_url_cookie
-        except Exception as e:
+        except Exception:
             logger.error("Exception loading cookies: {cookies} - {get_error_message(e)}")
 
         resp_headers = {'Location': redir_url}
@@ -476,7 +488,7 @@ class AppUtilsCore(ReactApi, Routes):
         expires_in = res.json().get('expires_in', None)
 
         # store redis token if turned on
-        conn = self.init_connection(env)
+        conn = self.init_connection(env, use_es=False)
         redis_handler = conn.get_redis_base()
         if redis_handler:
             # Get email from JWT.
@@ -532,7 +544,7 @@ class AppUtilsCore(ReactApi, Routes):
 
             # if redis is enabled check for session token and extract JWT from there
             canonical_env_name = full_env_name(env_name)
-            conn = self.init_connection(canonical_env_name)
+            conn = self.init_connection(canonical_env_name, use_es=False)
             redis_handler = conn.get_redis_base()
             if redis_handler:
                 redis_session_token = RedisSessionToken.from_redis(
@@ -553,8 +565,8 @@ class AppUtilsCore(ReactApi, Routes):
             else:
                 return jwt.decode(jwt_token, auth0_secret, audience=auth0_client_id, leeway=30,
                                   options={"verify_signature": True}, algorithms=["HS256"])
-        except Exception as e:
-            logger.warning(f"foursight_core: Exception decoding JWT token ({jwt_token}): {get_error_message(e)}")
+        except Exception:
+            logger.warning("foursight_core: Invalid session token")
             return None
 
     @classmethod
@@ -1689,12 +1701,15 @@ class AppUtilsCore(ReactApi, Routes):
         Returns:
             dict: runner input of queued messages, used for testing
         """
-        logger.warning(f"queue_scheduled_checks: sched_environ={sched_environ} schedule_name={schedule_name} conditions={conditions}")
+        logger.warning(f"queue_scheduled_checks: sched_environ={sched_environ} "
+                       f"schedule_name={schedule_name} conditions={conditions}")
         queue = self.sqs.get_sqs_queue()
         logger.warning(f"queue_scheduled_checks: queue={queue}")
         if schedule_name is not None:
             logger.warning(f"queue_scheduled_checks: have schedule_name")
-            logger.warning(f"queue_scheduled_checks: environment.is_valid_environment_name(sched_environ, or_all=True)={self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
+            logger.warning("queue_scheduled_checks: "
+                           "environment.is_valid_environment_name(sched_environ, or_all=True)="
+                           f"{self.environment.is_valid_environment_name(sched_environ, or_all=True)}")
             if not self.environment.is_valid_environment_name(sched_environ, or_all=True):
                 logger.warning(f'-RUN-> {sched_environ} is not a valid environment. Cannot queue.')
                 return
@@ -1992,10 +2007,10 @@ class AppUtilsCore(ReactApi, Routes):
                                           params=action_params, uuid=run_uuid)
                     except Exception as exc:
                         logger.warning('-RUN-> Could not queue action %s on stage %s with kwargs: %s. Error: %s'
-                              % (run_result['action'], stage, action_params, str(exc)))
+                                       % (run_result['action'], stage, action_params, str(exc)))
                     else:
                         logger.warning('-RUN-> Queued action %s on stage %s with kwargs: %s'
-                              % (run_result['action'], stage, action_params))
+                                       % (run_result['action'], stage, action_params))
             logger.warning(f'-RUN-> Finished: {run_name}')
             self.sqs.delete_message_and_propogate(runner_input, receipt, propogate=propogate)
             return run_result
